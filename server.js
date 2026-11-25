@@ -65,12 +65,13 @@ http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Private-Network', 'true');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
   const url = req.url.split('?')[0];
 
-  if (req.method === 'GET' && (url === '/' || url === '/rezie.html')) {
-    return fs.readFile(path.join(__dirname, 'rezie.html'), (e, buf) =>
-      e ? send(res, 404, 'rezie.html nenalezen vedle server.js') : send(res, 200, buf, 'text/html; charset=utf-8'));
+  if (req.method === 'GET' && (url === '/' || url === '/index.html' || url === '/rezie.html')) {
+    return fs.readFile(path.join(__dirname, 'index.html'), (e, buf) =>
+      e ? send(res, 404, 'index.html nenalezen vedle server.js') : send(res, 200, buf, 'text/html; charset=utf-8'));
   }
   if (req.method === 'GET' && url === '/status') {
     return send(res, 200, JSON.stringify({ running: !!ff, ffmpeg: hasFfmpeg(), last }), 'application/json');

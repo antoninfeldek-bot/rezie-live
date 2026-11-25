@@ -1,7 +1,7 @@
 # 🎬 Režie Live – návod
 
 ## Co je ve složce
-- **rezie.html** – samotná režie (běží v prohlížeči Chrome / Edge)
+- **index.html** – samotná režie (běží v prohlížeči Chrome / Edge)
 - **server.js** – malý pomocný program, který posílá vysílání na YouTube / Twitch / Facebook
 - **NAVOD.md** – tenhle návod
 
@@ -20,7 +20,7 @@ Všechny tři soubory dej do **jedné složky**.
 3. V Chrome otevři **http://localhost:8080**
 4. Klikni **Spustit studio** a povol kameru a mikrofon.
 
-(Režie jde otevřít i dvojklikem na rezie.html, ale vysílání funguje jen se spuštěným server.js.)
+Režie je taky online: **https://antoninfeldek-bot.github.io/rezie-live/** – kamery, scény, nahrávání i čtečka fungují rovnou tam. Jen pro **vysílání** musí v počítači běžet `node server.js` (online stránka mu pak posílá obraz).
 
 ## 3. Jak se s tím pracuje
 - **Zdroje** (záložka dole): přidej kamery, mikrofony, videa (znělky), obrázky (logo), texty (titulky), obrazovku.
