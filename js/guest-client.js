@@ -40,7 +40,7 @@
   };
   $('#cam').onchange = $('#mic').onchange = $('#q').onchange = () => getMedia().catch(e => err(e.message));
 
-  const gathered = p => new Promise(res => { if (p.iceGatheringState === 'complete') return res(); const to = setTimeout(res, 2500); p.addEventListener('icegatheringstatechange', () => { if (p.iceGatheringState === 'complete') { clearTimeout(to); res(); } }); });
+  const gathered = p => new Promise(res => { if (p.iceGatheringState === 'complete') return res(); const to = setTimeout(res, 3000); p.addEventListener('icegatheringstatechange', () => { if (p.iceGatheringState === 'complete') { clearTimeout(to); res(); } }); });
   async function join() {
     const name = ($('#name').value || t('Host')).trim().slice(0, 40); try { localStorage.setItem('rz-guest-name', name); } catch (e) {}
     $('#setup').hidden = true; $('#live').hidden = false; state(t('Připojuji…')); err(''); leaving = false;
@@ -57,7 +57,9 @@
   }
   async function offer(name) {
     if (pc) try { pc.close(); } catch (e) {}
-    pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    let ice = [{urls:['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302']}];
+    try { const r = await fetch('/g/config?k=' + encodeURIComponent(K)); if (r.ok) { const c = await r.json(); if (c.iceServers && c.iceServers.length) ice = c.iceServers; } } catch (e) {}
+    pc = new RTCPeerConnection({iceServers:ice});
     const vt = stream.getVideoTracks()[0], at = stream.getAudioTracks()[0];
     if (vt) { vt.contentHint = 'motion'; pc.addTrack(vt, stream); } else pc.addTransceiver('video', {direction:'recvonly'});
     if (at) pc.addTrack(at, stream); else pc.addTransceiver('audio', {direction:'recvonly'});

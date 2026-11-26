@@ -10,11 +10,18 @@ const REM = (() => {
   const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join(''); };
   const C = () => S.rem;
 
-  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10)}; }
-  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey});
+  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn)}; }
+  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey, online:C().online, turn:C().turn});
+  // STUN najde veřejnou adresu (stačí většinou); TURN přeposílá obraz, když to přísná síť (škola, firma) jinak nepustí
+  function iceServers() {
+    const l = [{urls:['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302']}], t = C().turn;
+    if (t && t.url) l.push({urls:t.url.split(/[\s,]+/).filter(Boolean), username:t.user || undefined, credential:t.pass || undefined});
+    return l;
+  }
   const host = () => ST.info && ST.info.on ? `${ST.info.https ? 'https' : 'http'}://${ST.info.ips[0] || 'IP-ADRESA'}:${ST.info.port}` : '';
   const remoteUrl = () => host() + '/remote?k=' + C().pin + (I18N.lang === 'en' ? '&lang=en' : '');
   const prompterUrl = () => host() + '/prompter?k=' + C().pkey + (I18N.lang === 'en' ? '&lang=en' : '');
+  const onlineUrl = () => ST.info && ST.info.tunnel && ST.info.tunnel.url ? ST.info.tunnel.url + '/guest?k=' + C().gkey + (I18N.lang === 'en' ? '&lang=en' : '') : '';
   const guestUrl = () => host() + '/guest?k=' + C().gkey + (I18N.lang === 'en' ? '&lang=en' : '');
 
   /* ---------- zapnutí / vypnutí ---------- */
@@ -22,12 +29,24 @@ const REM = (() => {
     const b = base(); if (!b) { ST.err = L('Funguje jen v aplikaci pro Mac nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
     ST.starting = true; ST.err = ''; renderTab();
     try {
-      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey})});
+      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ice:iceServers()})});
       if (!r.ok) throw new Error(await r.text());
       ST.info = await r.json(); C().on = true; save();
       connectEvents(); startPush();
+      if (C().online && (!ST.info.tunnel || ST.info.tunnel.status === 'off')) setOnline(true);
     } catch (e) { ST.err = L('Nepodařilo se zapnout:') + ' ' + e.message; C().on = false; }
     ST.starting = false; renderTab();
+  }
+  async function setOnline(on) {
+    C().online = on; save();
+    try { const r = await fetch(base() + '/lan/tunnel', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on})}); if (!r.ok) throw new Error(await r.text()); ST.info = await r.json(); }
+    catch (e) { ST.info.tunnel = {status:'off', err:e.message}; C().online = false; }
+    renderTab();
+  }
+  async function saveTurn(t) {
+    C().turn = t; save();
+    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ice:iceServers()})}); } catch (e) {}
+    toast(L('TURN server uložen'));
   }
   async function disable() {
     C().on = false; save();
@@ -48,6 +67,7 @@ const REM = (() => {
   }
   function onMsg(d) {
     if (d.t === 'act') { try { act(d.a, d.v); } catch (e) { HLT.note('Dálkové ovládání: ' + e.message); } }
+    else if (d.t === 'tunnel') { if (ST.info) ST.info.tunnel = {status:d.status, url:d.url, err:d.err}; if (d.status === 'on' && d.url) toast('🌍 ' + L('Odkaz pro hosty přes internet je připravený')); if (S.tabCur === 'remote') renderTab(); }
     else if (d.t === 'remotes') { ST.remotes = d.n; if (S.tabCur === 'remote') renderTab(); }
     else if (d.t === 'prompters') { ST.prompters = d.n; ST.prJson = ''; if (S.tabCur === 'remote') renderTab(); }
     else if (d.t === 'offer') guestOffer(d).catch(e => { HLT.note('Host: ' + e.message); toast(L('Host se nepřipojil:') + ' ' + e.message); });
@@ -139,7 +159,7 @@ const REM = (() => {
     mmUpdate(g);
     const retV = pg.captureStream(15).getVideoTracks()[0], retA = g.mmDest.stream.getAudioTracks()[0];
     g.retV = retV;
-    const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]}); g.pc = pc;
+    const pc = new RTCPeerConnection({iceServers:iceServers()}); g.pc = pc;
     const vids = [], auds = [];
     pc.ontrack = e => {
       const t = e.track;
@@ -174,7 +194,7 @@ const REM = (() => {
   }
   const gathered = pc => new Promise(res => {
     if (pc.iceGatheringState === 'complete') return res();
-    const t = setTimeout(res, 2500);   // bez internetu STUN nedoběhne – v místní síti stačí místní adresy
+    const t = setTimeout(res, 3000);   // bez internetu STUN nedoběhne – v místní síti stačí místní adresy
     pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } });
   });
   function mmUpdate(g) {
@@ -230,9 +250,20 @@ const REM = (() => {
           <code class="url" title="${L('Klikni pro zkopírování')}">${esc(prompterUrl())}</code>
           <p class="dim">${L('Připojené čtečky:')} <b>${ST.prompters}</b> · ${L('Text, rychlost a posun se řídí z režie (záložka Čtečka, klávesa P) nebo z ovladače.')}</p>
           <div class="btns"><button data-rm="newpk">🔑 ${L('Nový klíč')}</button></div></div>
-        <div class="remcard"><h4>👤 ${L('Odkaz pro hosty')}</h4><div class="qr">${qr(guestUrl())}</div>
-          <code class="url" title="${L('Klikni pro zkopírování')}">${esc(guestUrl())}</code>
-          <div class="btns"><button data-rm="newg">🔑 ${L('Nový odkaz')}</button></div></div>
+        <div class="remcard"><h4>👤 ${L('Odkaz pro hosty')}</h4>
+          <label class="chk"><input type="checkbox" id="remOnline" ${C().online ? 'checked' : ''}> 🌍 ${L('Hosté i mimo Wi-Fi (přes internet)')}</label>
+          ${(() => { const tn = ST.info.tunnel || {}, u = onlineUrl();
+            if (C().online && tn.status === 'on' && u) return `<div class="qr">${qr(u)}</div><code class="url" title="${L('Klikni pro zkopírování')}">${esc(u)}</code>
+              <p class="dim">🟢 ${L('Funguje odkudkoli na světě, bez varování o certifikátu. Adresa se změní při každém zapnutí – posílej hostům vždy aktuální.')}</p>
+              <details><summary class="dim">${L('Odkaz jen pro místní Wi-Fi')}</summary><code class="url">${esc(guestUrl())}</code></details>`;
+            return (C().online ? `<p class="${tn.err ? 'warn' : 'dim'}">${tn.status === 'starting' ? '🟡 ' + L('Vytvářím veřejnou adresu…') : ''} ${tn.err ? esc(L(tn.err)) : ''}</p>` : '') +
+              `<div class="qr">${qr(guestUrl())}</div><code class="url" title="${L('Klikni pro zkopírování')}">${esc(guestUrl())}</code>`; })()}
+          <div class="btns"><button data-rm="newg">🔑 ${L('Nový odkaz')}</button></div>
+          <details class="turn"><summary class="dim">${L('Pokročilé: vlastní TURN server')}</summary>
+            <p class="dim">${L('Většinou není potřeba. Hodí se, když se host z přísné sítě (škola, firma, některé mobilní sítě) nepřipojí. TURN zdarma nabízí např. Cloudflare Realtime nebo Metered.')}</p>
+            <input id="turnUrl" placeholder="turn:server:3478, turns:server:443" value="${esc(C().turn.url)}">
+            <input id="turnUser" placeholder="${L('uživatel')}" value="${esc(C().turn.user)}"><input id="turnPass" type="password" placeholder="${L('heslo')}" value="${esc(C().turn.pass)}">
+            <div class="btns"><button data-rm="turn">${L('Uložit TURN')}</button></div></details></div>
         <div class="remcard"><h4>${L('Hosté')}</h4>
           ${guests.length ? guests.map(s => { const live = G.has(s.guestId); return `<div class="guest ${live ? 'live' : ''}" data-gid="${esc(s.guestId)}" data-sid="${s.id}">
             <span>${live ? '🟢' : '⚪'} ${esc(s.name)}</span>
@@ -241,16 +272,17 @@ const REM = (() => {
       ${ST.info.https ? `<p class="dim">⚠ ${L('Při prvním otevření prohlížeč napíše, že spojení není soukromé (certifikát si aplikace vyrobila sama). Klikni na „Podrobnosti → Přesto pokračovat“. Spojení je šifrované.')}</p>` : `<p class="warn">${L('Chybí OpenSSL – spojení není šifrované, takže kamera hosta v mobilu nepůjde. Ovladač funguje.')}</p>`}
       ${ST.info.ips.length > 1 ? `<p class="dim">${L('Jiné adresy tohoto počítače:')} ${ST.info.ips.slice(1).map(esc).join(', ')}</p>` : ''}
       ${!ST.info.ips.length ? `<p class="warn">${L('Počítač není připojený k žádné síti.')}</p>` : ''}
-      <p class="dim">${L('Host mimo tvou Wi-Fi: zatím jen přes tunel (např. Cloudflare Tunnel nebo Tailscale) – odkaz pak pošleš s jeho adresou.')}</p>` : ''}`;
+` : ''}`;
   }
   function init() {
     const box = $('#tab-remote');
-    box.addEventListener('change', e => { if (e.target.id === 'remOn') e.target.checked ? enable() : disable(); });
+    box.addEventListener('change', e => { if (e.target.id === 'remOn') e.target.checked ? enable() : disable(); if (e.target.id === 'remOnline') setOnline(e.target.checked); });
     box.addEventListener('click', e => {
       const t = e.target;
       if (t.classList.contains('url')) { navigator.clipboard && navigator.clipboard.writeText(t.textContent); t.classList.add('copied'); setTimeout(() => t.classList.remove('copied'), 800); return; }
       const a = t.dataset.rm; if (!a) return;
       if (a === 'newpin') newKeys('pin'); else if (a === 'newg') newKeys('gkey'); else if (a === 'newpk') newKeys('pkey');
+      else if (a === 'turn') saveTurn({url:$('#turnUrl').value.trim(), user:$('#turnUser').value.trim(), pass:$('#turnPass').value});
       else if (a === 'kick') kick(t.closest('.guest').dataset.gid);
       else if (a === 'addpv') { const s = srcById(t.closest('.guest').dataset.sid); if (s) { addToPreview(s); renderSources(); save(); toast(L('Host přidán do náhledu')); } }
     });

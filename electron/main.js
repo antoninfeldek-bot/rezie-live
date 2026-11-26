@@ -4,6 +4,7 @@ const { app, BrowserWindow, systemPreferences, session, shell, dialog, ipcMain, 
 const { Streamer } = require('./streamer.js');
 const net = require('net');
 const path = require('path');
+const fs = require('fs');
 
 app.setName('Režie Live');
 // macOS a Chromium nesmí aplikaci brzdit, když je zakrytá nebo minimalizovaná
@@ -41,6 +42,7 @@ app.whenReady().then(async () => {
   if (ff) process.env.FFMPEG = ff;
   const port = await freePort(8080);
   process.env.PORT = String(port);
+  { const cf = path.join(process.resourcesPath || '', 'bin', process.platform === 'win32' ? 'cloudflared.exe' : 'cloudflared'); if (fs.existsSync(cf)) process.env.CLOUDFLARED = cf; }   // tunel pro hosty přes internet
   process.env.CERT_DIR = path.join(app.getPath('userData'), 'cert');   // certifikát pro dálkové ovládání v místní síti
   try { require(path.join(__dirname, '..', 'server.js')); }
   catch (e) { dialog.showErrorBox('Režie Live', 'Vnitřní server se nespustil: ' + e.message); }

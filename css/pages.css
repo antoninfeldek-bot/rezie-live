@@ -219,3 +219,5 @@ dialog.settings h3{margin:0 0 12px}
 .btns.end{justify-content:flex-end;margin-top:12px}
 .stfmt{grid-column:span 2;display:flex;align-items:center;gap:8px}
 @media (max-width:700px){.setw{grid-template-columns:1fr}.setw nav{flex-direction:row;flex-wrap:wrap}.setb .grid2{grid-template-columns:1fr}}
+.remcard details{margin-top:8px}.remcard details input{display:block;width:100%;margin-top:6px}
+.remcard label.chk{margin-bottom:8px}

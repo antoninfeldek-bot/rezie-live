@@ -104,6 +104,7 @@ const guests = new Map();          // id → {res, name}
 const prompters = new Set();       // iPady u čtecího zařízení
 let prState = '{}';
 let lan = null, lanState = '{}';
+const badKeys = new Map();         // ochrana proti hádání klíče
 const LAN_FILES = ['/remote.html', '/guest.html', '/prompter.html', '/js/prompter-client.js', '/js/remote-client.js', '/js/guest-client.js', '/js/qr.js', '/css/remote.css'];
 const toApp = o => { const m = 'data: ' + JSON.stringify(o) + '\n\n'; appClients.forEach(c => c.write(m)); };
 const sse = (req, res, set, extra) => {
@@ -128,11 +129,17 @@ function lanIps() {
   for (const [name, list] of Object.entries(os.networkInterfaces())) for (const a of list || []) if (a.family === 'IPv4' && !a.internal) out.push({ip:a.address, name});
   return out.sort((a, b) => (/^(en|wl|eth)/.test(b.name) ? 1 : 0) - (/^(en|wl|eth)/.test(a.name) ? 1 : 0));
 }
-const lanInfo = () => lan ? {on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, prompters:prompters.size, guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
-function lanHandler(req, res) {
+const lanInfo = () => lan ? {tunnel:{status:tun.status, url:tun.url, err:tun.err}, on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, prompters:prompters.size, guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
+function lanHandler(req, res, online) {
   res.setHeader('Cache-Control', 'no-cache');
   const u = new URL(req.url, 'http://x'), p = u.pathname, k = u.searchParams.get('k') || '';
-  const ok = (key) => key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key));
+  const ip = online ? String(req.headers['cf-connecting-ip'] || 'x') : req.socket.remoteAddress;
+  const bad = badKeys.get(ip);
+  if (bad && bad.n >= 30 && Date.now() - bad.t < 600000) return send(res, 429, 'Příliš mnoho pokusů – zkus to za 10 minut');
+  const ok = (key) => { const g = key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key)); if (!g && k) { const b = badKeys.get(ip) || {n:0, t:Date.now()}; if (Date.now() - b.t > 600000) { b.n = 0; b.t = Date.now(); } b.n++; badKeys.set(ip, b); } return g; };
+  // přes internet (tunel) jde jen připojení hosta – ovladač a čtečka zůstávají jen v místní síti
+  if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/css/remote.css')) return send(res, 404, 'nenalezeno');
+  if (p === '/g/config') { if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz'); return send(res, 200, JSON.stringify({iceServers:lan.ice || []}), 'application/json'); }
   if (req.method === 'GET' && (p === '/' || p === '/remote')) return serveFile(res, '/remote.html');
   if (req.method === 'GET' && p === '/guest') return serveFile(res, '/guest.html');
   if (req.method === 'GET' && p === '/prompter') return serveFile(res, '/prompter.html');
@@ -180,18 +187,67 @@ function serveFile(res, rel) {
   fs.readFile(file, (e, buf) => e ? send(res, 404, 'nenalezeno') : send(res, 200, buf, MIME[path.extname(file)] || 'application/octet-stream'));
 }
 function lanStart(cfg) {
-  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; return Promise.resolve(lanInfo()); }
+  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; return Promise.resolve(lanInfo()); }
   const c = certFiles();
   const srv = c ? https.createServer(c, lanHandler) : http.createServer(lanHandler);
   return new Promise((ok, fail) => {
     const tryPort = port => {
       srv.once('error', e => { if (e.code === 'EADDRINUSE' && port < PORT + 120) tryPort(port + 1); else fail(e); });
-      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
+      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
     };
     tryPort(+process.env.LAN_PORT || PORT + 363);
   });
 }
+/* ---------- hosté přes internet: tunel Cloudflare (zdarma, bez účtu) ----------
+   cloudflared vytvoří veřejnou https adresu *.trycloudflare.com (platný certifikát → kamera v mobilu jde bez varování).
+   Tunel vede na zvláštní místní port, který umí JEN stránku hosta a jeho připojení – nic jiného z internetu nejde. */
+const tun = {want:false, proc:null, srv:null, port:0, url:'', status:'off', err:'', retry:0, timer:null};
+const tunEmit = () => toApp({t:'tunnel', status:tun.status, url:tun.url, err:tun.err});
+function cloudflaredPath() {
+  if (process.env.CLOUDFLARED && fs.existsSync(process.env.CLOUDFLARED)) return process.env.CLOUDFLARED;
+  for (const f of ['/opt/homebrew/bin/cloudflared', '/usr/local/bin/cloudflared', '/usr/bin/cloudflared']) if (fs.existsSync(f)) return f;
+  return 'cloudflared';
+}
+function tunnelStart() {
+  if (!lan) return Promise.reject(new Error('Nejdřív zapni místní síť'));
+  tun.want = true; tun.err = '';
+  const go = () => {
+    if (!tun.want || tun.proc) return;
+    tun.status = 'starting'; tun.url = ''; tunEmit();
+    const p = spawn(cloudflaredPath(), ['tunnel', '--no-autoupdate', '--url', `http://127.0.0.1:${tun.port}`], {stdio:['ignore', 'pipe', 'pipe']});
+    tun.proc = p; let buf = '';
+    const onData = d => {
+      buf = (buf + d).slice(-4000);
+      const m = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/.exec(buf);
+      if (m && tun.url !== m[0]) { tun.url = m[0]; tun.status = 'on'; tun.retry = 0; tunEmit(); console.log('🌍 Hosté přes internet: ' + tun.url); }
+      if (/failed to (request quick Tunnel|unmarshal)|429 Too Many Requests/i.test(buf) && tun.status !== 'on') tun.err = 'Cloudflare teď tunel nevytvořil – zkusím to znovu';
+    };
+    p.stdout.on('data', onData); p.stderr.on('data', onData);
+    p.on('error', e => { tun.proc = null; tun.want = false; tun.status = 'off'; tun.err = e.code === 'ENOENT' ? 'Chybí program cloudflared (v aplikaci pro Mac je přibalený; jinak: brew install cloudflared)' : e.message; tunEmit(); });
+    p.on('close', () => {
+      if (tun.proc !== p) return; tun.proc = null; tun.url = '';
+      if (!tun.want) { tun.status = 'off'; tunEmit(); return; }
+      tun.status = 'starting'; tun.err = tun.err || 'Tunel spadl – připojuji znovu'; tunEmit();
+      tun.timer = setTimeout(go, Math.min(30000, 2000 * 2 ** tun.retry++));
+    });
+  };
+  if (tun.srv) { go(); return Promise.resolve(); }
+  return new Promise((ok, fail) => {
+    tun.srv = http.createServer((q, r) => { if (!lan) return send(r, 503, 'Režie neběží'); lanHandler(q, r, true); });
+    tun.srv.once('error', fail);
+    tun.srv.listen(0, '127.0.0.1', () => { tun.port = tun.srv.address().port; go(); ok(); });
+  });
+}
+function tunnelStop() {
+  tun.want = false; clearTimeout(tun.timer);
+  const p = tun.proc; tun.proc = null; if (p) try { p.kill(); } catch (e) {}
+  if (tun.srv) { try { tun.srv.close(); tun.srv.closeAllConnections && tun.srv.closeAllConnections(); } catch (e) {} tun.srv = null; }
+  tun.url = ''; tun.status = 'off'; tunEmit();
+}
+process.on('exit', () => { try { tun.proc && tun.proc.kill(); } catch (e) {} });
+
 function lanStop() {
+  tunnelStop();
   if (!lan) return; const s = lan.srv; lan = null;
   remotes.forEach(r => { try { r.end(); } catch (e) {} }); remotes.clear();
   guests.forEach(g => { try { g.res.end(); } catch (e) {} }); guests.clear();
@@ -229,6 +285,10 @@ http.createServer(async (req, res) => {
     let d = ''; req.on('data', c => { d += c; if (d.length > 2e6) req.destroy(); });
     req.on('end', () => { lanState = d || '{}'; const m = 'data: ' + lanState + '\n\n'; remotes.forEach(r => r.write(m)); send(res, 200, String(remotes.size)); });
     return;
+  }
+  if (url === '/lan/tunnel' && req.method === 'POST') {
+    try { const d = await readJson(req); if (d.on) await tunnelStart(); else tunnelStop(); return send(res, 200, JSON.stringify(lanInfo()), 'application/json'); }
+    catch (e) { return send(res, 400, e.message); }
   }
   if (url === '/lan/prompter' && req.method === 'POST') {
     let d = ''; req.on('data', c => { d += c; if (d.length > 1e6) req.destroy(); });

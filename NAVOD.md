@@ -42,6 +42,8 @@ Zaškrtni **Povolit v místní síti** – objeví se tři QR kódy:
 - **Čtecí zařízení (iPad)** – naskenuj iPadem, který je ve čtecím zařízení. Ukáže text na celou obrazovku a posouvá ho přesně podle režie. Klepnutím se ukáže lišta: zrcadlení (podle režie / zapnuto / vypnuto), velikost písma, celá obrazovka. Obrazovka nezhasne.
 - **Odkaz pro hosty** – host otevře odkaz v mobilu nebo počítači, povolí kameru a připojí se. V režii se objeví jako zdroj 👤. Vidí program, slyší všechny kromě sebe (mix-minus) a když je ve vysílání, svítí mu červeně „JSI VE VYSÍLÁNÍ“.
 
+**🌍 Host odkudkoli (přes internet):** u odkazu pro hosty zaškrtni **Hosté i mimo Wi-Fi**. Za pár sekund se objeví nový QR kód a odkaz `https://…trycloudflare.com` – ten pošli hostovi (WhatsApp, e-mail…). Funguje odkudkoli, bez varování o certifikátu, zdarma a bez účtu (tunel Cloudflare je v aplikaci přibalený). Přes internet jde jen stránka hosta – ovladač a čtečka zůstávají jen ve tvé Wi-Fi. Adresa se mění při každém zapnutí. Kdyby se host z přísné sítě (škola, firma) nepřipojil, vyplň v „Pokročilé: vlastní TURN server“ údaje z Cloudflare Realtime nebo Metered.
+
 Při prvním otevření prohlížeč napíše, že spojení není soukromé (certifikát si aplikace vyrobila sama) – klikni **Podrobnosti → Přesto pokračovat**. Mac se může zeptat, jestli povolit příchozí spojení – dej **Povolit**.
 
 ### 🛡 Spolehlivost

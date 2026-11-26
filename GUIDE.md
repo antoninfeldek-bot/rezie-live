@@ -35,6 +35,8 @@ Tick **Allow on the local network** – three QR codes appear:
 - **Teleprompter (iPad)** – scan with the iPad in the teleprompter rig. It shows the text full screen and scrolls exactly with the app. Tap for a bar: mirror (like app / on / off), font size, full screen. The screen stays on.
 - **Guest link** – the guest opens it on a phone or computer, allows the camera and joins. They appear as a 👤 source. They see the program, hear everyone except themselves (mix-minus) and see a red “YOU ARE LIVE” when on air.
 
+**🌍 Guest from anywhere (over the internet):** at the guest link tick **Guests outside your Wi-Fi**. In a few seconds a new QR code and a `https://…trycloudflare.com` link appear – send it to the guest. Works from anywhere, no certificate warning, free and no account (the Cloudflare tunnel is bundled in the app). Only the guest page goes over the internet – the remote and prompter stay on your Wi-Fi. The address changes each time. If a guest on a strict network (school, company) can’t connect, fill in “Advanced: your own TURN server” with details from Cloudflare Realtime or Metered.
+
 On first open the browser says the connection isn’t private (the app made its own certificate) – click **Details → Proceed anyway**. The Mac may ask to allow incoming connections – choose **Allow**.
 
 ### 🛡 Reliability
