@@ -6,7 +6,7 @@ const TR = (() => {
   const DIRS = {left:'zleva', right:'zprava', up:'zdola', down:'shora'};
   const EASES = {inout:'plynule', out:'zpomalit', in:'zrychlit', linear:'rovnoměrně'};
   const EF = {linear:t => t, in:t => t * t * t, out:t => 1 - Math.pow(1 - t, 3), inout:ease};
-  const mk = (name, type, dur, extra) => Object.assign({id:uid(), name, type, dur, ease:'inout', dir:'left', soft:0.08, color:'#000000', cut:0.5, sound:true}, extra || {});
+  const mk = (name, type, dur, extra) => Object.assign({id:uid(), name:L(name), type, dur, ease:'inout', dir:'left', soft:0.08, color:'#000000', cut:0.5, sound:true}, extra || {});
   const defaults = () => [mk('Prolínačka', 'fade', 600), mk('Přes černou', 'dip', 1000), mk('Stíračka', 'wipe', 700),
     mk('Vytlačení', 'push', 650), mk('Zoom', 'zoom', 700), mk('Kruh', 'iris', 800, {soft:0.04}), mk('Rozmazání', 'blur', 700)];
 
@@ -176,7 +176,7 @@ const TR = (() => {
       const t = S.trs.list.find(x => x.id === e.target.closest('.trc').dataset.id); if (!t) return;
       if (act === 'sel') select(t.id);
       else if (act === 'test') { const old = S.trs.cur; S.trs.cur = t.id; take('auto'); S.trs.cur = old; }
-      else if (act === 'dup') { const c = JSON.parse(JSON.stringify({...t, _v:undefined, _g:undefined})); c.id = uid(); c.name += ' (kopie)'; S.trs.list.splice(S.trs.list.indexOf(t) + 1, 0, c); renderTab(); renderSel(); save(); }
+      else if (act === 'dup') { const c = JSON.parse(JSON.stringify({...t, _v:undefined, _g:undefined})); c.id = uid(); c.name += ' ' + L('(kopie)'); S.trs.list.splice(S.trs.list.indexOf(t) + 1, 0, c); renderTab(); renderSel(); save(); }
       else if (act === 'del') { if (S.trs.list.length < 2) return alert('Aspoň jeden přechod musí zůstat.'); if (!confirm(`Smazat přechod „${t.name}“?`)) return; S.trs.list = S.trs.list.filter(x => x !== t); if (S.trs.cur === t.id) S.trs.cur = S.trs.list[0].id; renderTab(); renderSel(); save(); }
       else if (act === 'stfile') { const f = await pickFile('video/*'); if (f) { loadStinger(t, f); renderTab(); save(); } }
     });

@@ -30,9 +30,10 @@ const GFX = (() => {
 
   /* ---------- model ---------- */
   function newEl(type, extra) {
-    const E = {id:uid(), type, name:TNAME[type], vis:true, p:Object.assign({}, BASE, JSON.parse(JSON.stringify(TYPEDEF[type]))), kf:{}};
+    const E = {id:uid(), type, name:L(TNAME[type]), vis:true, p:Object.assign({}, BASE, JSON.parse(JSON.stringify(TYPEDEF[type]))), kf:{}};
     if (type === 'ticker') Object.assign(E.p, {x:0, y:980, w:W, h:70});
-    if (extra) { if (extra.name) E.name = extra.name; Object.assign(E.p, extra.p || {}); }
+    if (typeof E.p.text === 'string' && !/^\{/.test(E.p.text)) E.p.text = L(E.p.text);
+    if (extra) { if (extra.name) E.name = L(extra.name); if (extra.p && typeof extra.p.text === 'string' && !/^\{/.test(extra.p.text)) extra.p.text = L(extra.p.text); Object.assign(E.p, extra.p || {}); }
     return E;
   }
   function kv(E, prop, t) {
@@ -83,10 +84,10 @@ const GFX = (() => {
   }
 
   /* ---------- šablony ---------- */
-  function newG(name) { return {id:uid(), name, dur:5, inEnd:1, outStart:4, autoOut:0, cdMin:5, fields:{}, els:[]}; }
+  function newG(name) { return {id:uid(), name:L(name), dur:5, inEnd:1, outStart:4, autoOut:0, cdMin:5, fields:{}, els:[]}; }
   const TEMPLATES = {
     lower:['Jmenovka (dolní třetina)', () => {
-      const G = newG('Jmenovka'); G.fields = {jmeno:'Jan Novák', funkce:'moderátor'};
+      const G = newG('Jmenovka'); G.fields = {jmeno:L('Jan Novák'), funkce:L('moderátor')};
       const acc = newEl('rect', {name:'Proužek', p:{x:110, y:812, w:14, h:150, fill:'#3b82f6'}});
       const bg = newEl('rect', {name:'Pozadí', p:{x:124, y:812, w:780, h:150, fill:'#0f172a', op:0.92}});
       const n = newEl('text', {name:'Jméno', p:{x:164, y:826, w:720, h:76, text:'{jmeno}', size:58}});
@@ -97,7 +98,7 @@ const GFX = (() => {
       return G;
     }],
     bug:['Logo v rohu', () => {
-      const G = newG('Logo v rohu'); G.fields = {logo:'MOJE TV'};
+      const G = newG('Logo v rohu'); G.fields = {logo:L('MOJE TV')};
       const bg = newEl('rect', {name:'Podklad', p:{x:1560, y:50, w:300, h:84, fill:'#111827', op:0.8, radius:14}});
       const t = newEl('text', {name:'Logo', p:{x:1560, y:50, w:300, h:84, text:'{logo}', size:42, align:'center', ls:2}});
       G.els = [bg, t]; applyPreset(G, bg, 'fade', 'fade', {dur:0.6}); applyPreset(G, t, 'zoom', 'fade', {delay:0.1, dur:0.6}); return G;
@@ -108,7 +109,7 @@ const GFX = (() => {
       G.els = [bg, t]; applyPreset(G, bg, 'pop', 'fade', {dur:0.45}); applyPreset(G, t, 'fade', 'fade', {delay:0.2, dur:0.3}); return G;
     }],
     ticker:['Lišta se zprávami', () => {
-      const G = newG('Lišta'); G.fields = {zpravy:'Vítejte u živého vysílání  •  Pište nám do komentářů  •  Sledujte nás i příště'};
+      const G = newG('Lišta'); G.fields = {zpravy:L('Vítejte u živého vysílání  •  Pište nám do komentářů  •  Sledujte nás i příště')};
       const bar = newEl('rect', {name:'Lišta', p:{x:0, y:990, w:W, h:70, fill:'#0b1220', op:0.95}});
       const lab = newEl('rect', {name:'Štítek', p:{x:0, y:990, w:200, h:70, fill:'#dc2626'}});
       const lt = newEl('text', {name:'Štítek text', p:{x:0, y:990, w:200, h:70, text:'ZPRÁVY', size:34, align:'center'}});
@@ -119,7 +120,7 @@ const GFX = (() => {
       return G;
     }],
     full:['Velký titulek přes celou obrazovku', () => {
-      const G = newG('Velký titulek'); G.fields = {titulek:'NÁZEV POŘADU', podtitulek:'díl 1'};
+      const G = newG('Velký titulek'); G.fields = {titulek:L('NÁZEV POŘADU'), podtitulek:L('díl 1')};
       const bg = newEl('rect', {name:'Pozadí', p:{x:0, y:0, w:W, h:H, fill:'#0b1220', op:0.88}});
       const t = newEl('text', {name:'Titulek', p:{x:160, y:400, w:1600, h:170, text:'{titulek}', size:130, align:'center', weight:800, ls:4}});
       const s = newEl('text', {name:'Podtitulek', p:{x:160, y:590, w:1600, h:80, text:'{podtitulek}', size:52, align:'center', weight:400, color:'#93c5fd'}});
@@ -195,7 +196,7 @@ const GFX = (() => {
           else { const k = P.fit === 'cover' ? Math.max(v.w / iw, v.h / ih) : Math.min(v.w / iw, v.h / ih), dw = iw * k, dh = ih * k;
             if (P.fit === 'cover') { ctx.beginPath(); ctx.rect(0, 0, v.w, v.h); ctx.clip(); }
             ctx.drawImage(im, (v.w - dw) / 2, (v.h - dh) / 2, dw, dh); }
-        } else if (ctx === ED.ctx) { ctx.strokeStyle = '#666'; ctx.setLineDash([8, 6]); ctx.strokeRect(0, 0, v.w, v.h); ctx.setLineDash([]); ctx.fillStyle = '#888'; ctx.font = '28px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('obrázek – nahraj ho vpravo', v.w / 2, v.h / 2); }
+        } else if (ctx === ED.ctx) { ctx.strokeStyle = '#666'; ctx.setLineDash([8, 6]); ctx.strokeRect(0, 0, v.w, v.h); ctx.setLineDash([]); ctx.fillStyle = '#888'; ctx.font = '28px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(L('obrázek – nahraj ho vpravo'), v.w / 2, v.h / 2); }
       } else if (E.type === 'ticker') {
         const s = tokens(G, P.text, st, now).replace(/\n/g, '   ');
         ctx.font = `${P.weight} ${P.size}px ${P.font}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = P.color;
@@ -374,7 +375,7 @@ const GFX = (() => {
     const row = e.target.closest('[data-eid]'), E = row ? elById(G, row.dataset.eid) : elById(G, ED.sel);
     switch (act) {
       case 'new': newFromTemplate().then(g => { if (g) { ED.gid = g.id; ED.sel = null; renderPage(); } }); break;
-      case 'dup': if (G) { const c = JSON.parse(JSON.stringify(G)); c.id = uid(); c.name += ' (kopie)'; c.els.forEach(x => x.id = uid()); S.gfx.list.splice(S.gfx.list.indexOf(G) + 1, 0, c); ED.gid = c.id; renderPage(); save(); } break;
+      case 'dup': if (G) { const c = JSON.parse(JSON.stringify(G)); c.id = uid(); c.name += ' ' + L('(kopie)'); c.els.forEach(x => x.id = uid()); S.gfx.list.splice(S.gfx.list.indexOf(G) + 1, 0, c); ED.gid = c.id; renderPage(); save(); } break;
       case 'del': if (G && confirm(`Smazat grafiku „${G.name}“?`)) { delete RT[G.id]; S.gfx.list = S.gfx.list.filter(x => x !== G); ED.gid = null; ED.sel = null; renderPage(); renderCtl(); save(); } break;
       case 'up': case 'down': if (G) { const i = S.gfx.list.indexOf(G), j = i + (act === 'up' ? -1 : 1); if (j >= 0 && j < S.gfx.list.length) { [S.gfx.list[i], S.gfx.list[j]] = [S.gfx.list[j], S.gfx.list[i]]; renderPage(); renderCtl(); save(); } } break;
       case 'add-text': case 'add-rect': case 'add-image': case 'add-ticker': if (G) { pushUndo(); const n = newEl(act.slice(4)); G.els.push(n); ED.sel = n.id; renderPage(); save(); } break;
@@ -481,11 +482,11 @@ const GFX = (() => {
       c.fillStyle = '#e7e9ec';
       if (r.kind === 'el') {
         c.fillText(r.E.vis ? '👁' : '·', 6, r.y + TL.rh / 2); c.fillStyle = '#8b919b'; c.fillText(ED.expanded[r.E.id] ? '▾' : '▸', 24, r.y + TL.rh / 2);
-        c.fillStyle = sel ? '#facc15' : '#e7e9ec'; c.fillText(r.E.name.slice(0, 24), 38, r.y + TL.rh / 2);
+        c.fillStyle = sel ? '#facc15' : '#e7e9ec'; c.fillText(L(r.E.name).slice(0, 24), 38, r.y + TL.rh / 2);
         const times = new Set(); Object.values(r.E.kf).forEach(ks => ks.forEach(k => times.add(+k.t.toFixed(4))));
         times.forEach(t => diamond(c, t2x(G, t), r.y + TL.rh / 2, 5, '#9ca3af', false));
       } else {
-        c.fillStyle = '#8b919b'; c.fillText(AL[r.prop], 46, r.y + TL.rh / 2);
+        c.fillStyle = '#8b919b'; c.fillText(L(AL[r.prop]), 46, r.y + TL.rh / 2);
         (r.E.kf[r.prop] || []).forEach((k, i) => { const s = ED.selKf && ED.selKf.eid === r.E.id && ED.selKf.prop === r.prop && ED.selKf.i === i;
           diamond(c, t2x(G, k.t), r.y + TL.rh / 2, 5, s ? '#facc15' : '#60a5fa', true); });
       }
@@ -495,7 +496,7 @@ const GFX = (() => {
     const step = G.dur > 20 ? 2 : G.dur > 8 ? 1 : 0.5;
     for (let t = 0; t <= G.dur + 1e-6; t += step / 2) { const x = t2x(G, t), major = Math.abs(t / step - Math.round(t / step)) < 1e-6; c.moveTo(x + 0.5, major ? 12 : 20); c.lineTo(x + 0.5, TL.top); if (major) c.fillText(t.toFixed(step < 1 ? 1 : 0) + 's', x + 3, 8); }
     c.stroke();
-    c.fillStyle = '#e7e9ec'; c.fillText('čas →', 8, TL.top / 2);
+    c.fillStyle = '#e7e9ec'; c.fillText(L('čas →'), 8, TL.top / 2);
     marker(c, xi, h, '#22c55e', 'IN'); marker(c, xo, h, '#ef4444', 'OUT');
     const xp = t2x(G, ED.t); c.strokeStyle = '#facc15'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(xp, 0); c.lineTo(xp, h); c.stroke(); c.lineWidth = 1;
     c.fillStyle = '#facc15'; c.beginPath(); c.moveTo(xp - 6, 0); c.lineTo(xp + 6, 0); c.lineTo(xp, 9); c.fill();

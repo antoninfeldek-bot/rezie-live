@@ -7,6 +7,8 @@
 
 Všechno nech pohromadě v **jedné složce** (tak, jak je to na GitHubu).
 
+Aplikace umí česky i anglicky – přepínač **🌐 EN / 🌐 CZ** je v horní liště (a na úvodní obrazovce). Anglický návod: GUIDE.md.
+
 ## 1. Jednorázová instalace
 1. **Node.js** – stáhni z nodejs.org (verze LTS) a nainstaluj.
 2. **FFmpeg** – potřeba jen pro vysílání:

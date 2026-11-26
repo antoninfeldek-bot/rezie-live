@@ -5,7 +5,7 @@ const RUN = (() => {
   const mmss = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const parse = v => { v = String(v).trim(); if (!v) return 0; if (v.includes(':')) { const [m, s] = v.split(':'); return (+m || 0) * 60 + (+s || 0); } return Math.round((+v || 0) * 60); };
   const R_ = () => S.rundown, items = () => S.rundown.items;
-  const newItem = (title, dur) => ({id:uid(), title, dur, scene:'', gfx:'', prompt:'', notes:''});
+  const newItem = (title, dur) => ({id:uid(), title:L(title), dur, scene:'', gfx:'', prompt:'', notes:''});
   function go(i) {
     const r = R_(), old = items()[r.cur];
     if (old && old.gfx) { const G = GFX.byId(old.gfx); if (G) GFX.setIn(G, false); }

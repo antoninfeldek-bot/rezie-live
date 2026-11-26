@@ -1,0 +1,287 @@
+'use strict';
+/* ================= JAZYK / LANGUAGE (CZ ⇄ EN) =================
+   Aplikace je napsaná česky. V angličtině se celá stránka (texty, popisky, nápovědy, hlášky)
+   překládá automaticky podle slovníku níže. Přepínač je v horní liště (🌐). */
+const I18N = (() => {
+  const DICT = {
+/* --- obecné / start --- */
+'Režie Live':'Live Director','🎬 Režie Live':'🎬 Live Director','🎬 REŽIE':'🎬 DIRECTOR',
+'Webová režie pro živé vysílání: kamery, scény, klíč, grafika s animacemi, mix pult s efekty, grading, scopy, scénář, nahrávání a stream.':'Web-based live production switcher: cameras, scenes, chroma key, animated graphics, audio mixer with effects, color grading, scopes, rundown, recording and streaming.',
+'Spustit studio':'Start studio','Prohlížeč se zeptá na kameru a mikrofon – povol to.':'Your browser will ask for camera and microphone access – please allow it.',
+'Nejlépe funguje v Google Chrome nebo Edge.':'Works best in Google Chrome or Edge.',
+'Režie':'Director','Grafika':'Graphics','Zvuk':'Audio','Barvy':'Color','Čtečka':'Prompter','Program':'Program','Multiview':'Multiview',
+'Okno Program – čistý výstup na druhý monitor / projektor':'Program window – clean output for a second monitor / projector',
+'Okno Multiview – přehled všech zdrojů':'Multiview window – all sources at a glance','Okno čtečky (teleprompter)':'Prompter window (teleprompter)',
+'● Program':'● Program','■ Stop program':'■ Stop program','● Vše (ISO)':'● All (ISO)','■ Stop vše (':'■ Stop all (','⦿ Vysílat':'⦿ Go live','■ Ukončit vysílání':'■ End stream',
+'Uložit projekt do souboru':'Save project to file','Načíst projekt ze souboru':'Load project from file','Nápověda':'Help','Zrušit':'Cancel','Zavřít':'Close',
+'NÁHLED':'PREVIEW','PROGRAM':'PROGRAM','mezerník':'space','Prohodit':'Swap','Po přepnutí dá starou scénu do náhledu':'After a take, the old scene goes back to preview',
+'Hlasitost programu':'Program volume','T-bar: táhni pro ruční přechod':'T-bar: drag for a manual transition','Vybraný přechod':'Selected transition',
+'Scény':'Scenes','Nová scéna':'New scene','Duplikovat':'Duplicate','Posunout':'Move','Smazat':'Delete','Vrstvy scény v náhledu':'Layers of the preview scene',
+'Vlastnosti':'Properties','Zdroje':'Sources','Přechody':'Transitions','Scénář':'Rundown','Vysílání':'Streaming','Nahrávky':'Recordings','Ovládání':'Controls',
+'Klik = náhled, dvojklik = rovnou do vysílání':'Click = preview, double-click = straight to air',
+/* --- scény a vrstvy --- */
+'Kamera':'Camera','Host':'Guest','Znělka':'Intro','Titulky':'Titles','Scéna':'Scene','Scéna 1':'Scene 1','Scéna 2':'Scene 2','Scéna 3':'Scene 3','Scéna 4':'Scene 4',
+'(kopie)':'(copy)','Vyber nebo vytvoř scénu.':'Select or create a scene.','Scéna je prázdná.':'The scene is empty.','+ Přidat zdroj do této scény…':'+ Add a source to this scene…',
+'(smazaný zdroj)':'(deleted source)','Zobrazit/skrýt':'Show/hide','Výš':'Up','Níž':'Down','Odebrat ze scény':'Remove from scene','KLÍČ':'KEY',
+'Vyber scénu.':'Select a scene.','Název scény':'Scene name','Když v této scéně skončí video, přepnout na:':'When the video in this scene ends, switch to:','— nic —':'— nothing —',
+'Hodí se na znělku: pustíš scénu se znělkou a po jejím konci se samo přepne na kameru.':'Great for an intro: play the intro scene and when it ends it switches to the camera by itself.',
+'Vrstva':'Layer','Vrstva:':'Layer:','Klikni na něco v náhledu nebo na vrstvu v seznamu. V náhledu můžeš vrstvy myší posouvat a za rohy zvětšovat (Shift = volný poměr).':'Click something in the preview or a layer in the list. In the preview you can drag layers with the mouse and resize them by the corners (Shift = free aspect ratio).',
+'Šířka':'Width','Výška':'Height','Velikost %':'Size %','Celá obrazovka':'Full screen','Podle poměru zdroje':'Match source aspect','Malé okno v rohu':'Small corner window',
+'Na střed':'Center','Dolní třetina':'Lower third','Průhlednost':'Opacity','Oříznutí':'Crop','Zleva':'Left','Zprava':'Right','Shora':'Top','Zdola':'Bottom',
+'Klíčování (zelené / modré pozadí)':'Chroma key (green / blue screen)','Zapnout klíč':'Enable key','Barva':'Color','🎯 Kliknout do náhledu a vybrat barvu':'🎯 Click the preview to pick a color',
+'Zelená':'Green','Modrá':'Blue','Podobnost (kolik zmizí)':'Similarity (how much disappears)','Vyhlazení okrajů':'Edge smoothness','Potlačení zeleného přesvitu':'Green spill suppression',
+'Postup: zapni klíč → klikni na 🎯 → klikni do zeleného pozadí v náhledu → posuň „Podobnost“, až pozadí zmizí a člověk zůstane celý. Rovnoměrné světlo na plátně pomáhá nejvíc.':'How to: enable the key → click 🎯 → click the green background in the preview → move “Similarity” until the background disappears and the person stays whole. Even lighting on the screen helps the most.',
+'🎨 Barvy':'🎨 Color','Bez úprav barev.':'No color changes.','Otevřít v Barvách (grading, LUT, scopy)':'Open in Color (grading, LUT, scopes)',
+'Klikni přímo do obrazu vybrané vrstvy (do zeleného pozadí).':'Click directly on the image of the selected layer (on the green background).',
+'Tuhle scénu teď vysíláš. Nejdřív přepni na jinou.':'This scene is on air right now. Switch to another one first.','Smazat scénu „':'Delete scene “',
+/* --- zdroje --- */
+'📷 + Kamera':'📷 + Camera','🖥 + Obrazovka / okno':'🖥 + Screen / window','🎞 + Video (znělka)':'🎞 + Video (intro)','🖼 + Obrázek / logo':'🖼 + Image / logo','🔤 + Text / titulek':'🔤 + Text / title','🎨 + Barva':'🎨 + Color','🎤 + Mikrofon':'🎤 + Microphone',
+'Zatím žádné zdroje. Začni tím, že přidáš kameru.':'No sources yet. Start by adding a camera.','+ do scény':'+ to scene','Přidat do scény, která je v náhledu':'Add to the scene in preview','Smazat zdroj':'Delete source',
+'⚠ Zdroj není připojený.':'⚠ Source is not connected.','Připojit znovu':'Reconnect','Hlavní text':'Main text','Druhý řádek (např. funkce)':'Second line (e.g. job title)','Velikost':'Size','Velikost 2.':'Size 2',
+'Barva 2.':'Color 2','Tučně':'Bold','Pozadí':'Background','Barva pozadí':'Background color','Krytí pozadí':'Background opacity','Proužek':'Accent bar','Barva proužku':'Accent color','Písmo':'Font',
+'Systémové':'System','▶ Přehrát':'▶ Play','⏸ Pauza':'⏸ Pause','⏮ Začátek':'⏮ Start','Při přepnutí do vysílání pustit od začátku':'Restart from the beginning when taken to air',
+'Opakovat dokola (smyčka)':'Repeat (loop)','Zastavit, když není ve vysílání':'Pause when not on air','Vyměnit soubor':'Replace file','Změnit zařízení':'Change device',
+'Smazat zdroj „':'Delete source “','“? Zmizí ze všech scén.':'”? It will disappear from all scenes.','Kamera ':'Camera ','Mikrofon ':'Microphone ','Titulek ':'Title ','Titulek 1':'Title 1','Titulek 2':'Title 2','Barevné pozadí':'Color background','Obrazovka':'Screen',
+'Jméno Příjmení':'First Last','moderátor':'presenter','Mikrofon':'Microphone','Mikrofon 1':'Microphone 1','Mikrofon 2':'Microphone 2',
+'Rozlišení':'Resolution','1080p (Full HD)':'1080p (Full HD)','720p (HD)':'720p (HD)','Tip: stejná kamera nejde většinou otevřít dvakrát. Když ji chceš ve více scénách, přidej ji jako vrstvu do dalších scén.':'Tip: the same camera usually can’t be opened twice. If you want it in more scenes, add it as a layer to the other scenes.',
+'Mikrofon / zvuková karta':'Microphone / audio interface','Potlačení šumu (pro levné mikrofony)':'Noise suppression (for cheap microphones)','Potlačení ozvěny (když nemáš sluchátka)':'Echo cancellation (if you don’t use headphones)',
+'Nenašel jsem žádnou kameru.':'No camera found.','Nenašel jsem žádný mikrofon.':'No microphone found.','Zdroj se nepodařilo přidat:':'Could not add the source:','Nepodařilo se:':'Failed:',
+/* --- grafika: ovládání --- */
+'+ Nová grafika':'+ New graphic','✨ Otevřít editor grafiky':'✨ Open graphics editor','F1–F8 = zapnout/vypnout grafiku 1–8. Grafika jde přes všechny scény (jako DSK v televizi).':'F1–F8 = toggle graphic 1–8. Graphics go over all scenes (like a DSK in TV).',
+'✕ hned':'✕ now','Skrýt hned bez animace':'Hide immediately without animation','✏ Upravit':'✏ Edit','ON AIR':'ON AIR','● ON AIR – klikni pro OUT':'● ON AIR – click for OUT','odjíždí…':'leaving…','▶ IN – poslat do vysílání':'▶ IN – send to air',
+'Sama zmizí po (s, 0 = ne)':'Auto hide after (s, 0 = never)','Odpočet (minuty)':'Countdown (minutes)','Zatím žádná grafika.':'No graphics yet.','Nová grafika':'New graphic','Šablona':'Template',
+'Šablonu pak můžeš libovolně upravit v editoru – texty, barvy, animace.':'You can then edit the template any way you like in the editor – texts, colors, animations.',
+'Jmenovka (dolní třetina)':'Name tag (lower third)','Logo v rohu':'Corner logo','ŽIVĚ štítek':'LIVE badge','Lišta se zprávami':'News ticker','Velký titulek přes celou obrazovku':'Full-screen title','Odpočet':'Countdown','Hodiny v rohu':'Corner clock','Prázdná grafika':'Empty graphic',
+'Jmenovka':'Name tag','Lišta':'Ticker','Velký titulek':'Big title','Hodiny':'Clock','ŽIVĚ':'LIVE','● ŽIVĚ':'● LIVE','Jan Novák':'John Smith','MOJE TV':'MY TV','ZPRÁVY':'NEWS','NÁZEV POŘADU':'SHOW TITLE','díl 1':'episode 1','ZAČÍNÁME ZA':'STARTING IN',
+'Vítejte u živého vysílání  •  Pište nám do komentářů  •  Sledujte nás i příště':'Welcome to the live stream  •  Write to us in the comments  •  Join us next time',
+'Tady běží text lišty  •  další zpráva':'Ticker text runs here  •  next message',
+'Pozadí ':'Background ','Jméno':'Name','Funkce':'Job title','Podklad':'Base','Logo':'Logo','Červená':'Red','Lišta ':'Bar ','Štítek':'Label','Štítek text':'Label text','Běžící text':'Running text','Titulek':'Title','Podtitulek':'Subtitle','Popisek':'Caption','Čas':'Time',
+/* --- editor grafiky --- */
+'Grafiky':'Graphics','Nová ze šablony':'New from template','Vrstvy':'Layers','+ Text':'+ Text','+ Obdélník':'+ Rectangle','+ Obrázek':'+ Image','+ Lišta':'+ Ticker',
+'Pozadí: šachovnice':'Background: checkerboard','Pozadí: program':'Background: program','Pozadí: černé':'Background: black','bezpečné okraje':'safe areas','Zpět (Ctrl+Z)':'Undo (Ctrl+Z)','Znovu (Ctrl+Shift+Z)':'Redo (Ctrl+Shift+Z)',
+'▶ Do vysílání':'▶ To air','● ON AIR (OUT)':'● ON AIR (OUT)','▶ IN':'▶ IN','▶ OUT':'▶ OUT','smyčka':'loop',
+'Zelená část = příjezd (IN), pak grafika čeká, červená = odjezd (OUT). Posuň značky IN/OUT na pravítku. ◆ = klíčový snímek, táhni je myší.':'Green part = entry (IN), then the graphic waits, red = exit (OUT). Move the IN/OUT markers on the ruler. ◆ = keyframe, drag them with the mouse.',
+'Žádná grafika – klikni +':'No graphics – click +','Vytvoř grafiku tlačítkem +.':'Create a graphic with the + button.','Název':'Name','Celková délka (s)':'Total length (s)','Konec příjezdu IN (s)':'End of entry IN (s)','Začátek odjezdu OUT (s)':'Start of exit OUT (s)',
+'Sama zmizí po (s)':'Auto hide after (s)','Odpočet {cd} (min)':'Countdown {cd} (min)','Pole (texty, které měníš při vysílání)':'Fields (texts you change during the show)',
+'Do textu napiš třeba {jmeno} a objeví se tu pole.':'Type e.g. {name} into a text and a field will appear here.','+ Přidat pole':'+ Add field',
+'Speciální: {time} čas, {hm} hodiny:minuty, {date} datum, {cd} odpočet, {elapsed} uběhlý čas.':'Special: {time} time, {hm} hours:minutes, {date} date, {cd} countdown, {elapsed} elapsed time.',
+'Text':'Text','Obdélník':'Rectangle','Obrázek':'Image','Běžící lišta':'Ticker','Zpět na nastavení grafiky':'Back to graphic settings','Název vrstvy':'Layer name',
+'Tloušťka':'Weight','Zarovnání':'Alignment','vlevo':'left','na střed':'center','vpravo':'right','Svisle':'Vertical','nahoru':'top','dolů':'bottom','Mezery písmen':'Letter spacing','VELKÁ PÍSMENA':'UPPERCASE',
+'Stín':'Shadow','Barva stínu':'Shadow color','Obrys (px)':'Outline (px)','Barva obrysu':'Outline color','Rychlost (px/s)':'Speed (px/s)','Mezera':'Gap','Přechod barev':'Gradient','Druhá barva':'Second color','Úhel přechodu':'Gradient angle','Zaoblení':'Corner radius',
+'📂 Nahrát obrázek':'📂 Load image','Přizpůsobení':'Fit','celý obrázek':'whole image','vyplnit':'fill','roztáhnout':'stretch','obrázek – nahraj ho vpravo':'image – load it on the right',
+'Rychlá animace':'Quick animation','Příjezd (IN)':'Entry (IN)','Odjezd (OUT)':'Exit (OUT)','Zpoždění (s)':'Delay (s)','Délka (s)':'Duration (s)','Použít animaci':'Apply animation','Smazat všechny animace':'Delete all animations',
+'Smazat všechny animace této vrstvy?':'Delete all animations of this layer?','Vlastnosti v čase':'Properties at','(◆ = klíčový snímek)':'(◆ = keyframe)','Smazat klíčový snímek':'Delete keyframe','Přidat klíčový snímek v tomto čase':'Add a keyframe at this time',
+'Vybraný klíčový snímek –':'Selected keyframe –','Čas (s)':'Time (s)','Hodnota':'Value','Průběh k dalšímu':'Easing to next','🗑 Smazat snímek':'🗑 Delete keyframe',
+'— žádná —':'— none —','Prolnutí':'Fade','Vjezd zleva':'Slide in from left','Vjezd zprava':'Slide in from right','Vjezd zdola':'Slide in from bottom','Vjezd shora':'Slide in from top',
+'Odkrytí zleva':'Reveal from left','Odkrytí zprava':'Reveal from right','Odkrytí zdola':'Reveal from bottom','Odkrytí shora':'Reveal from top','Zvětšení':'Zoom','Vyskočení':'Pop','Z rozostření':'From blur',
+'Plynule':'Smooth','Zpomalit (vjezd)':'Ease out (entry)','Zrychlit (odjezd)':'Ease in (exit)','S překmitem':'Overshoot','Lineárně':'Linear','Skok (hold)':'Jump (hold)',
+'X':'X','Y':'Y','Měřítko X':'Scale X','Měřítko Y':'Scale Y','Rotace °':'Rotation °','Krytí':'Opacity','Ořez zleva':'Crop left','Ořez zprava':'Crop right','Ořez shora':'Crop top','Ořez zdola':'Crop bottom','Rozostření':'Blur',
+'Smazat grafiku „':'Delete graphic “','Nové pole':'New field','Název pole (bez mezer, např. jmeno)':'Field name (no spaces, e.g. name)','čas →':'time →',
+/* --- přechody --- */
+'+ Nový přechod':'+ New transition','Nový přechod':'New transition','Vybraný přechod se použije na tlačítko AUTO (Enter) a T-bar. Klávesy jdou nastavit v záložce Ovládání.':'The selected transition is used by the AUTO button (Enter) and the T-bar. Keys can be set in the Controls tab.',
+'● Vybráno':'● Selected','○ Vybrat':'○ Select','Použít jako hlavní přechod':'Use as main transition','Vyzkoušet (pošle náhled do programu)':'Test (sends preview to program)','Typ':'Type','Délka (ms)':'Duration (ms)','Bod střihu (s)':'Cut point (s)','Průběh':'Easing','Směr':'Direction','Měkkost hrany':'Edge softness',
+'Střih':'Cut','Prolínačka':'Crossfade','Přes barvu':'Dip to color','Přes černou':'Dip to black','Stíračka':'Wipe','Najetí':'Slide','Vytlačení':'Push','Zoom':'Zoom','Kruh':'Iris','Rozmazání':'Blur','Stinger (video)':'Stinger (video)',
+'zleva':'from left','zprava':'from right','zdola':'from bottom','shora':'from top','plynule':'smooth','zpomalit':'ease out','zrychlit':'ease in','rovnoměrně':'linear',
+'🎞 Nahrát video':'🎞 Load video','🎞 Vyměnit video':'🎞 Replace video','Video s průhledností (WebM VP9 s alfa kanálem, např. z After Effects)':'Video with transparency (WebM VP9 with alpha channel, e.g. from After Effects)','⚠ připoj znovu:':'⚠ reconnect:','se zvukem':'with sound',
+'Aspoň jeden přechod musí zůstat.':'At least one transition must remain.','Smazat přechod „':'Delete transition “',
+'V náhledu je stejná scéna jako v programu – nejdřív vyber jinou scénu do náhledu.':'Preview shows the same scene as program – select a different scene for preview first.',
+'Vybraný přechod je „Střih“ – T-bar potřebuje přechod s délkou (např. Prolínačka).':'The selected transition is “Cut” – the T-bar needs a transition with a duration (e.g. Crossfade).',
+/* --- zvuk --- */
+'🎚 Otevřít mix pult s efekty':'🎚 Open the audio mixer with effects','Hlasitost programu:':'Program loudness:','LUFS (cíl pro YouTube kolem −14)':'LUFS (YouTube target around −14)',
+'Zelená = v pohodě, žlutá = hlasitě, červená = moc nahlas (zkreslení). Odposlech pouštěj jen do sluchátek, jinak bude pískat zpětná vazba.':'Green = fine, yellow = loud, red = too loud (distortion). Use monitoring only with headphones, otherwise you get feedback.',
+'Zatím tu nic není. Přidej mikrofon nebo video v záložce Zdroje.':'Nothing here yet. Add a microphone or video in the Sources tab.','Ztlumit':'Mute','zpoždění':'delay','Když zvuk předbíhá obraz':'When audio is ahead of video','jen ve vysílání':'only on air','Zvuk videa jen když je video ve vysílání':'Video audio only when the video is on air',
+'🔴 MASTER (program)':'🔴 MASTER (program)','🎧 Odposlech':'🎧 Monitor','Pustit program do repráků/sluchátek':'Play program to speakers/headphones',
+'🎚 Mix pult':'🎚 Mixer','Hlasitost odposlechu':'Monitor volume','Okamžitá':'Momentary','LUFS · krátkodobá':'LUFS · short-term','(YouTube ≈ −14)':'(YouTube ≈ −14)',
+'Zatím žádný zvuk. Přidej mikrofon nebo video v Režii → Zdroje.':'No audio yet. Add a microphone or video in Director → Sources.','+ přidat efekt':'+ add effect','Předvolba…':'Preset…','💾 Uložit tento řetězec jako předvolbu…':'💾 Save this chain as a preset…',
+'Panorama (dvojklik = střed)':'Pan (double-click = center)','Solo – poslech jen tohoto kanálu ve sluchátkách (do vysílání nejde)':'Solo – listen to this channel only in headphones (not sent to air)','vstup':'input','výstup':'output',
+'Zesílení':'Gain','Mono / kanál':'Mono / channel','Ořez basů':'Low cut','Gate':'Gate','Potlačení šumu':'Noise reduction','EQ':'EQ','Kompresor':'Compressor','De-esser':'De-esser','Limiter':'Limiter','Zpoždění':'Delay',
+'Frekvence':'Frequency','Strmost (Q)':'Slope (Q)','Práh':'Threshold','Útlum':'Range','Náběh':'Attack','Držení':'Hold','Doznění':'Release','Síla potlačení':'Reduction amount','Citlivost':'Sensitivity',
+'Poměr':'Ratio','Koleno':'Knee','Dorovnání':'Makeup','Frekvence sykavek':'Sibilance frequency','Max. útlum':'Max reduction','Strop (nikdy nepřekročí)':'Ceiling (never exceeded)',
+'Zesílí nebo zeslabí signál na vstupu, než jde do dalších efektů.':'Boosts or lowers the input signal before the other effects.',
+'Udělá z mikrofonu mono, nebo vezme jen levý / pravý kanál (např. mikrofon zapojený jen do jednoho vstupu zvukové karty).':'Makes the microphone mono, or takes only the left / right channel (e.g. a mic plugged into just one input of the audio interface).',
+'Odstraní hučení, dunění a nárazy do stojanu. Pro hlas 80–120 Hz.':'Removes hum, rumble and stand bumps. For voice 80–120 Hz.','Úplně ztlumí mikrofon, když se nemluví (odstraní šum v pauzách).':'Fully mutes the mic when nobody speaks (removes noise in pauses).',
+'Spektrální potlačení šumu (větrák, klimatizace, šum předzesilovače). Nejlepší: buď 2 s potichu a klikni „Naučit šum“.':'Spectral noise reduction (fan, air conditioning, preamp hiss). Best: stay quiet for 2 s and click “Learn noise”.',
+'Ekvalizér – tahej body v grafu (kolečko myši mění šířku). Hlas: ubrat 200–400 Hz (bahno), přidat 3–5 kHz (srozumitelnost).':'Equalizer – drag the points in the graph (mouse wheel changes width). Voice: cut 200–400 Hz (mud), boost 3–5 kHz (clarity).',
+'Vyrovná hlasitost – tiché zesílí a hlasité ztiší. Hlas: práh −20 dB, poměr 3:1.':'Evens out loudness – makes quiet parts louder and loud parts quieter. Voice: threshold −20 dB, ratio 3:1.','Ztlumí ostré sykavky „s“, „š“, „c“.':'Tames harsh “s” and “sh” sounds.',
+'Pojistka – zvuk nikdy nepřekročí strop, takže nebude zkreslený. Dej ho na konec řetězce a na master.':'Safety net – audio never goes over the ceiling, so it won’t distort. Put it at the end of the chain and on the master.',
+'Zpozdí zvuk, když předbíhá obraz (synchronizace s kamerou).':'Delays audio when it is ahead of the picture (sync with the camera).',
+'🎙 Hlas – mluvené slovo':'🎙 Voice – speech','🌬 Hlas v hlučném prostředí':'🌬 Voice in a noisy room','🎵 Hudba / video':'🎵 Music / video','∅ Bez efektů':'∅ No effects',
+'Klikni na efekt v kanálu a tady ho nastavíš. Efekty se zpracovávají shora dolů. Přidej je přes „+ přidat efekt“, nebo vyber hotovou předvolbu (např. 🎙 Hlas).':'Click an effect in a channel to set it up here. Effects are processed top to bottom. Add them with “+ add effect”, or choose a ready preset (e.g. 🎙 Voice).',
+'Tip pro mluvené slovo: Ořez basů → Potlačení šumu → Gate → EQ → Kompresor → De-esser → Limiter. Na masteru nech Limiter na −1 dB, aby vysílání nikdy nepřebudilo.':'Tip for speech: Low cut → Noise reduction → Gate → EQ → Compressor → De-esser → Limiter. Keep the Limiter at −1 dB on the master so the stream never distorts.',
+'● Zapnuto':'● On','○ Vypnuto':'○ Off','▲ dřív':'▲ earlier','▼ později':'▼ later','✕ Odebrat':'✕ Remove','Režim':'Mode','Mono (smíchat L+P)':'Mono (mix L+R)','Jen levý kanál':'Left channel only','Jen pravý kanál':'Right channel only',
+'Automaticky sledovat šum':'Track noise automatically','🎯 Naučit šum (2 s ticha)':'🎯 Learn noise (2 s of silence)','… poslouchám ticho':'… listening to silence','✔ Šum naučen.':'✔ Noise learned.','Buď 2 sekundy potichu, ať se naučí, jak zní šum v místnosti.':'Stay quiet for 2 seconds so it can learn what the room noise sounds like.',
+'Basy (shelf)':'Low shelf','Pásmo':'Band','Výšky (shelf)':'High shelf','Horní propust':'High-pass','Dolní propust':'Low-pass','Zářez':'Notch','Frekv.':'Freq.','Zisk dB':'Gain dB',
+'útlum':'reduction','Nahradit efekty v tomto kanálu předvolbou?':'Replace the effects in this channel with the preset?','Uložit předvolbu':'Save preset','Název předvolby':'Preset name',
+/* --- barvy --- */
+'Galerie gradů':'Grade gallery','Uložit aktuální grade':'Save current grade','Zobrazit: vybraný zdroj':'Show: selected source','Zobrazit: program':'Show: program','Před / po: vypnuto':'Before / after: off','Před / po: půlka':'Before / after: split','Jen původní':'Original only',
+'Kopírovat grade':'Copy grade','Vložit':'Paste','Na všechny kamery':'To all cameras','↺ Vynulovat vše':'↺ Reset all','Waveform (jas)':'Waveform (luma)','RGB parade':'RGB parade','Vektorskop':'Vectorscope','Histogram':'Histogram',
+'Lift (stíny)':'Lift (shadows)','Gamma (středy)':'Gamma (midtones)','Gain (světla)':'Gain (highlights)','Offset (vše)':'Offset (all)','Vynulovat':'Reset','Křivky':'Curves','Vynulovat křivky':'Reset curves','klik = bod, táhni, dvojklik = smazat':'click = point, drag, double-click = delete',
+'Zdroj':'Source','Přidej kameru nebo video v Režii → Zdroje.':'Add a camera or video in Director → Sources.','Ulož si hotový look tlačítkem +.':'Save a finished look with the + button.','Použít':'Apply','Žádný zdroj':'No source',
+'Základní korekce':'Basic correction','Expozice (clony)':'Exposure (stops)','Teplota':'Temperature','Tint':'Tint','Kontrast':'Contrast','Pivot kontrastu':'Contrast pivot','Saturace':'Saturation','Posun odstínů °':'Hue shift °',
+'— bez LUTu —':'— no LUT —','Smazat LUT z knihovny':'Delete LUT from library','Síla LUTu':'LUT strength','Pořadí: expozice/teplota → LUT → kola → kontrast → saturace → křivky.':'Order: exposure/temperature → LUT → wheels → contrast → saturation → curves.',
+'Uložit grade':'Save grade','Název (např. „Studio teplé“)':'Name (e.g. “Warm studio”)','✔ Zkopírováno':'✔ Copied','Žádná další kamera tu není.':'There is no other camera.','Grade zkopírován na':'Grade copied to','kamer(y).':'camera(s).',
+'Vynulovat celý grade tohoto zdroje?':'Reset the whole grade of this source?','Smazat LUT „':'Delete LUT “','“ ze všech zdrojů?':'” from all sources?','PŘED':'BEFORE','PO':'AFTER','žlutá čára = tón pleti':'yellow line = skin tone',
+'Tohle je 1D LUT. Potřebuju 3D LUT (.cube) – v DaVinci: Export LUT → 33 Point Cube.':'This is a 1D LUT. A 3D LUT (.cube) is needed – in DaVinci: Export LUT → 33 Point Cube.','Soubor není platný 3D LUT (.cube).':'The file is not a valid 3D LUT (.cube).',
+'LUTů je moc na uložení v prohlížeči. Po novém spuštění je bude potřeba nahrát znovu (nebo ulož projekt tlačítkem 💾 – tam se uloží).':'Too many LUTs to store in the browser. After a restart you will need to load them again (or save the project with 💾 – they are saved there).',
+/* --- scénář --- */
+'▶ Start pořadu':'▶ Start show','■ Konec pořadu':'■ End show','◀ Předchozí (B)':'◀ Previous (B)','Další blok ▶ (N)':'Next block ▶ (N)','Plán celkem:':'Planned total:','Blok':'Block','Délka':'Duration','Přepnout na scénu':'Switch to scene','Zapnout grafiku':'Show graphic',
+'Text do čtečky':'Prompter text','Poznámky':'Notes','Skočit na tento blok':'Jump to this block','(nechat stejný)':'(keep the same)','minuty:sekundy':'minutes:seconds','+ Přidat blok':'+ Add block',
+'Při přechodu na blok se sama přepne scéna, zapne grafika (a na konci bloku vypne) a do čtečky se nahraje text.':'When moving to a block, the scene switches, the graphic turns on (and off at the end of the block) and the text is loaded into the prompter.',
+'Pořad neběží.':'Show is not running.','PŘESAH +':'OVER +','Zbývá':'Left','uběhlo':'elapsed','z':'of','Další:':'Next:','— konec —':'— end —','pořad běží':'show running','konec v':'ends at',
+'Smazat blok?':'Delete block?','Scénář je prázdný. Přidej bloky v záložce Scénář.':'The rundown is empty. Add blocks in the Rundown tab.','Nový blok':'New block','Úvodní znělka':'Opening intro','Přivítání':'Welcome','Hlavní téma':'Main topic','Rozloučení':'Goodbye',
+/* --- čtečka --- */
+'▶ Spustit':'▶ Start','⏮ Na začátek':'⏮ To start','📜 Otevřít okno čtečky':'📜 Open prompter window','Zrcadlit (pro skleněnou čtečku)':'Mirror (for a glass teleprompter)','Velikost písma':'Font size','Sem napiš nebo vlož text pro moderátora…':'Type or paste the text for the presenter here…',
+'= start / pauza. V okně čtečky:':'= start / pause. In the prompter window:','start/pauza,':'start/pause,','rychlost,':'speed,','začátek, dvojklik = celá obrazovka.':'start, double-click = full screen.','Klávesa':'Key',
+'Dobrý večer, vítejte u našeho živého vysílání.\n\nSem si napiš text, který bude moderátor číst.':'Good evening, welcome to our live broadcast.\n\nWrite here the text the presenter will read.',
+/* --- vysílání --- */
+'📡 Přes server.js (RTMP)':'📡 Via server.js (RTMP)','YouTube, Facebook, Twitch… i víc míst najednou':'YouTube, Facebook, Twitch… even several at once','🌐 Přímo z prohlížeče (WHIP)':'🌐 Directly from the browser (WHIP)','bez instalace – Twitch, Restream, vlastní server':'no install – Twitch, Restream, your own server',
+'⚪ Nevysílá se':'⚪ Not streaming','🟡 Připojuji…':'🟡 Connecting…','🔴 ŽIVĚ':'🔴 LIVE','🟠 Vysílá se, ale s problémy':'🟠 Streaming, but with problems','🟡 Spojení vypadlo – připojuji znovu…':'🟡 Connection lost – reconnecting…','⚠ Chyba':'⚠ Error',
+'⦿ Spustit vysílání':'⦿ Start streaming','Kam vysílat (můžeš zapnout víc míst najednou)':'Where to stream (you can enable several destinations at once)','Platforma':'Platform','Adresa serveru':'Server URL','Klíč streamu':'Stream key','vlož klíč':'paste key','Odebrat':'Remove',
+'+ Přidat další místo':'+ Add another destination','Pamatovat klíče v tomto počítači':'Remember keys on this computer','Kvalita':'Quality','Datový tok videa (kbps)':'Video bitrate (kbps)','1080p (Full HD)':'1080p (Full HD)','720p (slabší internet)':'720p (slower internet)','Kódování':'Encoding','– není k dispozici':'– not available',
+'Doporučení: 1080p → 4500–6000 kbps, 720p → 2500–4000 kbps. Rychlost nahrávání internetu by měla být aspoň 1,5× vyšší. Na víc míst najednou se počítá součet. Kódování na grafice ulehčí procesoru.':'Recommended: 1080p → 4500–6000 kbps, 720p → 2500–4000 kbps. Your internet upload speed should be at least 1.5× higher. For several destinations add them up. GPU encoding takes load off the CPU.',
+'Přenosový program v počítači (server.js)':'Relay program on your computer (server.js)','Adresa':'Address','Otestovat spojení':'Test connection',
+'Spusť':'Run','(Windows) nebo':'(Windows) or','(Mac) – nebo v terminálu':'(Mac) – or in a terminal','. Potřebuje Node.js a FFmpeg (viz NAVOD.md).':'. Needs Node.js and FFmpeg (see GUIDE.md).',
+'WHIP – vysílání přímo z prohlížeče':'WHIP – streaming directly from the browser','Služba':'Service','WHIP adresa':'WHIP URL','Kodek videa':'Video codec','H.264 (doporučeno, chce ho většina služeb)':'H.264 (recommended, most services need it)','Nechat na prohlížeči (VP8/VP9/AV1)':'Let the browser decide (VP8/VP9/AV1)','Pamatovat token v tomto počítači':'Remember token on this computer',
+'YouTube ani Facebook WHIP zatím nepřijímají – pro ně použij Restream (přijme WHIP a pošle to dál), nebo režim „Přes server.js“. WebRTC se samo přizpůsobí, když internet zakolísá.':'YouTube and Facebook don’t accept WHIP yet – use Restream for them (it accepts WHIP and forwards it), or the “Via server.js” mode. WebRTC adapts by itself when the internet fluctuates.',
+'Záznam':'Log','YouTube Studio → Vytvořit → Spustit živé vysílání → Stream → Klíč streamu':'YouTube Studio → Create → Go live → Stream → Stream key','Facebook → Živé video → Použít klíč streamu':'Facebook → Live video → Use stream key',
+'Twitch → Ovládací panel tvůrce → Nastavení → Stream → Primární klíč streamu':'Twitch → Creator dashboard → Settings → Stream → Primary stream key','Kick → Dashboard → Settings → Stream URL + Stream Key (vlož obojí)':'Kick → Dashboard → Settings → Stream URL + Stream Key (paste both)',
+'Zkopíruj adresu serveru (rtmp:// nebo rtmps://) a klíč z platformy':'Copy the server URL (rtmp:// or rtmps://) and the key from the platform','Vlastní (Instagram, TikTok, …)':'Custom (Instagram, TikTok, …)',
+'Twitch (zkušební)':'Twitch (experimental)','Klíč streamu z Twitche':'Stream key from Twitch','Twitch WHIP není oficiálně zdokumentovaný – funguje, ale může se změnit. Token = tvůj klíč streamu.':'Twitch WHIP is not officially documented – it works, but it may change. Token = your stream key.',
+'Restream (rozešle na YouTube, FB, …)':'Restream (forwards to YouTube, FB, …)','Bearer token z Restreamu':'Bearer token from Restream','Restream → nastavení streamu → WHIP (beta) → zkopíruj URL a token. Restream to pak rozešle na všechny tvoje kanály.':'Restream → stream settings → WHIP (beta) → copy the URL and token. Restream then forwards it to all your channels.',
+'Vlastní WHIP server (MediaMTX, Cloudflare, …)':'Custom WHIP server (MediaMTX, Cloudflare, …)','Token (pokud ho server chce)':'Token (if the server needs one)','Vlož WHIP adresu svého serveru.':'Paste the WHIP URL of your server.',
+'Procesor (x264) – funguje všude':'CPU (x264) – works everywhere','NVIDIA grafika (NVENC)':'NVIDIA GPU (NVENC)','Intel grafika (Quick Sync)':'Intel GPU (Quick Sync)','AMD grafika (AMF)':'AMD GPU (AMF)','Mac (VideoToolbox)':'Mac (VideoToolbox)',
+'Spojení OK. FFmpeg:':'Connection OK. FFmpeg:','nalezen ✔':'found ✔','NENALEZEN ✖ – nainstaluj FFmpeg':'NOT FOUND ✖ – install FFmpeg','· kódování:':'· encoding:','Procesor':'CPU',
+'Server neodpovídá. Spusť start-windows.bat / start-mac.command nebo „node server.js“.':'Server is not responding. Run start-windows.bat / start-mac.command or “node server.js”.',
+'U místa „':'Destination “','“ chybí adresa nebo klíč.':'” is missing the URL or key.','Adresa musí začínat rtmp:// nebo rtmps://':'The URL must start with rtmp:// or rtmps://','Zapni aspoň jedno místo, kam vysílat.':'Enable at least one destination.',
+'Chyba odesílání:':'Send error:','spouštím kódování…':'starting encoder…','rychlost':'speed','zahozeno':'dropped','místa':'destinations','místo':'destination',
+'⚠ Počítač nestíhá kódovat (rychlost pod 1×). Zkus 720p, nižší datový tok, nebo kódování na grafice.':'⚠ The computer can’t keep up with encoding (speed below 1×). Try 720p, a lower bitrate, or GPU encoding.',
+'Spojení vypadlo – zkouším znovu (':'Connection lost – retrying (','Zkontroluj klíč streamu!':'Check your stream key!','Znovupřipojení selhalo:':'Reconnect failed:','server.js neodpovídá':'server.js is not responding',
+'Vyplň WHIP adresu (https://…).':'Fill in the WHIP URL (https://…).','⚠ Prohlížeč neumí H.264 přes WebRTC – použije se jiný kodek.':'⚠ The browser can’t do H.264 over WebRTC – another codec will be used.',
+'Na WHIP adresu se nejde připojit (síť nebo služba nepovoluje přístup z prohlížeče).':'Can’t connect to the WHIP URL (network problem, or the service doesn’t allow browser access).','WHIP server odpověděl':'WHIP server responded','– špatný klíč/token':'– wrong key/token',
+'WebRTC spojení navázáno ✔':'WebRTC connection established ✔','Spojení':'Connection','selhalo':'failed','zakolísalo':'dropped','Připojuji znovu (':'Reconnecting (','omezeno:':'limited by:','internet':'internet','procesor':'CPU','ping':'ping',
+'Vysílání spuštěno →':'Streaming started →','WHIP: nabídka přijata, navazuji spojení…':'WHIP: offer accepted, connecting…','Start selhal:':'Start failed:','Vysílání ukončeno.':'Streaming ended.',
+'Nepodařilo se spojit s přenosovým programem (':'Could not connect to the relay program (','Spusť start-windows.bat / start-mac.command nebo „node server.js“.':'Run start-windows.bat / start-mac.command or “node server.js”.','Vysílání se nespustilo:':'Streaming did not start:',
+/* --- nahrávky --- */
+'Kam ukládat':'Where to save','Teď se nahrávky drží v paměti a stáhnou se po zastavení (na dlouhé nahrávání to není ideální).':'Recordings are kept in memory now and download after you stop (not ideal for long recordings).','📁 Vybrat složku pro nahrávky':'📁 Choose a folder for recordings',
+'✅ Nahrávky se ukládají':'✅ Recordings are saved','průběžně rovnou do složky „':'continuously, directly to the folder “','“. Nic se nedrží v paměti, takže můžeš nahrávat hodiny a při pádu prohlížeče zůstane soubor uložený.':'”. Nothing is kept in memory, so you can record for hours and the file stays saved even if the browser crashes.',
+'Změnit složku':'Change folder','Přestat ukládat do složky':'Stop saving to the folder','📁 Složka „':'📁 Folder “','“ je vybraná, ale prohlížeč potřebuje znovu potvrdit přístup.':'” is selected, but the browser needs you to confirm access again.','Povolit přístup ke složce':'Allow folder access','Vybrat jinou':'Choose another',
+'Tenhle prohlížeč neumí ukládat rovnou do složky – nahrávky se po zastavení stáhnou. Pro ukládání na disk použij Chrome nebo Edge.':'This browser can’t save directly to a folder – recordings download after you stop. Use Chrome or Edge to save to disk.',
+'Formát nahrávek v tomhle prohlížeči:':'Recording format in this browser:','✅ MP4 · H.264 + AAC – otevře ho Premiere, DaVinci, Final Cut i telefon.':'✅ MP4 · H.264 + AAC – opens in Premiere, DaVinci, Final Cut and on phones.',
+'🟡 MP4 · H.264 + zvuk Opus – obraz jde všude, zvuk některé střihové programy (Premiere) neumí. DaVinci a VLC ano.':'🟡 MP4 · H.264 + Opus audio – video works everywhere, some editors (Premiere) can’t read the audio. DaVinci and VLC can.',
+'🟠 MP4 · tenhle prohlížeč neumí H.264 – uloží se VP9. Pro střih použij Chrome nebo Edge na Windows/Macu, nebo soubor převeď (HandBrake).':'🟠 MP4 · this browser can’t do H.264 – VP9 will be saved. For editing use Chrome or Edge on Windows/Mac, or convert the file (HandBrake).',
+'🟠 WebM – přehraje VLC a DaVinci, pro Premiere převeď (HandBrake).':'🟠 WebM – plays in VLC and DaVinci, convert for Premiere (HandBrake).',
+'= nahraje to, co jde ven (obraz + zvuk).':'= records what goes out (video + audio).','= program + každá kamera, obrazovka a mikrofon zvlášť ve stejnou chvíli, abys to mohl potom znovu sestříhat.':'= program + every camera, screen and microphone separately at the same time, so you can re-edit it later.',
+'Zatím nic nenahráno.':'Nothing recorded yet.','MB – uloženo ve složce':'MB – saved in folder','⚠ Nepodařilo se zapisovat na disk:':'⚠ Could not write to disk:','Nahrávání nejde spustit:':'Recording can’t start:','Složku se nepodařilo vybrat:':'Could not choose the folder:',
+/* --- ovládání --- */
+'Přepínání':'Switching','CUT – okamžité přepnutí':'CUT – instant switch','AUTO – přechod':'AUTO – transition','T-bar (MIDI fader)':'T-bar (MIDI fader)','do náhledu –':'to preview –','rovnou do vysílání –':'straight to air –','(prázdné)':'(empty)',
+'Vybrat přechod':'Select transition','Všechny grafiky OUT':'All graphics OUT','Scénář: start / stop':'Rundown: start / stop','Scénář: další blok':'Rundown: next block','Scénář: předchozí blok':'Rundown: previous block',
+'Čtečka: start / pauza':'Prompter: start / pause','Čtečka: rychleji':'Prompter: faster','Čtečka: pomaleji':'Prompter: slower','Čtečka: na začátek':'Prompter: to start','Nahrávat program start/stop':'Record program start/stop','Nahrávat vše (ISO) start/stop':'Record all (ISO) start/stop',
+'Vysílání start/stop':'Streaming start/stop','Nahrávání a vysílání':'Recording and streaming','Ztlumit / zapnout –':'Mute / unmute –','Fader (MIDI) –':'Fader (MIDI) –','Fader MASTER (MIDI)':'Fader MASTER (MIDI)',
+'Stránka Režie':'Director page','Stránka Grafika':'Graphics page','Stránka Zvuk':'Audio page','Stránka Barvy':'Color page','Stránky':'Pages','Scény ':'Scenes ',
+'🎛 Stream Deck / Bitfocus Companion':'🎛 Stream Deck / Bitfocus Companion','Povolit ovládání přes server.js':'Allow control via server.js','✔ připojeno':'✔ connected','… připojuji':'… connecting','⚠ server neodpovídá – běží node server.js?':'⚠ server not responding – is node server.js running?',
+'Stream Deck: přidej tlačítko s akcí':'Stream Deck: add a button with the action','(zaškrtni „GET request in background“) nebo plugin':'(tick “GET request in background”) or the plugin','a vlož adresu akce ze sloupce „Adresa“ níže. Companion: modul':'and paste the action URL from the “Address” column below. Companion: module',
+'. Funguje, i když okno režie není aktivní.':'. Works even when the director window is not active.','Jednodušší varianta: tlačítko':'Simpler option: a','na Stream Decku + klávesa z tabulky (okno režie musí být aktivní).':'button on the Stream Deck + a key from the table (the director window must be active).',
+'🎹 MIDI ovladač':'🎹 MIDI controller','Připojit MIDI':'Connect MIDI','✔ MIDI připojeno':'✔ MIDI connected','žádné zařízení':'no device','Poslední zpráva:':'Last message:',
+'Klikni „Naučit MIDI“ u akce a zmáčkni tlačítko nebo pohni faderem na ovladači. Fadery jdou na hlasitost a T-bar.':'Click “Learn” in the MIDI column of an action and press a button or move a fader on the controller. Faders work for volume and the T-bar.',
+'↺ Výchozí klávesy':'↺ Default keys','⌨ Zmáčkni klávesu…':'⌨ Press a key…','🎹 Pohni ovladačem…':'🎹 Move a control…','(Esc = zrušit)':'(Esc = cancel)','Akce':'Action','Adresa (Stream Deck)':'Address (Stream Deck)','Naučit':'Learn','jen MIDI':'MIDI only',
+'Klikni pro zkopírování':'Click to copy','Smazat přiřazení':'Remove assignment','Nota':'Note','kan.':'ch.','Mezerník':'Space','Vrátit výchozí klávesy? (MIDI přiřazení zůstanou)':'Restore default keys? (MIDI assignments stay)',
+'Tenhle prohlížeč neumí MIDI. Použij Chrome nebo Edge.':'This browser doesn’t support MIDI. Use Chrome or Edge.','Přístup k MIDI byl zamítnut.':'MIDI access was denied.','Scéna ':'Scene ','Grafika ':'Graphic ','přechod ':'transition ',
+/* --- nápověda --- */
+'scéna do náhledu':'scene to preview','scéna rovnou do vysílání':'scene straight to air','CUT – okamžité přepnutí náhled → program':'CUT – instant switch preview → program','AUTO – vybraný přechod (T-bar = ručně)':'AUTO – selected transition (T-bar = manual)',
+'čtečka start / pauza':'prompter start / pause','grafika 1–8 IN / OUT':'graphic 1–8 IN / OUT','scénář: další / předchozí blok':'rundown: next / previous block','šipky':'arrows','posun vybrané vrstvy (Shift = o 10 px)':'move the selected layer (Shift = 10 px)',
+'odebrat vybranou vrstvu ze scény':'remove the selected layer from the scene','dvojklik na scénu':'double-click a scene','rovnou do vysílání':'straight to air','Alt při tažení':'Alt while dragging','vypne přichytávání k okrajům':'turns off snapping to edges',
+'Všechny klávesy, MIDI a Stream Deck nastavíš v záložce':'All keys, MIDI and Stream Deck are set in the tab','. Na stránce Grafika je mezerník přehrát / zastavit animaci a Ctrl+Z zpět.':'. On the Graphics page, space plays / stops the animation and Ctrl+Z undoes.',
+'Upravuješ vždy scénu v':'You always edit the scene in','NÁHLEDU':'PREVIEW','(zelená). Ven jde jen':'(green). Only','(červená).':'(red) goes out.',
+'Okno „Program“ přetáhni na druhý monitor / projektor a dvojklikem ho dej na celou obrazovku.':'Drag the “Program” window to a second monitor / projector and double-click it for full screen.','Režie běží dál, i když je okno zakryté nebo minimalizované.':'The switcher keeps running even when the window is covered or minimized.',
+/* --- okna, hlášky, plátna --- */
+'Program – výstup':'Program – output','Prohlížeč zablokoval nové okno. Povol vyskakovací okna pro tuto stránku (ikona v adresním řádku).':'The browser blocked the new window. Allow pop-ups for this page (icon in the address bar).',
+'nevysílá se':'not streaming','Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).':'The browser has an old version cached – reload the page: Ctrl+Shift+R (Mac: Cmd+Shift+R).',
+'Tvůj prohlížeč nepodporuje WebGL. Použij Google Chrome.':'Your browser doesn’t support WebGL. Use Google Chrome.','Kamery nejdou použít. Otevři aplikaci přes http://localhost:8080 (spusť node server.js) nebo jako soubor v Chrome.':'Cameras can’t be used. Open the app via http://localhost:8080 (run node server.js) or as a file in Chrome.',
+'Soubor se nepodařilo načíst:':'Could not load the file:','Uložení selhalo':'Saving failed','Smazat „':'Delete “','Smazat':'Delete','Ano':'Yes','Ne':'No',
+'🌐 English':'🌐 English','🌐 Čeština':'🌐 Čeština','Přepnout jazyk':'Switch language'
+  };
+  // nejdelší fráze první; hranice slov jen tam, kde fráze začíná/končí písmenem nebo číslicí
+  const keys = Object.keys(DICT).filter(k => DICT[k] !== k).sort((a, b) => b.length - a.length);
+  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const RE = new RegExp(keys.map(k => (/^[\p{L}\p{N}]/u.test(k) ? '(?<![\\p{L}\\p{N}])' : '') + escRe(k) + (/[\p{L}\p{N}]$/u.test(k) ? '(?![\\p{L}\\p{N}])' : '')).join('|'), 'gu');
+  const REV = {}; for (const k in DICT) if (!(DICT[k] in REV)) REV[DICT[k]] = k;
+
+  let lang = (() => { try { return localStorage.getItem('rezie-lang') || 'cs'; } catch (e) { return 'cs'; } })();
+  const EXACT = {jmeno:'name', funkce:'job title', zpravy:'news', titulek:'title', podtitulek:'subtitle', logo:'logo'};   // názvy polí v grafice (jen popisky)
+  const t = s => {
+    if (lang !== 'en' || !s) return s; s = String(s);
+    const k = s.trim(); if (EXACT[k]) return s.replace(k, EXACT[k]);
+    return s.replace(RE, m => DICT[m] ?? m);
+  };
+
+  /* ---------- překlad stránky ---------- */
+  const TXT = new WeakMap(), ATT = new WeakMap();
+  const SKIP = el => !el || el.closest('textarea,script,style,code,[data-noi18n],#prMiniT');
+  function trText(n) {
+    if (SKIP(n.parentElement)) return;
+    const rec = TXT.get(n); if (rec && n.data === rec.en) return;
+    const cz = n.data; if (!/\S/.test(cz)) return;
+    const en = t(cz); TXT.set(n, {cz, en}); if (en !== cz) n.data = en;
+  }
+  function trAttr(el, a) {
+    const v = el.getAttribute(a); if (v == null || el.closest('[data-noi18n]')) return;
+    let m = ATT.get(el); if (!m) ATT.set(el, m = {});
+    if (m[a] && v === m[a].en) return;
+    const en = t(v); m[a] = {cz:v, en}; if (en !== v) el.setAttribute(a, en);
+  }
+  function walk(root) {
+    if (!root) return;
+    if (root.nodeType === 3) return trText(root);
+    if (root.nodeType !== 1) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) trText(n);
+    [root, ...root.querySelectorAll('[title],[placeholder]')].forEach(el => { if (el.hasAttribute && el.hasAttribute('title')) trAttr(el, 'title'); if (el.hasAttribute && el.hasAttribute('placeholder')) trAttr(el, 'placeholder'); });
+  }
+  const obs = new MutationObserver(ms => {
+    for (const m of ms) {
+      if (m.type === 'characterData') trText(m.target);
+      else if (m.type === 'attributes') trAttr(m.target, m.attributeName);
+      else m.addedNodes.forEach(walk);
+    }
+  });
+  function restore() {
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+    while ((n = w.nextNode())) { const r = TXT.get(n); if (r && n.data === r.en) n.data = r.cz; TXT.delete(n); }
+    document.querySelectorAll('[title],[placeholder]').forEach(el => { const m = ATT.get(el); if (!m) return; for (const a in m) if (el.getAttribute(a) === m[a].en) el.setAttribute(a, m[a].cz); ATT.delete(el); });
+  }
+  function apply() {
+    document.documentElement.lang = lang === 'en' ? 'en' : 'cs';
+    document.title = lang === 'en' ? 'Live Director' : 'Režie Live';
+    if (lang === 'en') { walk(document.body); obs.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:['title', 'placeholder']}); }
+    else { obs.disconnect(); restore(); }
+    document.querySelectorAll('.langBtn').forEach(b => { b.textContent = lang === 'en' ? '🌐 CZ' : '🌐 EN'; b.title = lang === 'en' ? 'Přepnout do češtiny' : 'Switch to English'; b.setAttribute('data-noi18n', ''); });
+  }
+
+  /* ---------- výchozí názvy v datech (scény, zdroje, grafiky…) převést do zvoleného jazyka ---------- */
+  function swapData(to) {
+    const map = to === 'en' ? DICT : REV;
+    const sw = v => (typeof v === 'string' && map[v] && map[v] !== v) ? map[v] : v;
+    const swNum = v => { if (typeof v !== 'string') return v; const m = /^(.*\S) (\d+)$/.exec(v); return m && map[m[1]] ? map[m[1]] + ' ' + m[2] : sw(v); };
+    try {
+      S.scenes.forEach(s => s.name = swNum(s.name));
+      S.sources.forEach(s => { s.name = swNum(s.name); if (s.type === 'text') { s.props.text = sw(s.props.text); s.props.sub = sw(s.props.sub); renderText(s); } });
+      if (S.trs) S.trs.list.forEach(x => x.name = sw(x.name));
+      if (S.gfx) S.gfx.list.forEach(G => { G.name = sw(G.name); for (const k in G.fields) G.fields[k] = sw(G.fields[k]); G.els.forEach(E => { E.name = sw(E.name); if (E.p.text) E.p.text = sw(E.p.text); }); });
+      if (S.rundown) S.rundown.items.forEach(i => i.title = sw(i.title));
+      R.prompter.text = sw(R.prompter.text); const pt = $('#prText'); if (pt) pt.value = R.prompter.text; updatePrompterLook();
+    } catch (e) { console.warn(e); }
+  }
+  function setLang(l) {
+    if (l === lang) return; lang = l; try { localStorage.setItem('rezie-lang', l); } catch (e) {}
+    const started = !$('#start');
+    if (started) swapData(l);
+    apply();
+    if (started) { try { renderAll(); if (S.page && S.page !== 'rezie') showPage(S.page); if (S.tabCur) showTab(S.tabCur); updatePrompterLook(); save(); } catch (e) { console.warn(e); } }
+  }
+  const origAlert = window.alert.bind(window), origConfirm = window.confirm.bind(window);
+  window.alert = m => origAlert(t(String(m)));
+  window.confirm = m => origConfirm(t(String(m)));
+  document.addEventListener('click', e => { const b = e.target.closest('.langBtn'); if (b) setLang(lang === 'en' ? 'cs' : 'en'); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+  return {t, setLang, get lang() { return lang; }, apply};
+})();
+const L = s => I18N.t(s);

@@ -1,4 +1,6 @@
-# 🎬 Režie Live
+# 🎬 Režie Live / Live Director
+
+🌐 Aplikace je česky i anglicky – přepínač 🌐 v horní liště. · The app is in Czech and English – switch with 🌐 in the top bar. English guide: [GUIDE.md](GUIDE.md)
 
 **Online:** https://antoninfeldek-bot.github.io/rezie-live/
 

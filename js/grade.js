@@ -201,7 +201,7 @@ const GR = (() => {
       if (ST.split !== 'before') { renderScene(sc); vx.drawImage(glc, 0, 0); }
       if (ST.split !== 'off') { const keep = s.color; s.color = undefined; renderScene(sc); s.color = keep;
         if (ST.split === 'before') vx.drawImage(glc, 0, 0); else { vx.drawImage(glc, 0, 0, W / 2, H, 0, 0, W / 2, H); vx.fillStyle = '#facc15'; vx.fillRect(W / 2 - 1, 0, 3, H);
-          vx.font = '600 30px system-ui'; vx.fillStyle = 'rgba(0,0,0,.6)'; vx.fillRect(20, 20, 150, 46); vx.fillRect(W - 170, 20, 150, 46); vx.fillStyle = '#fff'; vx.fillText('PŘED', 50, 54); vx.fillText('PO', W - 120, 54); } }
+          vx.font = '600 30px system-ui'; vx.fillStyle = 'rgba(0,0,0,.6)'; vx.fillRect(20, 20, 150, 46); vx.fillRect(W - 170, 20, 150, 46); vx.fillStyle = '#fff'; vx.fillText(L('PŘED'), 50, 54); vx.fillText(L('PO'), W - 120, 54); } }
     }
     if (ST.frame % 3 === 0) { smx.drawImage(view, 0, 0, 256, 144); const d = smx.getImageData(0, 0, 256, 144).data; ST.scopes.forEach((k, i) => drawScope(scC[i], k, d)); }
     if (ST.frame % 30 === 1) document.querySelectorAll('#cxSrc [data-th]').forEach(c => { const x = srcById(c.dataset.th); if (x) { const cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, 96, 54); drawContain(cx, x.el, 0, 0, 96, 54); } });
@@ -238,7 +238,7 @@ const GR = (() => {
         const cb = -0.1146 * c[0] - 0.3854 * c[1] + 0.5 * c[2], cr = 0.5 * c[0] - 0.4542 * c[1] - 0.0458 * c[2], X = cx + cb * 2 * R2, Y = cy - cr * 2 * R2;
         x.strokeStyle = 'rgba(255,255,255,.4)'; x.strokeRect(X - 5, Y - 5, 10, 10); x.fillStyle = '#9ca3af'; x.font = '10px system-ui'; x.fillText(l, X + 7, Y + 3); });
       const t = document.createElement('canvas'); t.width = w; t.height = h; t.getContext('2d').putImageData(img, 0, 0); x.globalCompositeOperation = 'lighter'; x.drawImage(t, 0, 0); x.globalCompositeOperation = 'source-over';
-      x.fillStyle = '#6b7280'; x.fillText('žlutá čára = tón pleti', 6, h - 6);
+      x.fillStyle = '#6b7280'; x.fillText(L('žlutá čára = tón pleti'), 6, h - 6);
     } else {
       const hs = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
       for (let i = 0; i < n; i++) { hs[0][d[i * 4]]++; hs[1][d[i * 4 + 1]]++; hs[2][d[i * 4 + 2]]++; }

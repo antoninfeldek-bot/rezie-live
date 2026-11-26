@@ -20,7 +20,7 @@ const S = {
 const R = {
   rec: null, iso: [], stream: null, recordings: [], meters: [], monitor: false,
   wins: {program: null, multi: null},
-  prompter: {text: 'Dobrý večer, vítejte u našeho živého vysílání.\n\nSem si napiš text, který bude moderátor číst.', speed: 60, size: 64, mirror: false, playing: false, pos: 0, win: null}
+  prompter: {text: L('Dobrý večer, vítejte u našeho živého vysílání.\n\nSem si napiš text, který bude moderátor číst.'), speed: 60, size: 64, mirror: false, playing: false, pos: 0, win: null}
 };
 
 const srcById = id => S.sources.find(s => s.id === id);
@@ -227,7 +227,7 @@ function meterPct(an, st) {
 /* ================= Zdroje ================= */
 function newSource(type, name) {
   const s = {id:uid(), type, name, props:{}, hasVideo:false};
-  if (type === 'text') s.props = {text:'Jméno Příjmení', sub:'moderátor', size:64, subSize:40, color:'#ffffff', subColor:'#cbd5e1', bold:true,
+  if (type === 'text') s.props = {text:L('Jméno Příjmení'), sub:L('moderátor'), size:64, subSize:40, color:'#ffffff', subColor:'#cbd5e1', bold:true,
     font:'system-ui, sans-serif', bg:true, bgColor:'#0f172a', bgOp:0.85, accentOn:true, accent:'#3b82f6', pad:28};
   if (type === 'video') s.props = {loop:false, restart:true, pauseOff:true, afv:true};
   if (type === 'color') s.props = {color:'#1e3a8a'};
@@ -389,14 +389,14 @@ async function addSource(type) {
     if (type === 'camera') {
       const f = await chooseCamera(); if (!f) return;
       const ds = await devices('videoinput'); const d = ds.find(x => x.deviceId === f.dev);
-      const s = newSource('camera', d && d.label ? d.label.replace(/\s*\(.*\)$/, '') : 'Kamera ' + (S.sources.filter(x => x.type === 'camera').length + 1));
+      const s = newSource('camera', d && d.label ? d.label.replace(/\s*\(.*\)$/, '') : L('Kamera ') + (S.sources.filter(x => x.type === 'camera').length + 1));
       s.deviceId = f.dev; s.res = +f.res; await openCamera(s); S.sources.push(s); addToPreview(s);
     } else if (type === 'mic') {
       const f = await chooseMic(); if (!f) return;
-      const s = newSource('mic', 'Mikrofon ' + (S.sources.filter(x => x.type === 'mic').length + 1));
+      const s = newSource('mic', L('Mikrofon ') + (S.sources.filter(x => x.type === 'mic').length + 1));
       s.deviceId = f.dev; s.micOpts = {ns:f.ns, ec:f.ec}; await openMic(s); S.sources.push(s); showTab('audio');
     } else if (type === 'screen') {
-      const s = newSource('screen', 'Obrazovka'); await openScreen(s); S.sources.push(s); addToPreview(s);
+      const s = newSource('screen', L('Obrazovka')); await openScreen(s); S.sources.push(s); addToPreview(s);
     } else if (type === 'video') {
       const file = await pickFile('video/*'); if (!file) return;
       const s = newSource('video', file.name.replace(/\.[^.]+$/, '')); loadVideo(s, file); S.sources.push(s); addToPreview(s);
@@ -406,9 +406,9 @@ async function addSource(type) {
       await new Promise(r => { if (s.el.complete) r(); else s.el.onload = () => { s.aspect = s.el.naturalWidth / s.el.naturalHeight; s.dirty = true; r(); }; });
       S.sources.push(s); addToPreview(s);
     } else if (type === 'text') {
-      const s = newSource('text', 'Titulek ' + (S.sources.filter(x => x.type === 'text').length + 1)); renderText(s); S.sources.push(s); addToPreview(s);
+      const s = newSource('text', L('Titulek ') + (S.sources.filter(x => x.type === 'text').length + 1)); renderText(s); S.sources.push(s); addToPreview(s);
     } else if (type === 'color') {
-      const s = newSource('color', 'Barevné pozadí'); renderColor(s); S.sources.push(s); addToPreview(s);
+      const s = newSource('color', L('Barevné pozadí')); renderColor(s); S.sources.push(s); addToPreview(s);
     }
   } catch (e) {
     console.error(e); alert('Zdroj se nepodařilo přidat: ' + (e.message || e.name));
@@ -454,12 +454,12 @@ function take(mode) {
 function takeScene(id, mode) { S.previewId = id; take(mode); }
 
 function addScene() {
-  const sc = {id:uid(), name:'Scéna ' + (S.scenes.length + 1), layers:[], autoNext:null};
+  const sc = {id:uid(), name:L('Scéna ') + (S.scenes.length + 1), layers:[], autoNext:null};
   S.scenes.push(sc); setPreview(sc.id); renderScenes(); save();
 }
 function dupScene() {
   const sc = prevScene(); if (!sc) return;
-  const c = JSON.parse(JSON.stringify(sc)); c.id = uid(); c.name = sc.name + ' (kopie)'; c.layers.forEach(l => l.id = uid());
+  const c = JSON.parse(JSON.stringify(sc)); c.id = uid(); c.name = sc.name + ' ' + L('(kopie)'); c.layers.forEach(l => l.id = uid());
   S.scenes.splice(S.scenes.indexOf(sc) + 1, 0, c); setPreview(c.id); renderScenes(); save();
 }
 function delScene() {
@@ -658,15 +658,15 @@ function drawMulti(c, onAir) {
   const x = c._x; x.fillStyle = '#0b0b0d'; x.fillRect(0, 0, W, H);
   const pvS = prevScene(), pgS = sceneById(S.programId);
   x.drawImage(pvBuf, 0, 0, 960, 540); x.drawImage(pg, 960, 0, 960, 540);
-  tallyBox(x, 0, 0, 960, 540, '#22c55e', 'NÁHLED' + (pvS ? ': ' + pvS.name : ''));
+  tallyBox(x, 0, 0, 960, 540, '#22c55e', L('NÁHLED') + (pvS ? ': ' + pvS.name : ''));
   tallyBox(x, 960, 0, 960, 540, '#ef4444', 'PROGRAM' + (pgS ? ': ' + pgS.name : ''));
   const inPv = sceneSources(pvS, new Set());
   // poslední políčko: hodiny, stav vysílání a hlasitost
   { const bx = 1440, by = 810, now = performance.now(); x.fillStyle = '#111318'; x.fillRect(bx + 4, by + 4, 472, 262);
     x.fillStyle = '#fff'; x.font = '600 64px ui-monospace, Menlo, Consolas, monospace'; x.textAlign = 'center'; x.fillText(new Date().toLocaleTimeString('cs-CZ'), bx + 240, by + 100);
     x.font = '600 26px system-ui, sans-serif';
-    const st = [R.stream ? '● ŽIVĚ ' + fmtT(now - R.stream.start) : '', R.rec ? 'REC ' + fmtT(now - R.rec.start) : '', R.iso.length ? 'ISO ' + fmtT(now - R.isoStart) : ''].filter(Boolean).join('   ');
-    x.fillStyle = st ? '#ef4444' : '#6b7280'; x.fillText(st || 'nevysílá se', bx + 240, by + 150);
+    const st = [R.stream ? L('● ŽIVĚ') + ' ' + fmtT(now - R.stream.start) : '', R.rec ? 'REC ' + fmtT(now - R.rec.start) : '', R.iso.length ? 'ISO ' + fmtT(now - R.isoStart) : ''].filter(Boolean).join('   ');
+    x.fillStyle = st ? '#ef4444' : '#6b7280'; x.fillText(st || L('nevysílá se'), bx + 240, by + 150);
     const gn = GFX.onAirNames(); x.fillStyle = '#fde68a'; x.font = '22px system-ui, sans-serif'; if (gn.length) x.fillText('✨ ' + gn.join(', ').slice(0, 40), bx + 240, by + 190);
     x.textAlign = 'left';
     if (masterAn) { R._mvm = R._mvm || {}; const p = meterPct(masterAn, R._mvm); const gg = x.createLinearGradient(bx + 30, 0, bx + 450, 0); gg.addColorStop(0, '#16a34a'); gg.addColorStop(0.7, '#16a34a'); gg.addColorStop(0.72, '#eab308'); gg.addColorStop(0.88, '#eab308'); gg.addColorStop(0.9, '#ef4444');
@@ -682,7 +682,7 @@ function drawMulti(c, onAir) {
 /* ================= Čtečka (teleprompter) ================= */
 function openPrompter() {
   const P = R.prompter; let w = P.win; if (w && !w.closed) { w.focus(); return; }
-  w = openWin('rz_prompter', 'Čtečka', 1280, 800); if (!w) return;
+  w = openWin('rz_prompter', L('Čtečka'), 1280, 800); if (!w) return;
   const d = w.document;
   d.head.querySelector('style').textContent += `#wrap{position:absolute;inset:0;overflow:hidden}#txt{padding:45vh 8vw 60vh;white-space:pre-wrap;font:600 64px/1.35 system-ui,sans-serif;color:#fff;will-change:transform}#line{position:fixed;left:0;right:0;top:45vh;border-top:3px solid rgba(255,40,40,.65)}#arrow{position:fixed;left:1.5vw;top:calc(45vh - 22px);color:#f33;font-size:40px}`;
   d.body.innerHTML = '<div id="wrap"><div id="txt"></div></div><div id="line"></div><div id="arrow">▶</div>';
@@ -792,7 +792,7 @@ function updateHeader() {
 }
 function tickClock() {
   const now = performance.now(); let t = new Date().toLocaleTimeString('cs-CZ');
-  if (R.stream) t += `  <b>● ŽIVĚ ${fmtT(now - R.stream.start)}</b>`;
+  if (R.stream) t += `  <b>${L('● ŽIVĚ')} ${fmtT(now - R.stream.start)}</b>`;
   if (R.rec) t += `  <b>REC ${fmtT(now - R.rec.start)}</b>`;
   if (R.iso.length) t += `  <b>ISO ${fmtT(now - R.isoStart)}</b>`;
   $('#clock').innerHTML = t;
@@ -973,7 +973,7 @@ async function loadProject() {
   let d = null; try { d = JSON.parse(localStorage.getItem('rezie-project')); } catch (e) {}
   if (d && d.scenes && d.scenes.length) await restore(d);
   else {
-    S.scenes = ['Kamera', 'Host', 'Znělka', 'Titulky'].map(n => ({id:uid(), name:n, layers:[], autoNext:null}));
+    S.scenes = ['Kamera', 'Host', 'Znělka', 'Titulky'].map(n => ({id:uid(), name:L(n), layers:[], autoNext:null}));
     S.previewId = S.scenes[0].id;
     AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null);
   }
@@ -1037,7 +1037,7 @@ function bindEvents() {
   $('#bMvL').onclick = () => moveScene(-1); $('#bMvR').onclick = () => moveScene(1);
   $('#scenes').onclick = e => { const b = e.target.closest('.scene'); if (b) setPreview(b.dataset.id); };
   $('#scenes').ondblclick = e => { const b = e.target.closest('.scene'); if (b) takeScene(b.dataset.id, 'cut'); };
-  $('#bWinPg').onclick = () => openCanvasWin('program', 'rz_program', 'Program – výstup');
+  $('#bWinPg').onclick = () => openCanvasWin('program', 'rz_program', L('Program – výstup'));
   $('#bWinMv').onclick = () => openCanvasWin('multi', 'rz_multi', 'Multiview');
   $('#bWinPr').onclick = openPrompter; $('#prOpen').onclick = openPrompter;
   $('#bRec').onclick = toggleRec; $('#bIso').onclick = toggleIso; $('#bStream').onclick = toggleStream;
