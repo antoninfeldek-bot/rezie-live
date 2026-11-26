@@ -39,6 +39,13 @@ Tick **Allow on the local network** – three QR codes appear:
 
 On first open the browser says the connection isn’t private (the app made its own certificate) – click **Details → Proceed anyway**. The Mac may ask to allow incoming connections – choose **Allow**.
 
+### 🎙 Intercom (crew and guest instructions)
+- **Camera operators:** in the 📱 Remote tab there is a **Camera operators (intercom)** QR code. The operator opens it on a phone, puts on headphones, enters a name and picks their camera. The phone then works as a **tally**: red = their camera is on air, green = in preview (get ready).
+- **Talking:** the **🎙** button at the top opens the intercom panel. **Hold** “All camera operators” or “Talk” next to a person. You can also hold the **§** (or **`**) key to talk to all crew. The director’s voice uses a **separate director mic** (choose it in the panel) and **never goes on air**.
+- **Replies:** the operator holds “Hold to talk to the director” (or turns the mic always on). You hear them in the director’s headphones.
+- **Instructions:** pick from “💬 Instruction…” (“Zoom in”, “Focus”, “On air in 5 s”…) or type your own. The operator sees it in big letters with a beep and vibration and replies 👍 / ⏳ / ❌.
+- **Guest before going live:** in the panel hold **“Talk to guest”** next to the guest. Only they hear you in their headphones (their program audio is lowered). Viewers hear nothing. Instructions (“You are live in 10 s”, “Look into the camera”…) appear on their screen.
+
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.
 - An unplugged camera or microphone **reconnects by itself**.

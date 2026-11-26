@@ -102,10 +102,11 @@ const appClients = new Set();      // okno režie (SSE)
 const remotes = new Set();         // připojená dálková ovládání
 const guests = new Map();          // id → {res, name}
 const prompters = new Set();       // iPady u čtecího zařízení
+const crews = new Map();           // kameramani (interkom): id → {res, name}
 let prState = '{}';
 let lan = null, lanState = '{}';
 const badKeys = new Map();         // ochrana proti hádání klíče
-const LAN_FILES = ['/remote.html', '/guest.html', '/prompter.html', '/js/prompter-client.js', '/js/remote-client.js', '/js/guest-client.js', '/js/qr.js', '/css/remote.css'];
+const LAN_FILES = ['/crew.html', '/js/crew-client.js', '/remote.html', '/guest.html', '/prompter.html', '/js/prompter-client.js', '/js/remote-client.js', '/js/guest-client.js', '/js/qr.js', '/css/remote.css'];
 const toApp = o => { const m = 'data: ' + JSON.stringify(o) + '\n\n'; appClients.forEach(c => c.write(m)); };
 const sse = (req, res, set, extra) => {
   res.writeHead(200, {'Content-Type':'text/event-stream', 'Cache-Control':'no-cache', Connection:'keep-alive', 'X-Accel-Buffering':'no'});
@@ -129,7 +130,7 @@ function lanIps() {
   for (const [name, list] of Object.entries(os.networkInterfaces())) for (const a of list || []) if (a.family === 'IPv4' && !a.internal) out.push({ip:a.address, name});
   return out.sort((a, b) => (/^(en|wl|eth)/.test(b.name) ? 1 : 0) - (/^(en|wl|eth)/.test(a.name) ? 1 : 0));
 }
-const lanInfo = () => lan ? {tunnel:{status:tun.status, url:tun.url, err:tun.err}, on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, prompters:prompters.size, guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
+const lanInfo = () => lan ? {tunnel:{status:tun.status, url:tun.url, err:tun.err}, on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, prompters:prompters.size, crews:[...crews].map(([id, c]) => ({id, name:c.name})), guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
 function lanHandler(req, res, online) {
   res.setHeader('Cache-Control', 'no-cache');
   const u = new URL(req.url, 'http://x'), p = u.pathname, k = u.searchParams.get('k') || '';
@@ -138,11 +139,38 @@ function lanHandler(req, res, online) {
   if (bad && bad.n >= 30 && Date.now() - bad.t < 600000) return send(res, 429, 'Příliš mnoho pokusů – zkus to za 10 minut');
   const ok = (key) => { const g = key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key)); if (!g && k) { const b = badKeys.get(ip) || {n:0, t:Date.now()}; if (Date.now() - b.t > 600000) { b.n = 0; b.t = Date.now(); } b.n++; badKeys.set(ip, b); } return g; };
   // přes internet (tunel) jde jen připojení hosta – ovladač a čtečka zůstávají jen v místní síti
-  if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/css/remote.css')) return send(res, 404, 'nenalezeno');
+  if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/crew' || p.startsWith('/c/') || p === '/js/crew-client.js' || p === '/css/remote.css')) return send(res, 404, 'nenalezeno');
+  if (p === '/c/config') { if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz'); return send(res, 200, JSON.stringify({iceServers:lan.ice || []}), 'application/json'); }
   if (p === '/g/config') { if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz'); return send(res, 200, JSON.stringify({iceServers:lan.ice || []}), 'application/json'); }
   if (req.method === 'GET' && (p === '/' || p === '/remote')) return serveFile(res, '/remote.html');
   if (req.method === 'GET' && p === '/guest') return serveFile(res, '/guest.html');
   if (req.method === 'GET' && p === '/prompter') return serveFile(res, '/prompter.html');
+  if (req.method === 'GET' && p === '/crew') return serveFile(res, '/crew.html');
+  // interkom – kameramani
+  if (p === '/c/events') {
+    if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz');
+    if (req.method === 'HEAD') return send(res, 200, '');
+    const id = (u.searchParams.get('id') || '').replace(/[^\w-]/g, '').slice(0, 40); if (!id) return send(res, 400, 'chybí id');
+    const old = crews.get(id); if (old) try { old.res.end(); } catch (e) {}
+    const c = {res, name:(u.searchParams.get('name') || 'Kameraman').slice(0, 40)}; crews.set(id, c);
+    sse(req, res, null, () => { if (crews.get(id) === c) { crews.delete(id); toApp({t:'crewLeave', id}); } });
+    return;
+  }
+  if ((p === '/c/offer' || p === '/c/msg') && req.method === 'POST') {
+    if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz');
+    return readJson(req).then(d => {
+      if (!d.id || !crews.has(d.id)) return send(res, 400, 'chyba');
+      if (!appClients.size) return send(res, 503, 'Režie teď neběží');
+      if (p === '/c/offer') { if (typeof d.sdp !== 'string' || d.sdp.length > 100000) return send(res, 400, 'chyba'); toApp({t:'crewOffer', id:d.id, name:String(d.name || 'Kameraman').slice(0, 40), sdp:d.sdp}); }
+      else toApp({t:'crewMsg', id:d.id, kind:String(d.kind || '').slice(0, 20), text:String(d.text || '').slice(0, 200), cam:String(d.cam || '').slice(0, 40)});
+      send(res, 200, 'ok');
+    }).catch(() => send(res, 400, 'chyba'));
+  }
+  // host odpovídá na pokyn režie (👍 / ⏳ / ❌)
+  if (p === '/g/msg' && req.method === 'POST') {
+    if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz');
+    return readJson(req).then(d => { if (!d.id || !guests.has(d.id)) return send(res, 400, 'chyba'); toApp({t:'guestMsg', id:d.id, text:String(d.text || '').slice(0, 200)}); send(res, 200, 'ok'); }).catch(() => send(res, 400, 'chyba'));
+  }
   // čtečka (jen zobrazení textu)
   if (p === '/p/events') {
     if (!ok(lan.pkey)) return send(res, 403, 'Špatný klíč');
@@ -187,13 +215,13 @@ function serveFile(res, rel) {
   fs.readFile(file, (e, buf) => e ? send(res, 404, 'nenalezeno') : send(res, 200, buf, MIME[path.extname(file)] || 'application/octet-stream'));
 }
 function lanStart(cfg) {
-  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; return Promise.resolve(lanInfo()); }
+  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; return Promise.resolve(lanInfo()); }
   const c = certFiles();
   const srv = c ? https.createServer(c, lanHandler) : http.createServer(lanHandler);
   return new Promise((ok, fail) => {
     const tryPort = port => {
       srv.once('error', e => { if (e.code === 'EADDRINUSE' && port < PORT + 120) tryPort(port + 1); else fail(e); });
-      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
+      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey, ckey:cfg.ckey, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
     };
     tryPort(+process.env.LAN_PORT || PORT + 363);
   });
@@ -252,6 +280,7 @@ function lanStop() {
   remotes.forEach(r => { try { r.end(); } catch (e) {} }); remotes.clear();
   guests.forEach(g => { try { g.res.end(); } catch (e) {} }); guests.clear();
   prompters.forEach(r => { try { r.end(); } catch (e) {} }); prompters.clear();
+  crews.forEach(c => { try { c.res.end(); } catch (e) {} }); crews.clear();
   try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch (e) {}
 }
 
@@ -294,6 +323,11 @@ http.createServer(async (req, res) => {
     let d = ''; req.on('data', c => { d += c; if (d.length > 1e6) req.destroy(); });
     req.on('end', () => { prState = d || '{}'; const m = 'data: ' + prState + '\n\n'; prompters.forEach(r => r.write(m)); send(res, 200, String(prompters.size)); });
     return;
+  }
+  const cm = /^\/lan\/crew\/([\w-]+)$/.exec(url);
+  if (cm && req.method === 'POST') {
+    try { const d = await readJson(req), c = crews.get(cm[1]); if (!c) return send(res, 404, 'není připojen'); c.res.write('data: ' + JSON.stringify(d) + '\n\n'); return send(res, 200, 'ok'); }
+    catch (e) { return send(res, 400, 'chyba'); }
   }
   const gm = /^\/lan\/guest\/([\w-]+)$/.exec(url);
   if (gm && req.method === 'POST') {

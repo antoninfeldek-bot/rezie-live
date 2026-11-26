@@ -65,3 +65,23 @@ body.guestp{min-height:100vh}
 .gctl button{font-size:22px;min-width:58px;border-radius:99px;background:rgba(30,33,40,.85)} .gctl button.off{background:var(--red)}
 .tally{position:fixed;inset:0;pointer-events:none;border:0 solid transparent;z-index:10;transition:border .2s}
 .tally.air{border:6px solid var(--red)} .tally.pv{border:6px solid var(--grn)}
+
+/* --- kameraman (interkom + tally) --- */
+body.crewp{min-height:100vh;overflow:hidden}
+.crewlive{position:fixed;inset:0;display:flex;flex-direction:column}
+.crewlive[hidden],.cmsg[hidden],.talkin[hidden]{display:none}
+.ctally{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#1a1d24;transition:background .15s;padding:calc(12px + env(safe-area-inset-top)) 12px 12px;position:relative}
+.ctally.air{background:#dc2626}.ctally.pv{background:#15803d}
+.ccam select{font-size:18px;font-weight:600;background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.25);max-width:80vw}
+.tstate{font-size:clamp(34px,10vw,72px);font-weight:900;text-align:center;letter-spacing:.02em}
+.talkin{background:#facc15;color:#000;font-weight:800;padding:8px 16px;border-radius:99px;font-size:18px;animation:pulse 1s infinite}
+.talkin.gt{position:absolute;left:50%;transform:translateX(-50%);top:calc(56px + env(safe-area-inset-top));z-index:6}
+@keyframes pulse{50%{opacity:.6}}
+.cmsg{position:fixed;left:12px;right:12px;top:calc(90px + env(safe-area-inset-top));background:#111827;border:3px solid #facc15;border-radius:16px;padding:16px;z-index:8;text-align:center}
+.cmsg #msgT,.cmsg #gmsgT{font-size:clamp(26px,7vw,48px);font-weight:800;margin-bottom:12px}
+.ackrow{display:flex;gap:8px;justify-content:center}.ackrow button{font-size:18px;padding:12px 16px}
+.cctl{background:#0d0e11;padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
+.pttbig{width:100%;font-size:22px;font-weight:800;padding:26px;border-radius:16px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.pttbig.on{background:#b91c1c;border-color:#ef4444}
+.crow{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px}
+.crow button.on{background:#b91c1c}.crow button.off{background:#7f1d1d}

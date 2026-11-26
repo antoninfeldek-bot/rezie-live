@@ -221,3 +221,18 @@ dialog.settings h3{margin:0 0 12px}
 @media (max-width:700px){.setw{grid-template-columns:1fr}.setw nav{flex-direction:row;flex-wrap:wrap}.setb .grid2{grid-template-columns:1fr}}
 .remcard details{margin-top:8px}.remcard details input{display:block;width:100%;margin-top:6px}
 .remcard label.chk{margin-bottom:8px}
+/* --- 🎙 interkom --- */
+#bIcom.talk{background:#b91c1c;color:#fff}
+.icom{position:fixed;right:14px;bottom:14px;width:min(620px,94vw);max-height:78vh;overflow:auto;z-index:60;background:var(--panel,#16181d);border:1px solid var(--line,#2a2e37);border-radius:10px;box-shadow:0 10px 40px #000a;padding:10px 12px}
+.icom[hidden]{display:none}
+.ichead{display:flex;align-items:center;gap:8px;margin-bottom:6px}.ichead b{flex:0 0 auto}.ichead select{flex:1;min-width:0}
+.icsec{border-top:1px solid var(--line,#2a2e37);padding:8px 0}.icsec h4{margin:0 0 6px}
+.icrow{display:flex;align-items:center;gap:6px;margin:5px 0;flex-wrap:wrap}
+.icrow .nm{flex:1;min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icrow select{max-width:150px}
+.icrow .tl{width:12px;height:12px;border-radius:50%;background:#444;flex:0 0 auto}.icrow .tl.air{background:#ef4444}.icrow .tl.pv{background:#22c55e}
+.icrow .lv{width:50px;height:6px;background:#0b0c0f;border-radius:3px;overflow:hidden}.icrow .lv i{display:block;height:100%;width:0;background:#22c55e}
+button.ptt{touch-action:none;user-select:none}button.ptt.on{background:#b91c1c;border-color:#ef4444;color:#fff}
+.icsend{display:flex;gap:6px;border-top:1px solid var(--line,#2a2e37);padding-top:8px}.icsend input{flex:1;min-width:0}.icsend select{max-width:170px}
+.iclog{max-height:110px;overflow:auto;font-size:11px;margin:6px 0 0;white-space:pre-wrap;color:var(--dim,#8b919c)}
+kbd{border:1px solid #555;border-radius:3px;padding:0 4px;font-size:11px}

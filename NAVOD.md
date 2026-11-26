@@ -46,6 +46,13 @@ Zaškrtni **Povolit v místní síti** – objeví se tři QR kódy:
 
 Při prvním otevření prohlížeč napíše, že spojení není soukromé (certifikát si aplikace vyrobila sama) – klikni **Podrobnosti → Přesto pokračovat**. Mac se může zeptat, jestli povolit příchozí spojení – dej **Povolit**.
 
+### 🎙 Interkom (kameramani a pokyny pro hosta)
+- **Kameramani:** v záložce 📱 Dálkově je QR kód **Kameramani (interkom)**. Kameraman ho otevře v mobilu, nasadí sluchátka, zadá jméno a vybere svou kameru. Mobil mu pak svítí jako **tally**: červená = jeho kamera je ve vysílání, zelená = je v náhledu (připrav se).
+- **Mluvení:** tlačítko **🎙** nahoře otevře panel interkomu. **Drž** „Všem kameramanům“ nebo „Mluvit“ u konkrétního člověka. Ke všem kameramanům můžeš mluvit i držením klávesy **§** (nebo **`**). Hlas režie jde z **vlastního mikrofonu režie** (vybereš v panelu) a **nikdy nejde do vysílání**.
+- **Odpovědi:** kameraman drží „Drž a mluv s režií“ (nebo zapne mikrofon trvale). Uslyšíš ho ve sluchátkách režie.
+- **Pokyny:** z nabídky „💬 Pokyn…“ („Přibliž“, „Zaostři“, „Za 5 s jdeš do vysílání“…) nebo napiš vlastní. Kameramanovi se ukáže velkým písmem s pípnutím a vibrací a odpoví 👍 / ⏳ / ❌.
+- **Host před vysíláním:** v panelu u hosta drž **„Mluvit s hostem“**. Uslyší tě jen on ve sluchátkách (program se mu na tu chvíli ztlumí). Divák nic neslyší. Pokyny („Za 10 s jsi ve vysílání“, „Dívej se do kamery“…) se mu ukážou na obrazovce.
+
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
 - Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.

@@ -10,8 +10,8 @@ const REM = (() => {
   const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join(''); };
   const C = () => S.rem;
 
-  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn)}; }
-  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey, online:C().online, turn:C().turn});
+  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), ckey:(d && d.ckey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn)}; }
+  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, online:C().online, turn:C().turn});
   // STUN najde veřejnou adresu (stačí většinou); TURN přeposílá obraz, když to přísná síť (škola, firma) jinak nepustí
   function iceServers() {
     const l = [{urls:['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302']}], t = C().turn;
@@ -22,6 +22,7 @@ const REM = (() => {
   const remoteUrl = () => host() + '/remote?k=' + C().pin + (I18N.lang === 'en' ? '&lang=en' : '');
   const prompterUrl = () => host() + '/prompter?k=' + C().pkey + (I18N.lang === 'en' ? '&lang=en' : '');
   const onlineUrl = () => ST.info && ST.info.tunnel && ST.info.tunnel.url ? ST.info.tunnel.url + '/guest?k=' + C().gkey + (I18N.lang === 'en' ? '&lang=en' : '') : '';
+  const crewUrl = () => (C().online && onlineUrl() ? ST.info.tunnel.url : host()) + '/crew?k=' + C().ckey + (I18N.lang === 'en' ? '&lang=en' : '');
   const guestUrl = () => host() + '/guest?k=' + C().gkey + (I18N.lang === 'en' ? '&lang=en' : '');
 
   /* ---------- zapnutí / vypnutí ---------- */
@@ -29,7 +30,7 @@ const REM = (() => {
     const b = base(); if (!b) { ST.err = L('Funguje jen v aplikaci pro Mac nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
     ST.starting = true; ST.err = ''; renderTab();
     try {
-      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ice:iceServers()})});
+      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers()})});
       if (!r.ok) throw new Error(await r.text());
       ST.info = await r.json(); C().on = true; save();
       connectEvents(); startPush();
@@ -45,7 +46,7 @@ const REM = (() => {
   }
   async function saveTurn(t) {
     C().turn = t; save();
-    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ice:iceServers()})}); } catch (e) {}
+    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers()})}); } catch (e) {}
     toast(L('TURN server uložen'));
   }
   async function disable() {
@@ -56,7 +57,7 @@ const REM = (() => {
     renderTab();
   }
   function newKeys(which) {
-    if (which === 'pin') C().pin = rnd(10); else if (which === 'pkey') C().pkey = rnd(10); else C().gkey = rnd(10);
+    if (which === 'pin') C().pin = rnd(10); else if (which === 'pkey') C().pkey = rnd(10); else if (which === 'ckey') C().ckey = rnd(10); else C().gkey = rnd(10);
     save(); if (C().on) enable(); else renderTab();
   }
   function connectEvents() {
@@ -72,6 +73,7 @@ const REM = (() => {
     else if (d.t === 'prompters') { ST.prompters = d.n; ST.prJson = ''; if (S.tabCur === 'remote') renderTab(); }
     else if (d.t === 'offer') guestOffer(d).catch(e => { HLT.note('Host: ' + e.message); toast(L('Host se nepřipojil:') + ' ' + e.message); });
     else if (d.t === 'leave') closeGuest(d.id);
+    else ICM.onMsg(d);
   }
 
   /* ---------- akce z ovladače ---------- */
@@ -250,6 +252,10 @@ const REM = (() => {
           <code class="url" title="${L('Klikni pro zkopírování')}">${esc(prompterUrl())}</code>
           <p class="dim">${L('Připojené čtečky:')} <b>${ST.prompters}</b> · ${L('Text, rychlost a posun se řídí z režie (záložka Čtečka, klávesa P) nebo z ovladače.')}</p>
           <div class="btns"><button data-rm="newpk">🔑 ${L('Nový klíč')}</button></div></div>
+        <div class="remcard"><h4>🎥 ${L('Kameramani (interkom)')}</h4><div class="qr">${qr(crewUrl())}</div>
+          <code class="url" title="${L('Klikni pro zkopírování')}">${esc(crewUrl())}</code>
+          <p class="dim">${L('Kameraman otevře odkaz v mobilu se sluchátky a vybere svou kameru. Slyší režii, může odpovědět a mobil mu svítí jako tally (červená = ve vysílání).')} ${L('Mluvíš z panelu 🎙 nahoře nebo držením klávesy')} <kbd>§</kbd> / <kbd>\`</kbd>.</p>
+          <div class="btns"><button data-rm="icom">🎙 ${L('Otevřít interkom')}</button><button data-rm="newck">🔑 ${L('Nový klíč')}</button></div></div>
         <div class="remcard"><h4>👤 ${L('Odkaz pro hosty')}</h4>
           <label class="chk"><input type="checkbox" id="remOnline" ${C().online ? 'checked' : ''}> 🌍 ${L('Hosté i mimo Wi-Fi (přes internet)')}</label>
           ${(() => { const tn = ST.info.tunnel || {}, u = onlineUrl();
@@ -281,12 +287,12 @@ const REM = (() => {
       const t = e.target;
       if (t.classList.contains('url')) { navigator.clipboard && navigator.clipboard.writeText(t.textContent); t.classList.add('copied'); setTimeout(() => t.classList.remove('copied'), 800); return; }
       const a = t.dataset.rm; if (!a) return;
-      if (a === 'newpin') newKeys('pin'); else if (a === 'newg') newKeys('gkey'); else if (a === 'newpk') newKeys('pkey');
+      if (a === 'newpin') newKeys('pin'); else if (a === 'newg') newKeys('gkey'); else if (a === 'newpk') newKeys('pkey'); else if (a === 'newck') newKeys('ckey'); else if (a === 'icom') ICM.open();
       else if (a === 'turn') saveTurn({url:$('#turnUrl').value.trim(), user:$('#turnUser').value.trim(), pass:$('#turnPass').value});
       else if (a === 'kick') kick(t.closest('.guest').dataset.gid);
       else if (a === 'addpv') { const s = srcById(t.closest('.guest').dataset.sid); if (s) { addToPreview(s); renderSources(); save(); toast(L('Host přidán do náhledu')); } }
     });
     if (C().on) enable();
   }
-  return {init, load, save:save_, renderTab, act, state, guests:() => G};
+  return {init, load, save:save_, renderTab, act, state, guests:() => G, base, iceServers, gathered, on:() => C().on && ST.info && ST.info.on};
 })();

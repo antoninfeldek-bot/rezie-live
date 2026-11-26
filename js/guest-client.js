@@ -8,7 +8,7 @@
     'Spojení vypadlo – připojuji znovu…':'Connection lost – reconnecting…', 'Režie tě odpojila. Díky!':'The director disconnected you. Thanks!', 'Odkaz je neplatný nebo starý. Požádej o nový.':'This link is invalid or old. Ask for a new one.',
     'Prohlížeč nepovolil kameru. Povol ji v nastavení prohlížeče a načti stránku znovu.':'The browser blocked the camera. Allow it in browser settings and reload.',
     'Kamera v prohlížeči jde jen přes zabezpečené spojení (https).':'Camera in the browser only works over a secure connection (https).', 'Režie teď neběží':'The director app is not running', 'Host':'Guest',
-    'Bez kamery':'No camera'};
+    'Bez kamery':'No camera', 'Režie ti mluví do sluchátek':'The director is talking in your headphones', 'Moment':'Wait', 'Problém':'Problem'};
   const t = s => EN && T[s] || s;
   if (EN) { document.documentElement.lang = 'en'; document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.textContent.trim()); }); document.title = 'Live Director – join as guest'; }
   const $ = s => document.querySelector(s);
@@ -52,6 +52,8 @@
       if (d.t === 'answer' && pc) { try { await pc.setRemoteDescription({type:'answer', sdp:d.sdp}); } catch (er) { err(er.message); } }
       else if (d.t === 'tally') { $('#tally').className = 'tally' + (d.air ? ' air' : d.pv ? ' pv' : ''); state(d.air ? t('● JSI VE VYSÍLÁNÍ') : d.pv ? t('V náhledu – za chvíli jdeš do vysílání') : t('Připojeno – čekáš v režii'), d.air ? 'air' : d.pv ? 'pv' : ''); }
       else if (d.t === 'bye') { leave(t('Režie tě odpojila. Díky!')); }
+      else if (d.t === 'talk') $('#gtalk').hidden = !d.on;
+      else if (d.t === 'msg') { $('#gmsgT').textContent = d.text; $('#gmsg').hidden = false; if (navigator.vibrate) navigator.vibrate([80, 60, 80]); }
     };
     es.onopen = () => offer(name);
   }
@@ -87,5 +89,6 @@
   $('#bMic').onclick = () => { const a = stream.getAudioTracks()[0]; if (!a) return; a.enabled = !a.enabled; $('#bMic').classList.toggle('off', !a.enabled); };
   $('#bCam').onclick = () => { const v = stream.getVideoTracks()[0]; if (!v) return; v.enabled = !v.enabled; $('#bCam').classList.toggle('off', !v.enabled); };
   $('#bSnd').onclick = () => { const r = $('#ret'); r.muted = !r.muted; $('#bSnd').classList.toggle('off', r.muted); };
+  document.querySelectorAll('[data-ack]').forEach(b => b.onclick = () => { fetch('/g/msg?k=' + encodeURIComponent(K), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, text:b.dataset.ack})}).catch(() => {}); $('#gmsg').hidden = true; });
   window.addEventListener('pagehide', () => { leaving = true; try { pc && pc.close(); } catch (e) {} });
 })();

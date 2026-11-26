@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0e11">
+<link rel="icon" href="data:,">
+<title>Režie Live – kameraman</title>
+<link rel="stylesheet" href="css/remote.css">
+</head>
+<body class="crewp">
+<main class="gwrap" id="setup">
+  <div class="gcard">
+    <h1>🎥 <span data-t>Interkom pro kameramany</span></h1>
+    <p class="dim" data-t>Nasaď si sluchátka. Uslyšíš režii a můžeš jí odpovědět.</p>
+    <label><span data-t>Tvoje jméno</span><input id="name" maxlength="40" autocomplete="name"></label>
+    <button id="join" class="wide big red" data-t>Připojit se k režii</button>
+  </div>
+  <p id="err" class="msg" hidden></p>
+</main>
+<main id="live" class="crewlive" hidden>
+  <div id="tally" class="ctally">
+    <div class="ccam"><select id="cam"></select></div>
+    <div id="tstate" class="tstate" data-t>Připojuji…</div>
+    <div id="talkIn" class="talkin" hidden>🎙 <span data-t>Režie mluví</span></div>
+  </div>
+  <div id="msg" class="cmsg" hidden><div id="msgT"></div><div class="ackrow"><button data-ack="👍 OK">👍 OK</button><button data-ack="⏳ Moment">⏳ <span data-t>Moment</span></button><button data-ack="❌ Problém">❌ <span data-t>Problém</span></button></div></div>
+  <div class="cctl">
+    <button id="ptt" class="pttbig"><span data-t>Drž a mluv s režií</span></button>
+    <div class="crow"><button id="bOpen" data-t>Mikrofon trvale</button><button id="bVol">🔊</button><button id="bLeave" class="red" data-t>Odejít</button></div>
+  </div>
+</main>
+<audio id="dir" autoplay playsinline></audio>
+<script src="js/crew-client.js"></script>
+</body>
+</html>
