@@ -268,11 +268,20 @@ void main(){vec2 p=r.xy+a*r.zw;vec2 c=p/vec2(${W}.0,${H}.0)*2.0-1.0;gl_Position=
 v=vec2(mix(cr.x,1.0-cr.z,a.x),mix(cr.y,1.0-cr.w,a.y));}`;
 const FS = `precision mediump float;uniform sampler2D t;uniform float op;uniform float key;uniform vec3 kc;
 uniform float sim;uniform float smo;uniform float spl;varying vec2 v;
+uniform sampler2D lut;uniform float lutOn;uniform float lutN;uniform float lutCols;uniform vec2 lutTex;uniform float lutMix;
+uniform float ex;uniform float tmp;uniform float tnt;uniform float con;uniform float sat;
 vec2 cuv(vec3 c){return vec2(c.r*-0.169+c.g*-0.331+c.b*0.5+0.5,c.r*0.5+c.g*-0.419+c.b*-0.081+0.5);}
+vec3 lutS(vec3 c){float n=lutN;float b=c.b*(n-1.0);float b0=floor(b);float b1=min(b0+1.0,n-1.0);float f=b-b0;
+vec2 xy=vec2(c.r*(n-1.0)+0.5,c.g*(n-1.0)+0.5);
+vec2 t0=vec2(mod(b0,lutCols),floor(b0/lutCols))*n;vec2 t1=vec2(mod(b1,lutCols),floor(b1/lutCols))*n;
+return mix(texture2D(lut,(t0+xy)/lutTex).rgb,texture2D(lut,(t1+xy)/lutTex).rgb,f);}
 void main(){vec4 c=texture2D(t,v);float a=c.a;
 if(key>0.5){float d=distance(cuv(c.rgb),cuv(kc));float b=d-sim;
 float m=pow(clamp(b/smo,0.0,1.0),1.5);float sv=pow(clamp(b/spl,0.0,1.0),1.5);
 float l=dot(c.rgb,vec3(0.2126,0.7152,0.0722));c.rgb=mix(vec3(l),c.rgb,sv);a*=m;}
+c.rgb*=ex;c.r+=tmp*0.08;c.b-=tmp*0.08;c.g-=tnt*0.08;c.rgb=clamp(c.rgb,0.0,1.0);
+if(lutOn>0.5){c.rgb=mix(c.rgb,lutS(c.rgb),lutMix);}
+c.rgb=(c.rgb-0.5)*con+0.5;float L=dot(c.rgb,vec3(0.2126,0.7152,0.0722));c.rgb=clamp(mix(vec3(L),c.rgb,sat),0.0,1.0);
 gl_FragColor=vec4(c.rgb,a*op);}`;
 const U = {};
 if (gl) {
@@ -283,8 +292,58 @@ if (gl) {
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,0, 1,0, 0,1, 1,1]), gl.STATIC_DRAW);
   const aLoc = gl.getAttribLocation(glProg, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
-  ['r','cr','t','op','key','kc','sim','smo','spl'].forEach(n => U[n] = gl.getUniformLocation(glProg, n));
-  gl.uniform1i(U.t, 0);
+  ['r','cr','t','op','key','kc','sim','smo','spl','lut','lutOn','lutN','lutCols','lutTex','lutMix','ex','tmp','tnt','con','sat'].forEach(n => U[n] = gl.getUniformLocation(glProg, n));
+  gl.uniform1i(U.t, 0); gl.uniform1i(U.lut, 1);
+}
+
+/* ================= LUTy (.cube) ================= */
+const COLOR_DEF = {exp:0, temp:0, tint:0, con:1, sat:1, lut:null, mix:1};
+const colorOf = s => s.color || (s.color = {...COLOR_DEF});
+S.luts = [];
+const lutById = id => S.luts.find(l => l.id === id);
+function parseCube(txt, name) {
+  let n = 0; const vals = [];
+  for (const raw of txt.split(/\r?\n/)) {
+    const l = raw.trim(); if (!l || l[0] === '#') continue;
+    const k = l.split(/\s+/);
+    if (k[0] === 'LUT_3D_SIZE') n = +k[1];
+    else if (k[0] === 'LUT_1D_SIZE') throw new Error('Tohle je 1D LUT. Potřebuju 3D LUT (.cube) – v DaVinci: Export LUT → 33 Point Cube.');
+    else if (/^[-+\d.]/.test(k[0]) && k.length >= 3) vals.push(+k[0], +k[1], +k[2]);
+  }
+  if (!n || n > 129 || vals.length < n * n * n * 3) throw new Error('Soubor není platný 3D LUT (.cube).');
+  const d = new Uint8Array(n * n * n * 3);
+  for (let i = 0; i < d.length; i++) d[i] = clamp(Math.round(vals[i] * 255), 0, 255);
+  return {id:uid(), name, n, d};
+}
+function lutTexture(L) {
+  if (L.tex) return L.tex;
+  const n = L.n, cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols), w = cols * n, h = rows * n, px = new Uint8Array(w * h * 4);
+  for (let b = 0; b < n; b++) {
+    const tx = (b % cols) * n, ty = Math.floor(b / cols) * n;
+    for (let g = 0; g < n; g++) for (let r = 0; r < n; r++) {
+      const si = (r + g * n + b * n * n) * 3, di = ((ty + g) * w + tx + r) * 4;
+      px[di] = L.d[si]; px[di + 1] = L.d[si + 1]; px[di + 2] = L.d[si + 2]; px[di + 3] = 255;
+    }
+  }
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  gl.activeTexture(gl.TEXTURE0);
+  Object.assign(L, {tex:t, cols, w, h}); return t;
+}
+function b64enc(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+function b64dec(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+const lutsJson = () => S.luts.map(l => ({id:l.id, name:l.name, n:l.n, b64:b64enc(l.d)}));
+function lutsFromJson(arr) { return (arr || []).map(x => ({id:x.id, name:x.name, n:x.n, d:b64dec(x.b64)})); }
+function saveLuts() {
+  try { localStorage.setItem('rezie-luts', JSON.stringify(lutsJson())); }
+  catch (e) { alert('LUTů je moc na uložení v prohlížeči. Po novém spuštění je bude potřeba nahrát znovu (nebo ulož projekt tlačítkem 💾 – tam se uloží).'); }
+}
+async function loadLutFile() {
+  const f = await pickFile('.cube'); if (!f) return null;
+  try { const L = parseCube(await f.text(), f.name.replace(/\.cube$/i, '')); S.luts.push(L); saveLuts(); return L; }
+  catch (e) { alert(e.message); return null; }
 }
 let frameNo = 0;
 
@@ -333,6 +392,12 @@ function renderScene(sc) {
     const k = l.key, kc = hex2rgb(k.color);
     gl.uniform1f(U.key, k.on ? 1 : 0); gl.uniform3f(U.kc, kc[0], kc[1], kc[2]);
     gl.uniform1f(U.sim, k.sim); gl.uniform1f(U.smo, Math.max(k.smooth, 0.001)); gl.uniform1f(U.spl, Math.max(k.spill, 0.001));
+    const co = s.color || COLOR_DEF, L = co.lut && lutById(co.lut);
+    gl.uniform1f(U.ex, Math.pow(2, co.exp)); gl.uniform1f(U.tmp, co.temp); gl.uniform1f(U.tnt, co.tint); gl.uniform1f(U.con, co.con); gl.uniform1f(U.sat, co.sat);
+    if (L) {
+      const lt = lutTexture(L); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, lt); gl.activeTexture(gl.TEXTURE0);
+      gl.uniform1f(U.lutOn, 1); gl.uniform1f(U.lutN, L.n); gl.uniform1f(U.lutCols, L.cols); gl.uniform2f(U.lutTex, L.w, L.h); gl.uniform1f(U.lutMix, co.mix);
+    } else gl.uniform1f(U.lutOn, 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
@@ -671,9 +736,42 @@ function renderProps() {
       ${range('Podobnost (kolik zmizí)', 'key.sim', l.key.sim, 0, 1, 0.005)}
       ${range('Vyhlazení okrajů', 'key.smooth', l.key.smooth, 0.001, 0.5, 0.001)}
       ${range('Potlačení zeleného přesvitu', 'key.spill', l.key.spill, 0.001, 0.5, 0.001)}
-      <p class="dim">Postup: zapni klíč → klikni na 🎯 → klikni do zeleného pozadí v náhledu → posuň „Podobnost“, až pozadí zmizí a člověk zůstane celý. Rovnoměrné světlo na plátně pomáhá nejvíc.</p></div></div>`;
+      <p class="dim">Postup: zapni klíč → klikni na 🎯 → klikni do zeleného pozadí v náhledu → posuň „Podobnost“, až pozadí zmizí a člověk zůstane celý. Rovnoměrné světlo na plátně pomáhá nejvíc.</p></div>${s && !['text','color'].includes(s.type) ? colorSec(s) : ''}</div>`;
   }
   box.innerHTML = h;
+}
+function crange(label, key, v, min, max, step) {
+  return `<label class="rng"><span>${label}</span><input type="range" data-c="${key}" min="${min}" max="${max}" step="${step}" value="${v}"><output>${fmtN(v, step)}</output></label>`;
+}
+function colorSec(s) {
+  const c = colorOf(s);
+  return `<div class="sec"><h4>🎨 Barvy a LUT – ${esc(s.name)}</h4>
+    <p class="dim" style="margin-top:-4px">Platí pro tento zdroj ve všech scénách.</p>
+    <div class="row"><label>LUT<select data-c="lut"><option value="">— bez LUTu —</option>${S.luts.map(l => `<option value="${l.id}" ${c.lut === l.id ? 'selected' : ''}>${esc(l.name)} (${l.n}³)</option>`).join('')}</select></label>
+      <button data-do="lutload">📂 Nahrát LUT (.cube)</button>${c.lut ? '<button data-do="lutdel" title="Smazat tento LUT z knihovny">🗑</button>' : ''}</div>
+    ${crange('Síla LUTu', 'mix', c.mix, 0, 1, 0.01)}
+    <h5>Korekce (před LUTem)</h5>
+    ${crange('Expozice (clony)', 'exp', c.exp, -2, 2, 0.05)}${crange('Teplota (modrá ↔ žlutá)', 'temp', c.temp, -1, 1, 0.01)}${crange('Tint (zelená ↔ fialová)', 'tint', c.tint, -1, 1, 0.01)}
+    <h5>Po LUTu</h5>
+    ${crange('Kontrast', 'con', c.con, 0.5, 1.5, 0.01)}${crange('Saturace', 'sat', c.sat, 0, 2, 0.01)}
+    <div class="btns"><button data-do="colreset">↺ Vynulovat</button><button data-do="colall">Použít na všechny kamery</button></div>
+    <p class="dim">LUT si vyrobíš v DaVinci: pravý klik na snímek → Generate LUT → 33 Point Cube. Pro Sony S-Log3 nahraj převodní LUT do Rec.709.</p></div>`;
+}
+async function colorAction(act) {
+  const l = selLayerObj(); if (!l) return; const s = srcById(l.sourceId); if (!s) return; const c = colorOf(s);
+  if (act === 'lutload') { const L = await loadLutFile(); if (L) { c.lut = L.id; c.mix = 1; } }
+  else if (act === 'lutdel') {
+    const L = lutById(c.lut); if (!L || !confirm(`Smazat LUT „${L.name}“ ze všech zdrojů?`)) return;
+    S.luts = S.luts.filter(x => x !== L); if (L.tex) gl.deleteTexture(L.tex);
+    S.sources.forEach(x => { if (x.color && x.color.lut === L.id) x.color.lut = null; }); saveLuts();
+  }
+  else if (act === 'colreset') s.color = {...COLOR_DEF};
+  else if (act === 'colall') {
+    const n = S.sources.filter(x => x !== s && x.type === s.type);
+    if (!n.length) return alert('Žádný další zdroj stejného typu tu není.');
+    n.forEach(x => x.color = {...c}); alert(`Barvy zkopírovány na ${n.length} ${s.type === 'camera' ? 'kamer(y)' : 'zdroj(e)'}.`);
+  }
+  renderProps(); save();
 }
 function updatePropInputs() {
   const l = selLayerObj(); if (!l) return;
@@ -1078,7 +1176,7 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts,
+  return {v:1, sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? {vol:s.audio.vol, mute:s.audio.mute, delay:s.audio.delay} : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
@@ -1090,7 +1188,7 @@ async function restore(d) {
   S.sources.forEach(s => { if (s.stream) s.stream.getTracks().forEach(t => t.stop()); if (s.el instanceof HTMLVideoElement) s.el.remove(); });
   S.sources = [];
   for (const x of d.sources || []) {
-    const s = {id:x.id, type:x.type, name:x.name, deviceId:x.deviceId, res:x.res, props:x.props || {}, micOpts:x.micOpts, hasVideo:false};
+    const s = {id:x.id, type:x.type, name:x.name, deviceId:x.deviceId, res:x.res, props:x.props || {}, micOpts:x.micOpts, color:x.color ? {...COLOR_DEF, ...x.color} : undefined, hasVideo:false};
     if (x.audio) s.audio = {vol:x.audio.vol ?? 1, mute:!!x.audio.mute, delay:x.audio.delay || 0};
     try {
       if (s.type === 'camera') await openCamera(s);
@@ -1110,6 +1208,7 @@ async function restore(d) {
   if (!sceneById(S.programId)) S.programId = null;
 }
 async function loadProject() {
+  try { S.luts = lutsFromJson(JSON.parse(localStorage.getItem('rezie-luts'))); } catch (e) { S.luts = []; }
   let d = null; try { d = JSON.parse(localStorage.getItem('rezie-project')); } catch (e) {}
   if (d && d.scenes && d.scenes.length) await restore(d);
   else {
@@ -1118,12 +1217,12 @@ async function loadProject() {
   }
 }
 function exportProject() {
-  const blob = new Blob([JSON.stringify(serialize(), null, 2)], {type:'application/json'});
+  const blob = new Blob([JSON.stringify({...serialize(), luts:lutsJson()})], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rezie-projekt_' + stamp() + '.json'; a.click();
 }
 async function importProject() {
   const f = await pickFile('.json,application/json'); if (!f) return;
-  try { const d = JSON.parse(await f.text()); await restore(d); fillStatic(); renderAll(); save(); }
+  try { const d = JSON.parse(await f.text()); if (d.luts) { S.luts = lutsFromJson(d.luts); saveLuts(); } await restore(d); fillStatic(); renderAll(); save(); }
   catch (e) { alert('Soubor se nepodařilo načíst: ' + e.message); }
 }
 function showHelp() {
@@ -1189,6 +1288,12 @@ function bindEvents() {
   tp.addEventListener('input', e => {
     const el = e.target, sc = prevScene();
     if (el.dataset.sc && sc) { sc[el.dataset.sc] = el.value || null; if (el.dataset.sc === 'name') renderScenes(); save(); return; }
+    if (el.dataset.c) {
+      const l = selLayerObj(), s = l && srcById(l.sourceId); if (!s) return; const c = colorOf(s);
+      if (el.dataset.c === 'lut') { c.lut = el.value || null; renderProps(); save(); return; }
+      const v = val(el); if (v === null) return; c[el.dataset.c] = v;
+      const o = el.parentElement.querySelector('output'); if (o) o.textContent = fmtN(v, +el.step || 1); save(); return;
+    }
     if (!el.dataset.l) return; const l = selLayerObj(); if (!l) return;
     let v = val(el); if (v === null) return; if (el.dataset.mul) v /= +el.dataset.mul;
     setPath(l, el.dataset.l, v);
@@ -1196,7 +1301,7 @@ function bindEvents() {
     if (el.dataset.l === 'key.on') renderLayers(); save();
   });
   tp.addEventListener('change', e => { if (e.target.dataset.sc === 'autoNext') { const sc = prevScene(); if (sc) { sc.autoNext = e.target.value || null; save(); } } });
-  tp.addEventListener('click', e => { const a = e.target.dataset.do; if (a) layerAction(a); });
+  tp.addEventListener('click', e => { const a = e.target.dataset.do; if (!a) return; if (['lutload','lutdel','colreset','colall'].includes(a)) colorAction(a); else layerAction(a); });
 
   // zdroje
   const ts = $('#tab-sources');

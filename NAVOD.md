@@ -34,6 +34,13 @@ Režie je taky online: **https://antoninfeldek-bot.github.io/rezie-live/** – k
 2. Klikni na **🎯** a potom do zeleného pozadí v náhledu.
 3. Posuň **Podobnost**, až zelená zmizí. Pod kameru dej vrstvu s pozadím (obrázek, video nebo barvu).
 
+### LUTy a barvy
+1. Vyber vrstvu s kamerou → záložka **Vlastnosti** → sekce **🎨 Barvy a LUT**.
+2. **📂 Nahrát LUT (.cube)** – LUT z DaVinci (pravý klik na snímek → Generate LUT → 33 Point Cube) nebo převodní LUT ze S-Logu do Rec.709.
+3. Dolaď **Sílu LUTu**, expozici, teplotu, tint, kontrast a saturaci.
+4. **Použít na všechny kamery** – stejné barvy na všechny kamery najednou.
+Barvy platí pro kameru ve všech scénách. LUTy se ukládají v prohlížeči i v projektu (💾).
+
 ### Znělka, která se sama přepne
 1. Udělej scénu „Znělka“ a dej do ní video.
 2. Ve **Vlastnostech scény** nastav „Když skončí video, přepnout na: Kamera“.
