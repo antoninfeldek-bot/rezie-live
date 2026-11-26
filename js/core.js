@@ -11,18 +11,11 @@ const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤
 const icon = s => s ? (IC[s.type] || '•') : '⚠';
 const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
 
-const PLAT = {
-  youtube:  {n:'YouTube',  url:'rtmp://a.rtmp.youtube.com/live2'},
-  twitch:   {n:'Twitch',   url:'rtmp://live.twitch.tv/app'},
-  facebook: {n:'Facebook', url:'rtmps://live-api-s.facebook.com:443/rtmp/'},
-  custom:   {n:'Vlastní (Instagram, Kick, TikTok, …)', url:''}
-};
 
 const S = {
   sources: [], scenes: [], previewId: null, programId: null, selLayer: null,
   trans: {dur: 600, swap: true}, active: null, picking: false,
-  streamCfg: {plat:'youtube', url:PLAT.youtube.url, vb:4500,
-    relay: (location.protocol.startsWith('http') && location.port === '8080') ? location.origin : 'http://localhost:8080'}
+  streamCfg: null
 };
 const R = {
   rec: null, iso: [], stream: null, recordings: [], meters: [], monitor: false,
@@ -783,44 +776,7 @@ function toggleIso() {
   updateHeader();
 }
 
-/* ================= Vysílání (stream) ================= */
-function stLog(t) { const el = $('#stLog'); el.textContent = (new Date().toLocaleTimeString() + '  ' + t + '\n' + el.textContent).slice(0, 4000); }
-function relayUrl() { return ($('#stRelay').value || 'http://localhost:8080').trim().replace(/\/+$/, ''); }
-async function testRelay() {
-  try { const r = await fetch(relayUrl() + '/status'); const j = await r.json(); stLog('Spojení OK. FFmpeg: ' + (j.ffmpeg ? 'nalezen ✔' : 'NENALEZEN ✖ – nainstaluj FFmpeg')); }
-  catch (e) { stLog('Server neodpovídá. Spusť v počítači: node server.js'); }
-}
-async function toggleStream() {
-  if (R.stream) return stopStream();
-  const c = S.streamCfg, key = $('#stKey').value.trim(), url = $('#stUrl').value.trim();
-  if (!url || !key) { showTab('stream'); return alert('Vyplň adresu serveru a klíč streamu (záložka Vysílání).'); }
-  const full = url.replace(/\/+$/, '') + '/' + key, relay = relayUrl();
-  try {
-    const r = await fetch(relay + '/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:full, vb:c.vb, fps:30})});
-    if (!r.ok) throw new Error(await r.text());
-  } catch (e) { showTab('stream'); stLog('Start selhal: ' + e.message); return alert('Nepodařilo se spojit s přenosovým programem (' + relay + ').\nSpusť v počítači:  node server.js\n\n' + e.message); }
-  const mime = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
-  const rec = new MediaRecorder(outStream(), {mimeType:mime, videoBitsPerSecond:c.vb * 1000 * 2, audioBitsPerSecond:160000});
-  const st = {rec, relay, q:Promise.resolve(), start:performance.now(), errs:0};
-  rec.ondataavailable = e => {
-    if (!e.data.size) return; const blob = e.data;
-    st.q = st.q.then(() => fetch(relay + '/chunk', {method:'POST', body:blob})).then(r => { if (!r.ok) throw new Error('server ' + r.status); })
-      .catch(err => { st.errs++; if (st.errs < 5 || st.errs % 50 === 0) stLog('Chyba odesílání: ' + err.message); });
-  };
-  rec.start(250);
-  st.poll = setInterval(async () => {
-    try { const j = await (await fetch(relay + '/status')).json(); if (j.last) $('#stLog').firstChild && stLogReplaceTop(j.last); if (!j.running && R.stream) stLog('⚠ FFmpeg se zastavil – zkontroluj klíč a adresu.'); }
-    catch (e) { stLog('⚠ Server neodpovídá'); }
-  }, 2000);
-  R.stream = st; stLog('Vysílání spuštěno → ' + url + '/••••'); updateHeader();
-}
-function stLogReplaceTop(t) { const el = $('#stLog'); const lines = el.textContent.split('\n'); if (lines[0].includes('ffmpeg:')) lines.shift(); el.textContent = ['ffmpeg: ' + t, ...lines].join('\n').slice(0, 4000); }
-async function stopStream() {
-  const st = R.stream; if (!st) return; R.stream = null; clearInterval(st.poll);
-  try { st.rec.stop(); } catch (e) {}
-  setTimeout(async () => { await st.q; try { await fetch(st.relay + '/stop', {method:'POST'}); } catch (e) {} stLog('Vysílání ukončeno.'); }, 600);
-  updateHeader();
-}
+/* Vysílání je v js/stream.js */
 
 /* ================= Hlavička ================= */
 function updateHeader() {
@@ -971,7 +927,7 @@ function serialize() {
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
-    streamCfg:S.streamCfg, aud:AUD.save(), gfx:GFX.save(), trs:TR.save(), rundown:RUN.save(), ctl:CTL.save(), grades:GR.save()};
+    streamCfg:STR.save(), aud:AUD.save(), gfx:GFX.save(), trs:TR.save(), rundown:RUN.save(), ctl:CTL.save(), grades:GR.save()};
 }
 let saveT = 0;
 function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem('rezie-project', JSON.stringify(serialize())); } catch (e) { console.warn('Uložení selhalo', e); } }, 400); }
@@ -993,7 +949,7 @@ async function restore(d) {
   }
   S.scenes = d.scenes || []; S.previewId = d.previewId; S.programId = d.programId; S.trans = Object.assign({dur:600, swap:true}, d.trans || {});
   if (d.prompter) Object.assign(R.prompter, d.prompter);
-  if (d.streamCfg) Object.assign(S.streamCfg, d.streamCfg);
+  STR.load(d.streamCfg);
   AUD.load(d.aud || (d.masterVol != null ? {fader:d.masterVol} : null)); GFX.load(d.gfx); TR.load(d.trs); RUN.load(d.rundown); CTL.load(d.ctl); GR.load(d.grades);
   if (!sceneById(S.previewId)) S.previewId = S.scenes[0] && S.scenes[0].id;
   if (!sceneById(S.programId)) S.programId = null;
@@ -1005,7 +961,7 @@ async function loadProject() {
   else {
     S.scenes = ['Kamera', 'Host', 'Znělka', 'Titulky'].map(n => ({id:uid(), name:n, layers:[], autoNext:null}));
     S.previewId = S.scenes[0].id;
-    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null);
+    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null);
   }
 }
 function exportProject() {
@@ -1041,16 +997,15 @@ function showHelp() {
 /* ================= Statické prvky a události ================= */
 function fillStatic() {
   $('#tSwap').checked = S.trans.swap;
-  $('#stPlat').innerHTML = Object.entries(PLAT).map(([k, p]) => `<option value="${k}" ${S.streamCfg.plat === k ? 'selected' : ''}>${p.n}</option>`).join('');
-  $('#stUrl').value = S.streamCfg.url; $('#stVb').value = S.streamCfg.vb; $('#stRelay').value = S.streamCfg.relay;
   $('#prText').value = R.prompter.text; $('#prMirror').checked = R.prompter.mirror; updatePrompterLook();
 }
 function showTab(name) {
+  S.tabCur = name;
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('act', b.dataset.tab === name));
   document.querySelectorAll('.tabc').forEach(c => c.classList.toggle('act', c.id === 'tab-' + name));
   if (TAB_RENDER[name]) TAB_RENDER[name]();
 }
-const TAB_RENDER = {gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
+const TAB_RENDER = {stream:() => STR.renderTab(), gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
 function renderAll() { renderScenes(); renderLayers(); renderProps(); renderSources(); renderMixer(); renderRecs(); updateHeader(); Object.values(TAB_RENDER).forEach(f => f()); TR.renderSel(); if (S.page && S.page !== 'rezie') showPage(S.page); }
 function showPage(name) {
   S.page = name;
@@ -1148,11 +1103,6 @@ function bindEvents() {
   $('#prText').oninput = e => { R.prompter.text = e.target.value; updatePrompterLook(); save(); };
 
   // vysílání
-  $('#stPlat').onchange = e => { S.streamCfg.plat = e.target.value; const u = PLAT[e.target.value].url; if (u) $('#stUrl').value = u; S.streamCfg.url = $('#stUrl').value; save(); };
-  $('#stUrl').oninput = e => { S.streamCfg.url = e.target.value.trim(); save(); };
-  $('#stVb').oninput = e => { S.streamCfg.vb = Math.max(500, +e.target.value || 4500); save(); };
-  $('#stRelay').oninput = e => { S.streamCfg.relay = e.target.value.trim(); save(); };
-  $('#stTest').onclick = testRelay;
 
   navigator.mediaDevices.ondevicechange = () => renderSources();
   document.addEventListener('pointerdown', () => { if (actx && actx.state === 'suspended') actx.resume(); });
@@ -1168,7 +1118,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   setInterval(tickClock, 500); startLoop();
 };

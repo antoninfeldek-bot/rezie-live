@@ -15,10 +15,11 @@ Všechno nech pohromadě v **jedné složce** (tak, jak je to na GitHubu).
    - Kontrola: `ffmpeg -version` musí něco vypsat.
 
 ## 2. Spuštění
-1. Otevři terminál ve složce s aplikací.
-2. Napiš `node server.js`
-3. V Chrome otevři **http://localhost:8080**
-4. Klikni **Spustit studio** a povol kameru a mikrofon.
+- **Windows:** dvojklik na **start-windows.bat**
+- **Mac:** dvojklik na **start-mac.command** (poprvé pravý klik → Otevřít)
+- nebo v terminálu ve složce: `node server.js` a v Chrome otevři **http://localhost:8080**
+
+Klikni **Spustit studio** a povol kameru a mikrofon.
 
 Režie je taky online: **https://antoninfeldek-bot.github.io/rezie-live/** – kamery, scény, nahrávání i čtečka fungují rovnou tam. Jen pro **vysílání** musí v počítači běžet `node server.js` (online stránka mu pak posílá obraz).
 
@@ -87,16 +88,29 @@ Bloky pořadu s délkou, scénou, grafikou, textem do čtečky a poznámkami. **
 ### Zvuk
 Záložka **Zvuk**: hlasitost každého mikrofonu, ztlumení (M), zpoždění (když zvuk předbíhá obraz), MASTER a odposlech do sluchátek.
 
-## 4. Vysílání na sociální síť
-1. Na platformě si vezmi **klíč streamu** (stream key):
-   - YouTube: YouTube Studio → Vytvořit → Spustit živé vysílání → Stream → „Klíč streamu“
-   - Twitch: Ovládací panel tvůrce → Nastavení → Stream → „Primární klíč streamu“
-   - Facebook: Live Producer → „Použít klíč streamu“
-   - Jiná síť: vyber **Vlastní** a zkopíruj adresu serveru i klíč (jestli to síť u tvého účtu dovoluje).
-2. V aplikaci záložka **Vysílání** → vyber platformu, vlož klíč.
-3. Klikni **⦿ Vysílat**. Stav uvidíš v záložce Vysílání.
+## 4. Vysílání (záložka Vysílání)
+Jsou dvě cesty – vybereš je nahoře v záložce:
 
-⚠ Klíč streamu nikomu neukazuj – kdo ho má, může vysílat na tvůj kanál. Aplikace si ho neukládá.
+### 📡 Přes server.js (RTMP) – nejspolehlivější, funguje všude
+1. Spusť start-windows.bat / start-mac.command (potřebuje Node.js a FFmpeg).
+2. Vyber platformu a vlož **klíč streamu**:
+   - YouTube: YouTube Studio → Vytvořit → Spustit živé vysílání → Stream → Klíč streamu
+   - Facebook: Živé video → Použít klíč streamu
+   - Twitch: Ovládací panel tvůrce → Nastavení → Stream → Primární klíč streamu
+   - Jiná síť: „Vlastní“ – zkopíruj adresu serveru i klíč.
+3. **+ Přidat další místo** = vysílání na víc míst najednou (třeba YouTube + Facebook). Když jedno spadne, ostatní jedou dál.
+4. **Kódování:** když máš grafickou kartu NVIDIA / Intel / AMD nebo Mac, vyber ji – ulehčí procesoru. Aplikace sama ukáže, co tvůj počítač umí (tlačítko „Otestovat spojení“).
+5. **Rozlišení:** 1080p (4500–6000 kbps) nebo 720p (2500–4000 kbps) pro slabší internet. Na víc míst najednou potřebuješ součet.
+6. **⦿ Spustit vysílání.** Ukazuje fps, datový tok a rychlost. Když spojení vypadne, sám se připojí znovu. Když píše „počítač nestíhá“, dej 720p nebo kódování na grafice.
+
+### 🌐 Přímo z prohlížeče (WHIP) – bez instalace, i z online verze
+- **Twitch:** vyber Twitch a vlož klíč streamu. (Twitch to zatím oficiálně nedokumentuje – funguje, ale může se změnit.)
+- **Restream:** v Restreamu najdi WHIP (beta), zkopíruj adresu a token. Restream to pak rozešle na YouTube, Facebook i jinam.
+- **Vlastní WHIP server** (MediaMTX, Cloudflare…): vlož jeho adresu.
+- YouTube a Facebook WHIP zatím přímo nepřijímají – pro ně Restream nebo režim server.js.
+- WebRTC se samo přizpůsobí, když internet zakolísá, a ukazuje ping a kvalitu.
+
+⚠ Klíč streamu nikomu neukazuj. Aplikace si ho pamatuje jen když zaškrtneš „Pamatovat klíče v tomto počítači“.
 
 ## 5. Nahrávání
 - **● Program** – nahraje to, co jde ven. **● Vše (ISO)** – program + každou kameru a mikrofon zvlášť, ve stejnou chvíli.
@@ -106,5 +120,5 @@ Záložka **Zvuk**: hlasitost každého mikrofonu, ztlumení (M), zpoždění (k
 ## 6. Když něco nejde
 - **Kamera je černá** – jedna kamera jde většinou otevřít jen jednou. Zavři jiné programy, které ji používají (Zoom, OBS, Teams).
 - **Nové okno se neotevře** – povol vyskakovací okna (ikona vpravo v adresním řádku).
-- **Vysílání nejde** – běží `node server.js`? V záložce Vysílání klikni „Otestovat spojení“.
+- **Vysílání nejde** – běží server.js (start-windows.bat / start-mac.command)? V záložce Vysílání klikni „Otestovat spojení“. Stav a chyby vidíš v „Záznamu“ dole v záložce. Hláška o klíči = špatně zkopírovaný klíč streamu.
 - **Projekt** se ukládá sám v prohlížeči. Zálohu uděláš tlačítkem 💾. Videa a obrazovku je po novém spuštění potřeba připojit znovu („Připojit znovu“).

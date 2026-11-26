@@ -96,21 +96,7 @@
       </div>
       <p class="dim">Klávesa <kbd>P</kbd> = start / pauza. V okně čtečky: <kbd>mezerník</kbd> start/pauza, <kbd>↑</kbd><kbd>↓</kbd> rychlost, <kbd>Home</kbd> začátek, dvojklik = celá obrazovka.</p>
     </div>
-    <div class="tabc" id="tab-stream">
-      <div class="sec"><h4>Kam vysílat</h4>
-        <div class="grid2">
-          <label>Platforma<select id="stPlat"></select></label>
-          <label>Adresa serveru (URL)<input id="stUrl" placeholder="rtmp://…"></label>
-          <label>Klíč streamu (z platformy)<input id="stKey" type="password" placeholder="vlož klíč streamu" autocomplete="off"></label>
-          <label>Kvalita videa (kbps)<input id="stVb" type="number" step="500" min="500"></label>
-        </div>
-      </div>
-      <div class="sec"><h4>Přenosový program v počítači (server.js)</h4>
-        <div class="row"><label>Adresa<input id="stRelay"></label><button id="stTest">Otestovat spojení</button></div>
-        <p class="dim">Prohlížeč sám neumí posílat RTMP na YouTube/Twitch/Facebook. Proto v počítači běží malý program <b>server.js</b> (Node.js + FFmpeg). Aplikace mu posílá obraz a on ho pošle dál. Návod je v souboru NAVOD.md.</p>
-      </div>
-      <div class="sec"><h4>Stav</h4><pre id="stLog">—</pre></div>
-    </div>
+    <div class="tabc" id="tab-stream"></div>
     <div class="tabc" id="tab-rec">
       <div class="sec"><h4>Kam ukládat</h4><div id="diskBox"></div></div>
       <p class="dim"><b>● Program</b> = nahraje to, co jde ven (obraz + zvuk). <b>● Vše (ISO)</b> = program + každá kamera, obrazovka a mikrofon zvlášť ve stejnou chvíli, abys to mohl potom znovu sestříhat.</p>
@@ -142,5 +128,6 @@
 <script src="js/control.js"></script>
 <script src="js/rundown.js"></script>
 <script src="js/disk.js"></script>
+<script src="js/stream.js"></script>
 </body>
 </html>
