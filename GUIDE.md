@@ -30,8 +30,9 @@ In the Streaming tab choose **🚀 Native streaming**:
 After changing the canvas or FPS the studio restarts itself and layers are recalculated for the new format.
 
 ### 📱 Remote control and guests (Remote tab)
-Tick **Allow on the local network** – two QR codes appear:
+Tick **Allow on the local network** – three QR codes appear:
 - **Remote** – scan with an iPad or phone (same Wi-Fi). A second person can switch scenes (CUT, AUTO, T-bar), run graphics, mix audio, control the rundown and prompter.
+- **Teleprompter (iPad)** – scan with the iPad in the teleprompter rig. It shows the text full screen and scrolls exactly with the app. Tap for a bar: mirror (like app / on / off), font size, full screen. The screen stays on.
 - **Guest link** – the guest opens it on a phone or computer, allows the camera and joins. They appear as a 👤 source. They see the program, hear everyone except themselves (mix-minus) and see a red “YOU ARE LIVE” when on air.
 
 On first open the browser says the connection isn’t private (the app made its own certificate) – click **Details → Proceed anyway**. The Mac may ask to allow incoming connections – choose **Allow**.

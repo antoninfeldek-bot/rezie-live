@@ -4,16 +4,17 @@
    Host otevře odkaz v mobilu nebo počítači → WebRTC spojení přímo s režií (obraz + zvuk hosta sem,
    zpátky k hostovi jde program a zvuk bez jeho vlastního hlasu = mix-minus, aby neslyšel ozvěnu). */
 const REM = (() => {
-  const ST = {es:null, info:null, remotes:0, push:null, busy:false, lastJson:'', lastPost:0, thumbT:0, thumbs:null, err:'', starting:false};
+  const ST = {prompters:0, prJson:'', prT:0, prBusy:false, es:null, info:null, remotes:0, push:null, busy:false, lastJson:'', lastPost:0, thumbT:0, thumbs:null, err:'', starting:false};
   const G = new Map();   // id hosta → {pc, s, mm, mmDest, conn:Set, air, pv, aEl}
   const base = () => /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : null;
   const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join(''); };
   const C = () => S.rem;
 
-  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10)}; }
-  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey});
+  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10)}; }
+  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey});
   const host = () => ST.info && ST.info.on ? `${ST.info.https ? 'https' : 'http'}://${ST.info.ips[0] || 'IP-ADRESA'}:${ST.info.port}` : '';
   const remoteUrl = () => host() + '/remote?k=' + C().pin + (I18N.lang === 'en' ? '&lang=en' : '');
+  const prompterUrl = () => host() + '/prompter?k=' + C().pkey + (I18N.lang === 'en' ? '&lang=en' : '');
   const guestUrl = () => host() + '/guest?k=' + C().gkey + (I18N.lang === 'en' ? '&lang=en' : '');
 
   /* ---------- zapnutí / vypnutí ---------- */
@@ -21,7 +22,7 @@ const REM = (() => {
     const b = base(); if (!b) { ST.err = L('Funguje jen v aplikaci pro Mac nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
     ST.starting = true; ST.err = ''; renderTab();
     try {
-      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey})});
+      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey})});
       if (!r.ok) throw new Error(await r.text());
       ST.info = await r.json(); C().on = true; save();
       connectEvents(); startPush();
@@ -36,7 +37,7 @@ const REM = (() => {
     renderTab();
   }
   function newKeys(which) {
-    if (which === 'pin') C().pin = rnd(10); else C().gkey = rnd(10);
+    if (which === 'pin') C().pin = rnd(10); else if (which === 'pkey') C().pkey = rnd(10); else C().gkey = rnd(10);
     save(); if (C().on) enable(); else renderTab();
   }
   function connectEvents() {
@@ -48,6 +49,7 @@ const REM = (() => {
   function onMsg(d) {
     if (d.t === 'act') { try { act(d.a, d.v); } catch (e) { HLT.note('Dálkové ovládání: ' + e.message); } }
     else if (d.t === 'remotes') { ST.remotes = d.n; if (S.tabCur === 'remote') renderTab(); }
+    else if (d.t === 'prompters') { ST.prompters = d.n; ST.prJson = ''; if (S.tabCur === 'remote') renderTab(); }
     else if (d.t === 'offer') guestOffer(d).catch(e => { HLT.note('Host: ' + e.message); toast(L('Host se nepřipojil:') + ' ' + e.message); });
     else if (d.t === 'leave') closeGuest(d.id);
   }
@@ -95,7 +97,9 @@ const REM = (() => {
   function startPush() {
     clearInterval(ST.push);
     ST.push = setInterval(async () => {
-      if (ST.busy || !C().on) return;
+      if (!C().on) return;
+      pushPrompter();
+      if (ST.busy) return;
       tally();
       const now = performance.now(), want = ST.remotes > 0;
       if (!want && now - ST.lastPost < 3000) return;
@@ -107,6 +111,18 @@ const REM = (() => {
       try { const r = await fetch(base() + '/lan/state', {method:'POST', body:JSON.stringify(s)}); ST.remotes = +(await r.text()) || 0; } catch (e) {}
       ST.busy = false;
     }, 200);
+  }
+
+  /* ---------- čtečka na iPadu: text, pozice, rychlost (iPad si mezi zprávami posouvá text sám, plynule) ---------- */
+  async function pushPrompter() {
+    if (ST.prBusy || !ST.prompters) return;
+    const P = R.prompter, w = P.win && !P.win.closed ? P.win : null;
+    const st = {text:P.text, size:P.size, mirror:!!P.mirror, speed:P.speed, playing:!!P.playing, pos:Math.round(P.pos * 10) / 10, ref:w ? w.innerWidth : 1280};
+    const j = JSON.stringify(st), now = performance.now();
+    if (j === ST.prJson && now - ST.prT < (P.playing ? 500 : 3000)) return;
+    ST.prJson = j; ST.prT = now; ST.prBusy = true;
+    try { const r = await fetch(base() + '/lan/prompter', {method:'POST', body:j}); ST.prompters = +(await r.text()) || 0; } catch (e) {}
+    ST.prBusy = false;
   }
 
   /* ---------- hosté (WebRTC) ---------- */
@@ -210,6 +226,10 @@ const REM = (() => {
           <code class="url" title="${L('Klikni pro zkopírování')}">${esc(remoteUrl())}</code>
           <p class="dim">${L('Připojené ovladače:')} <b>${ST.remotes}</b></p>
           <div class="btns"><button data-rm="newpin">🔑 ${L('Nový klíč')}</button></div></div>
+        <div class="remcard"><h4>📜 ${L('Čtecí zařízení (iPad)')}</h4><div class="qr">${qr(prompterUrl())}</div>
+          <code class="url" title="${L('Klikni pro zkopírování')}">${esc(prompterUrl())}</code>
+          <p class="dim">${L('Připojené čtečky:')} <b>${ST.prompters}</b> · ${L('Text, rychlost a posun se řídí z režie (záložka Čtečka, klávesa P) nebo z ovladače.')}</p>
+          <div class="btns"><button data-rm="newpk">🔑 ${L('Nový klíč')}</button></div></div>
         <div class="remcard"><h4>👤 ${L('Odkaz pro hosty')}</h4><div class="qr">${qr(guestUrl())}</div>
           <code class="url" title="${L('Klikni pro zkopírování')}">${esc(guestUrl())}</code>
           <div class="btns"><button data-rm="newg">🔑 ${L('Nový odkaz')}</button></div></div>
@@ -230,7 +250,7 @@ const REM = (() => {
       const t = e.target;
       if (t.classList.contains('url')) { navigator.clipboard && navigator.clipboard.writeText(t.textContent); t.classList.add('copied'); setTimeout(() => t.classList.remove('copied'), 800); return; }
       const a = t.dataset.rm; if (!a) return;
-      if (a === 'newpin') newKeys('pin'); else if (a === 'newg') newKeys('gkey');
+      if (a === 'newpin') newKeys('pin'); else if (a === 'newg') newKeys('gkey'); else if (a === 'newpk') newKeys('pkey');
       else if (a === 'kick') kick(t.closest('.guest').dataset.gid);
       else if (a === 'addpv') { const s = srcById(t.closest('.guest').dataset.sid); if (s) { addToPreview(s); renderSources(); save(); toast(L('Host přidán do náhledu')); } }
     });

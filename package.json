@@ -24,7 +24,7 @@
     "appId": "live.rezie.app",
     "productName": "Rezie Live",
     "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["index.html", "remote.html", "guest.html", "css/**", "js/**", "server.js", "electron/**", "package.json"],
+    "files": ["index.html", "remote.html", "guest.html", "prompter.html", "css/**", "js/**", "server.js", "electron/**", "package.json"],
     "asarUnpack": ["node_modules/ffmpeg-static/**"],
     "mac": {
       "category": "public.app-category.video",

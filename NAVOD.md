@@ -37,8 +37,9 @@ V záložce Vysílání vyber **🚀 Nativní vysílání**:
 Po změně plátna nebo FPS se studio samo restartuje a vrstvy se přepočítají na nový formát.
 
 ### 📱 Dálkové ovládání a hosté (záložka Dálkově)
-Zaškrtni **Povolit v místní síti** – objeví se dva QR kódy:
+Zaškrtni **Povolit v místní síti** – objeví se tři QR kódy:
 - **Ovladač** – naskenuj iPadem nebo mobilem (stejná Wi-Fi). Druhý člověk pak přepíná scény (CUT, AUTO, T-bar), pouští grafiku, míchá zvuk, ovládá scénář a čtečku.
+- **Čtecí zařízení (iPad)** – naskenuj iPadem, který je ve čtecím zařízení. Ukáže text na celou obrazovku a posouvá ho přesně podle režie. Klepnutím se ukáže lišta: zrcadlení (podle režie / zapnuto / vypnuto), velikost písma, celá obrazovka. Obrazovka nezhasne.
 - **Odkaz pro hosty** – host otevře odkaz v mobilu nebo počítači, povolí kameru a připojí se. V režii se objeví jako zdroj 👤. Vidí program, slyší všechny kromě sebe (mix-minus) a když je ve vysílání, svítí mu červeně „JSI VE VYSÍLÁNÍ“.
 
 Při prvním otevření prohlížeč napíše, že spojení není soukromé (certifikát si aplikace vyrobila sama) – klikni **Podrobnosti → Přesto pokračovat**. Mac se může zeptat, jestli povolit příchozí spojení – dej **Povolit**.
