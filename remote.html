@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0e11">
+<title>Režie Live – ovladač</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/remote.css">
+</head>
+<body class="remote">
+<header class="rbar">
+  <b class="logo">🎬 <span data-t>Ovladač</span></b>
+  <span id="conn" class="dot off" title=""></span>
+  <span id="chips"></span>
+  <button id="more" class="ghost">⋯</button>
+</header>
+<main id="views">
+  <section data-v="sw" class="view on">
+    <div class="mons"><figure class="mon pv"><img id="thPv" alt=""><figcaption data-t>NÁHLED</figcaption></figure><figure class="mon pg"><img id="thPg" alt=""><figcaption data-t>VYSÍLÁNÍ</figcaption></figure></div>
+    <div class="row"><label class="sw"><input type="checkbox" id="direct"> <span data-t>Klepnutí = rovnou do vysílání</span></label></div>
+    <div id="scenes" class="grid"></div>
+    <div class="take"><button id="cut" class="big" data-t>CUT</button><button id="auto" class="big red" data-t>AUTO</button></div>
+    <div class="tb"><span data-t>T-bar</span><input type="range" id="tbar" min="0" max="1000" value="0"></div>
+    <div id="trs" class="chipsel"></div>
+  </section>
+  <section data-v="gfx" class="view"><div id="gfx" class="grid"></div><button id="gfxOut" class="wide" data-t>Všechny grafiky OUT</button></section>
+  <section data-v="aud" class="view"><div id="mix"></div></section>
+  <section data-v="rd" class="view">
+    <div class="rdbox"><div class="dim" data-t>Právě běží</div><div id="rdName" class="rdname">—</div><div id="rdLeft" class="rdleft">--:--</div><div class="dim"><span data-t>Další:</span> <span id="rdNext">—</span></div></div>
+    <div class="take"><button data-a="rd.prev" class="big" data-t>◀ Předchozí</button><button data-a="rd.next" class="big red" data-t>Další ▶</button></div>
+    <button data-a="rd.start" class="wide" data-t>Scénář start / stop</button>
+  </section>
+  <section data-v="pr" class="view">
+    <button id="prPlay" data-a="prompter" class="wide big">▶</button>
+    <div class="take"><button data-a="prompter.slower" class="big" data-t>Pomaleji</button><button data-a="prompter.faster" class="big" data-t>Rychleji</button></div>
+    <div class="dim center"><span data-t>Rychlost:</span> <b id="prSpeed">—</b></div>
+    <button data-a="prompter.reset" class="wide" data-t>⏮ Na začátek</button>
+  </section>
+</main>
+<nav class="rnav">
+  <button data-go="sw" class="on">🎬<span data-t>Přepínání</span></button>
+  <button data-go="gfx">✨<span data-t>Grafika</span></button>
+  <button data-go="aud">🎚<span data-t>Zvuk</span></button>
+  <button data-go="rd">📋<span data-t>Scénář</span></button>
+  <button data-go="pr">📜<span data-t>Čtečka</span></button>
+</nav>
+<div id="sheet" class="sheet" hidden>
+  <div class="sheetin">
+    <button id="bRec" class="wide" data-t>⏺ Nahrávat program start/stop</button>
+    <button id="bStream" class="wide red" data-t>📡 Vysílání start/stop</button>
+    <button id="bFull" class="wide" data-t>⛶ Celá obrazovka</button>
+    <button id="sheetClose" class="wide ghost" data-t>Zavřít</button>
+  </div>
+</div>
+<div id="msg" class="msg" hidden></div>
+<script src="js/remote-client.js"></script>
+</body>
+</html>

@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('rzNative', {
   info: () => ipcRenderer.invoke('rz:info'),
   start: cfg => ipcRenderer.invoke('rz:start', cfg),
   stop: () => ipcRenderer.invoke('rz:stop'),
+  state: () => ipcRenderer.invoke('rz:state'),
+  resume: cfg => ipcRenderer.invoke('rz:resume', cfg),
   video: (u8, key) => ipcRenderer.send('rz:v', u8, key),
   audio: u8 => ipcRenderer.send('rz:a', u8),
   onStatus: cb => ipcRenderer.on('rz:status', (e, s) => cb(s)),

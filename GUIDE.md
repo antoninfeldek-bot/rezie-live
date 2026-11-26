@@ -19,6 +19,19 @@ In the Streaming tab choose **🚀 Native streaming**:
 - video is driven by the audio clock → **sound and picture never drift apart**, even when the window is hidden,
 - for YouTube you can turn on the **backup server** (backup ingest).
 
+### 📱 Remote control and guests (Remote tab)
+Tick **Allow on the local network** – two QR codes appear:
+- **Remote** – scan with an iPad or phone (same Wi-Fi). A second person can switch scenes (CUT, AUTO, T-bar), run graphics, mix audio, control the rundown and prompter.
+- **Guest link** – the guest opens it on a phone or computer, allows the camera and joins. They appear as a 👤 source. They see the program, hear everyone except themselves (mix-minus) and see a red “YOU ARE LIVE” when on air.
+
+On first open the browser says the connection isn’t private (the app made its own certificate) – click **Details → Proceed anyway**. The Mac may ask to allow incoming connections – choose **Allow**.
+
+### 🛡 Reliability
+- The project saves itself every few seconds, with a backup every minute.
+- An unplugged camera or microphone **reconnects by itself**.
+- The **● fps** badge at the top shows if the computer keeps up (click for details).
+- **In the Mac app**: if the window crashes or freezes, the stream **does not stop** – a “Technical difficulties” slate runs, the app reopens itself and the program goes back on air.
+
 ## 1. Install once
 1. **Node.js** – download the LTS version from nodejs.org.
 2. **FFmpeg** – only needed for RTMP streaming:

@@ -268,6 +268,17 @@ const STR = (() => {
     setStatus('off', ''); keepLog(); renderTab(); updateHeader();
   }
 
+  // Okno spadlo nebo se načetlo znovu, ale vysílací jádro dál vysílá (záložní obraz) → navázat a vrátit program
+  async function resumeIfLive() {
+    let s; try { s = await NAT.state(); } catch (e) { return; }
+    if (!s || !s.running || R.stream) return;
+    const c = C(), st = {mode:'app', relay:relayUrl(), start:performance.now(), retries:0, targets:[], resumed:true};
+    R.stream = st; setStatus('connecting', ''); updateHeader();
+    try { await NAT.resume({vb:c.vb, res:s.cfg && s.cfg.h === 720 ? '720' : '1080'}); stLog('Režie obnovena – vysílání pokračuje (' + (s.targets || []).join(', ') + ')'); toast(L('Režie se obnovila – vysílání nepřestalo')); }
+    catch (e) { R.stream = null; setStatus('error', ''); stLog('Obnovení vysílání selhalo: ' + e.message); }
+    keepLog(); renderTab(); updateHeader();
+  }
+
   function init() {
     const box = $('#tab-stream');
     box.addEventListener('click', e => {
@@ -300,6 +311,7 @@ const STR = (() => {
       window.rzNative.onStatus(s => { NAT.onStatus(s); renderOuts(s); });
       window.rzNative.onLog(l => { stLog(l.replace(/^\S+\s+\S*\s*/, '')); keepLog(); });
     }
+    if (NAT.available()) resumeIfLive();
     if (C().mode === 'rtmp') fetch(relayUrl() + '/status').then(r => r.json()).then(j => { ST.srv = j; if (S.tabCur === 'stream') renderTab(); }).catch(() => {});
   }
   return {load, save:save_, renderTab, init, start, stop, test};

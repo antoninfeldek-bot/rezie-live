@@ -7,7 +7,7 @@ const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤', color:'🎨', mic:'🎤'};
+const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤', color:'🎨', mic:'🎤', guest:'👤'};
 const icon = s => s ? (IC[s.type] || '•') : '⚠';
 const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
 
@@ -259,6 +259,7 @@ async function openMic(s) {
     echoCancellation:!!o.ec, noiseSuppression:!!o.ns, autoGainControl:false}});
   if (s.stream) s.stream.getTracks().forEach(t => t.stop());
   s.stream = st; s.devLabel = st.getAudioTracks()[0].label; s.missing = false;
+  st.getAudioTracks()[0].onended = () => { s.missing = true; renderSources(); };
   attachAudio(s, actx.createMediaStreamSource(st));
 }
 async function openScreen(s) {
@@ -386,6 +387,7 @@ async function chooseMic(s) {
 
 async function addSource(type) {
   try {
+    if (type === 'guest') { showTab('remote'); return; }
     if (type === 'camera') {
       const f = await chooseCamera(); if (!f) return;
       const ds = await devices('videoinput'); const d = ds.find(x => x.deviceId === f.dev);
@@ -575,7 +577,7 @@ function pickColor(p) {
 const FONTS = [['system-ui, sans-serif','Systémové'],['Arial, sans-serif','Arial'],['"Arial Black", sans-serif','Arial Black'],['Impact, sans-serif','Impact'],['Georgia, serif','Georgia'],['"Times New Roman", serif','Times'],['"Courier New", monospace','Courier']];
 function srcCard(s) {
   const p = s.props; let b = '';
-  if (s.missing) b += `<div class="warn">⚠ Zdroj není připojený.<button data-sa="reload">Připojit znovu</button></div>`;
+  if (s.missing) b += s.type === 'guest' ? `<div class="warn">⚠ Host není připojený – pošli mu odkaz (záložka 📱 Dálkově).</div>` : `<div class="warn">⚠ Zdroj není připojený.<button data-sa="reload">Připojit znovu</button></div>`;
   if (s.type === 'text') b += `
     <label>Hlavní text<textarea data-s="props.text" rows="2">${esc(p.text)}</textarea></label>
     <label>Druhý řádek (např. funkce)<textarea data-s="props.sub" rows="1">${esc(p.sub)}</textarea></label>
@@ -599,7 +601,7 @@ function srcCard(s) {
 function renderSources() {
   $('#tab-sources').innerHTML = `<div class="addbar">
     <button data-add="camera">📷 + Kamera</button><button data-add="screen">🖥 + Obrazovka / okno</button><button data-add="video">🎞 + Video (znělka)</button>
-    <button data-add="image">🖼 + Obrázek / logo</button><button data-add="text">🔤 + Text / titulek</button><button data-add="color">🎨 + Barva</button><button data-add="mic">🎤 + Mikrofon</button></div>
+    <button data-add="image">🖼 + Obrázek / logo</button><button data-add="text">🔤 + Text / titulek</button><button data-add="color">🎨 + Barva</button><button data-add="mic">🎤 + Mikrofon</button><button data-add="guest">👤 + Host přes odkaz</button></div>
     <div class="srclist">${S.sources.map(srcCard).join('') || '<p class="dim">Zatím žádné zdroje. Začni tím, že přidáš kameru.</p>'}</div>`;
 }
 
@@ -838,7 +840,7 @@ function frame(now) {
 /* Smyčka: normálně requestAnimationFrame. Když je okno zakryté nebo minimalizované, prohlížeč ho zastaví –
    pak převezme časovač ve Workeru (ten se nebrzdí), takže vysílání, nahrávání i okna Program/Multiview běží dál. */
 let lastFrameT = 0, lastRafT = 0, frameCost = 0;
-function timedFrame(n) { const t0 = performance.now(); frame(n); frameCost = frameCost * 0.9 + (performance.now() - t0) * 0.1; }
+function timedFrame(n) { const t0 = performance.now(); frame(n); HLT.frame(); frameCost = frameCost * 0.9 + (performance.now() - t0) * 0.1; }
 function rafLoop() { lastRafT = performance.now(); timedFrame(lastRafT); requestAnimationFrame(rafLoop); }
 /* Záloha běží JEN když je okno skryté (nebo rAF úplně stojí přes 1 s) a nikdy se nehromadí:
    Worker pošle další tik až poté, co hlavní vlákno ten předchozí vyřídí (ping-pong). */
@@ -937,11 +939,11 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
+  return {v:1, sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
-    streamCfg:STR.save(), aud:AUD.save(), gfx:GFX.save(), trs:TR.save(), rundown:RUN.save(), ctl:CTL.save(), grades:GR.save()};
+    streamCfg:STR.save(), rem:REM.save(), aud:AUD.save(), gfx:GFX.save(), trs:TR.save(), rundown:RUN.save(), ctl:CTL.save(), grades:GR.save()};
 }
 let saveT = 0;
 function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem('rezie-project', JSON.stringify(serialize())); } catch (e) { console.warn('Uložení selhalo', e); } }, 400); }
@@ -949,7 +951,7 @@ async function restore(d) {
   S.sources.forEach(s => { if (s.stream) s.stream.getTracks().forEach(t => t.stop()); if (s.el instanceof HTMLVideoElement) s.el.remove(); });
   S.sources = [];
   for (const x of d.sources || []) {
-    const s = {id:x.id, type:x.type, name:x.name, deviceId:x.deviceId, res:x.res, props:x.props || {}, micOpts:x.micOpts, color:x.color ? fixColor(x.color) : undefined, hasVideo:false};
+    const s = {id:x.id, type:x.type, name:x.name, guestId:x.guestId, deviceId:x.deviceId, res:x.res, props:x.props || {}, micOpts:x.micOpts, color:x.color ? fixColor(x.color) : undefined, hasVideo:false};
     if (x.audio) s.audio = AUD.loadCh(x.audio);
     try {
       if (s.type === 'camera') await openCamera(s);
@@ -963,7 +965,7 @@ async function restore(d) {
   }
   S.scenes = d.scenes || []; S.previewId = d.previewId; S.programId = d.programId; S.trans = Object.assign({dur:600, swap:true}, d.trans || {});
   if (d.prompter) Object.assign(R.prompter, d.prompter);
-  STR.load(d.streamCfg);
+  STR.load(d.streamCfg); REM.load(d.rem);
   AUD.load(d.aud || (d.masterVol != null ? {fader:d.masterVol} : null)); GFX.load(d.gfx); TR.load(d.trs); RUN.load(d.rundown); CTL.load(d.ctl); GR.load(d.grades);
   if (!sceneById(S.previewId)) S.previewId = S.scenes[0] && S.scenes[0].id;
   if (!sceneById(S.programId)) S.programId = null;
@@ -971,11 +973,12 @@ async function restore(d) {
 async function loadProject() {
   try { S.luts = lutsFromJson(JSON.parse(localStorage.getItem('rezie-luts'))); } catch (e) { S.luts = []; }
   let d = null; try { d = JSON.parse(localStorage.getItem('rezie-project')); } catch (e) {}
+  if (!d || !d.scenes) { try { const b = JSON.parse(localStorage.getItem('rezie-project-bak')); if (b && b.scenes && b.scenes.length) { d = b; setTimeout(() => toast(L('Projekt obnoven ze zálohy')), 1500); } } catch (e) {} }
   if (d && d.scenes && d.scenes.length) await restore(d);
   else {
     S.scenes = ['Kamera', 'Host', 'Znělka', 'Titulky'].map(n => ({id:uid(), name:L(n), layers:[], autoNext:null}));
     S.previewId = S.scenes[0].id;
-    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null);
+    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null); REM.load(null);
   }
 }
 function exportProject() {
@@ -1019,7 +1022,7 @@ function showTab(name) {
   document.querySelectorAll('.tabc').forEach(c => c.classList.toggle('act', c.id === 'tab-' + name));
   if (TAB_RENDER[name]) TAB_RENDER[name]();
 }
-const TAB_RENDER = {stream:() => STR.renderTab(), gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
+const TAB_RENDER = {remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
 function renderAll() { renderScenes(); renderLayers(); renderProps(); renderSources(); renderMixer(); renderRecs(); updateHeader(); Object.values(TAB_RENDER).forEach(f => f()); TR.renderSel(); if (S.page && S.page !== 'rezie') showPage(S.page); }
 function showPage(name) {
   S.page = name;
@@ -1132,8 +1135,10 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, HLT, REM]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();
 };
+// po pádu okna (aplikace pro Mac) se studio spustí samo a naváže na běžící vysílání
+if (/[?&]recover=1/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(() => { const b = $('#startBtn'); if (b) b.click(); }, 300); }

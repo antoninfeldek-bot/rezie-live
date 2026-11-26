@@ -189,3 +189,18 @@ header>button{flex:0 0 auto}
 .stout small{grid-column:2}
 .stout.live{border-color:#166534}.stout.reconnecting,.stout.starting{border-color:#a16207}.stout.cong{border-color:#b45309;background:#1f1708}
 .stout.enc{border-color:#1e40af}
+
+/* --- stav aplikace (horní lišta) --- */
+.health{flex:0 0 auto;font-size:12px;font-variant-numeric:tabular-nums;padding:3px 8px;border-radius:99px;background:var(--panel2,#1e2128);cursor:pointer;white-space:nowrap;color:#86efac}
+.health.warn{color:#fde047}.health.bad{color:#fca5a5;background:#450a0a}
+pre.errlog{max-height:220px;overflow:auto;background:#0b0c0f;padding:8px;border-radius:6px;font-size:11px;white-space:pre-wrap}
+/* --- záložka Dálkově --- */
+.remgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:8px}
+.remcard{background:var(--panel2,#1e2128);border:1px solid var(--line,#2a2e37);border-radius:8px;padding:10px}
+.remcard h4{margin:0 0 8px}
+.remcard .qr{background:#fff;border-radius:6px;padding:4px;width:176px;height:176px;margin-bottom:6px}
+.remcard .qr svg{display:block}
+.remcard code.url{display:block;word-break:break-all;font-size:11px;cursor:pointer}
+.remcard code.url.copied{color:#86efac}
+.guest{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line,#2a2e37)}
+.guest span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0e11">
+<title>Režie Live – připojení hosta</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/remote.css">
+</head>
+<body class="guestp">
+<div id="tally" class="tally"></div>
+<main class="gwrap">
+  <section id="setup" class="gcard">
+    <h1>🎬 <span data-t>Připojení do vysílání</span></h1>
+    <p class="dim" data-t>Režie tě uvidí a uslyší. Ideálně použij sluchátka.</p>
+    <video id="self" class="self mirror" autoplay playsinline muted></video>
+    <button id="allow" class="wide big" data-t>📷 Povolit kameru a mikrofon</button>
+    <div id="form" hidden>
+      <label><span data-t>Tvoje jméno</span><input id="name" maxlength="40" autocomplete="name"></label>
+      <label><span data-t>Kamera</span><select id="cam"></select></label>
+      <label><span data-t>Mikrofon</span><select id="mic"></select></label>
+      <label><span data-t>Kvalita</span><select id="q"><option value="720">720p</option><option value="1080">1080p</option><option value="480">480p</option></select></label>
+      <button id="join" class="wide big red" data-t>Připojit se</button>
+    </div>
+  </section>
+  <section id="live" class="glive" hidden>
+    <video id="ret" class="ret" autoplay playsinline></video>
+    <video id="selfLive" class="pip mirror" autoplay playsinline muted></video>
+    <div id="gstate" class="gstate"></div>
+    <div class="gctl"><button id="bMic">🎤</button><button id="bCam">📷</button><button id="bSnd">🔊</button><button id="bLeave" class="red" data-t>Odejít</button></div>
+  </section>
+  <p id="err" class="msg" hidden></p>
+</main>
+<script src="js/guest-client.js"></script>
+</body>
+</html>

@@ -30,7 +30,8 @@ registerProcessor('rz-tap',Tap);`;
     const fps = 30, h = opts.res === '720' ? 720 : 1080, w = Math.round(h * 16 / 9), vb = opts.vb * 1000;
     const cfg = await pickCodec(w, h, vb);
     const sr = actx.sampleRate;
-    await window.rzNative.start({fps, rate:sr, targets:opts.targets, record:opts.record});
+    if (opts.resume) { const r = await window.rzNative.resume({fps, rate:sr, w, h}); if (!r || !r.running) throw new Error('Vysílání už neběží'); }
+    else await window.rzNative.start({fps, rate:sr, w, h, targets:opts.targets, record:opts.record, slateText:L('Technické potíže – hned jsme zpět')});
     ST.cfg = cfg; ST.vb = ST.vbTarget = vb; ST.sent = 0; ST.samples = 0; ST.forceKey = true; ST.late = 0; ST.queueMax = 0; ST.okSince = performance.now(); ST.codec = cfg.codec;
     // kodér
     ST.enc = new VideoEncoder({
@@ -86,5 +87,8 @@ registerProcessor('rz-tap',Tap);`;
     try { await window.rzNative.stop(); } catch (e) {}
   }
   const stats = () => ({on:ST.on, codec:ST.codec, w:ST.cfg ? ST.cfg.width : 0, h:ST.cfg ? ST.cfg.height : 0, fps:ST.fps, vb:ST.vb, vbTarget:ST.vbTarget, late:ST.late, queue:ST.enc ? ST.enc.encodeQueueSize : 0, hw:ST.cfg && ST.cfg.hardwareAcceleration});
-  return {available, start, stop, onStatus, stats};
+  // po pádu / znovunačtení okna: vysílání v jádru pořád běží (se záložním obrazem) → jen znovu připojit kodér
+  async function resume(opts) { return start({...opts, resume:true}); }
+  const state = () => available() && window.rzNative.state ? window.rzNative.state() : Promise.resolve({running:false});
+  return {available, start, stop, onStatus, stats, resume, state};
 })();

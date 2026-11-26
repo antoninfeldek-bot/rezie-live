@@ -80,5 +80,5 @@ const RUN = (() => {
   function load(d) {
     S.rundown = {items:d && d.items ? d.items : [newItem('Úvodní znělka', 15), newItem('Přivítání', 60), newItem('Hlavní téma', 600), newItem('Rozloučení', 60)], cur:-1, start:null, showStart:null};
   }
-  return {init, load, save:save_, tick, renderTab, startStop, next, prev};
+  return {init, load, save:save_, tick, renderTab, startStop, next, prev, timing};
 })();

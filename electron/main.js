@@ -41,6 +41,7 @@ app.whenReady().then(async () => {
   if (ff) process.env.FFMPEG = ff;
   const port = await freePort(8080);
   process.env.PORT = String(port);
+  process.env.CERT_DIR = path.join(app.getPath('userData'), 'cert');   // certifikát pro dálkové ovládání v místní síti
   try { require(path.join(__dirname, '..', 'server.js')); }
   catch (e) { dialog.showErrorBox('Režie Live', 'Vnitřní server se nespustil: ' + e.message); }
 
@@ -54,7 +55,7 @@ app.whenReady().then(async () => {
 
   mainWin = new BrowserWindow({
     width: 1600, height: 1000, minWidth: 1100, minHeight: 680, backgroundColor: '#0d0e11', title: 'Režie Live', show: false,
-    webPreferences: { backgroundThrottling: false, contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'preload.js') }
+    webPreferences: { backgroundThrottling: false, contextIsolation: true, sandbox: true, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') }
   });
   mainWin.once('ready-to-show', () => { mainWin.maximize(); mainWin.show(); });
   // okna Program / Multiview / Čtečka (window.open) povolit, odkazy ven otevřít v prohlížeči
@@ -70,6 +71,19 @@ app.whenReady().then(async () => {
   streamer.on('status', s => send('rz:status', s));
   streamer.on('needKey', () => send('rz:needKey'));
   streamer.on('log', l => send('rz:log', l));
+  // ---- ochrana proti pádu: když okno režie spadne nebo zamrzne, vysílání jede dál se záložním obrazem a režie se sama obnoví ----
+  let reloading = false, hangT = null;
+  const recover = why => {
+    if (reloading || !mainWin || mainWin.isDestroyed()) return; reloading = true;
+    streamer.log('Režie ' + why + ' – obnovuji…'); streamer.hold();
+    setTimeout(() => { reloading = false; if (mainWin && !mainWin.isDestroyed()) mainWin.loadURL(`http://127.0.0.1:${port}/?recover=1`); }, 800);
+  };
+  mainWin.webContents.on('render-process-gone', (e, d) => { if (d.reason !== 'clean-exit') recover('spadla (' + d.reason + ')'); });
+  mainWin.on('unresponsive', () => { clearTimeout(hangT); hangT = setTimeout(() => { try { mainWin.webContents.forcefullyCrashRenderer(); } catch (er) {} recover('zamrzla'); }, 8000); });
+  mainWin.on('responsive', () => clearTimeout(hangT));
+  mainWin.webContents.on('did-start-navigation', (e, url, inPlace, isMain) => { if (isMain && !inPlace) streamer.hold(); });   // ruční znovunačtení (Cmd+R) taky nesmí shodit vysílání
+  ipcMain.handle('rz:state', () => streamer.state());
+  ipcMain.handle('rz:resume', (e, cfg) => streamer.resume(cfg));
   ipcMain.handle('rz:info', () => ({ ffmpeg: streamer.available(), protocols: streamer.protocols(), videos: path.join(app.getPath('videos'), 'Rezie Live'), platform: process.platform, version: app.getVersion() }));
   ipcMain.handle('rz:start', (e, cfg) => {
     if (cfg.record && cfg.record.dir) cfg.record.path = path.join(cfg.record.dir, cfg.record.name || ('Rezie_' + Date.now() + '.mkv'));

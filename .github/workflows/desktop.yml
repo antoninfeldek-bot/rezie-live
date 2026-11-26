@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    paths: ['electron/**', 'js/**', 'css/**', 'index.html', 'server.js', 'package.json', '.github/workflows/desktop.yml']
+    paths: ['electron/**', 'js/**', 'css/**', '*.html', 'server.js', 'package.json', '.github/workflows/desktop.yml']
 permissions:
   contents: write
 jobs:

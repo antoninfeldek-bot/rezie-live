@@ -26,6 +26,19 @@ V záložce Vysílání vyber **🚀 Nativní vysílání**:
 - obraz je řízený zvukovými hodinami → **zvuk a obraz se nikdy nerozjedou**, i když je okno schované,
 - u YouTube jde zapnout **záložní server** (backup ingest).
 
+### 📱 Dálkové ovládání a hosté (záložka Dálkově)
+Zaškrtni **Povolit v místní síti** – objeví se dva QR kódy:
+- **Ovladač** – naskenuj iPadem nebo mobilem (stejná Wi-Fi). Druhý člověk pak přepíná scény (CUT, AUTO, T-bar), pouští grafiku, míchá zvuk, ovládá scénář a čtečku.
+- **Odkaz pro hosty** – host otevře odkaz v mobilu nebo počítači, povolí kameru a připojí se. V režii se objeví jako zdroj 👤. Vidí program, slyší všechny kromě sebe (mix-minus) a když je ve vysílání, svítí mu červeně „JSI VE VYSÍLÁNÍ“.
+
+Při prvním otevření prohlížeč napíše, že spojení není soukromé (certifikát si aplikace vyrobila sama) – klikni **Podrobnosti → Přesto pokračovat**. Mac se může zeptat, jestli povolit příchozí spojení – dej **Povolit**.
+
+### 🛡 Spolehlivost
+- Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
+- Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.
+- Ukazatel **● fps** nahoře ukazuje, jestli počítač stíhá (klikni pro podrobnosti).
+- **V aplikaci pro Mac**: když okno spadne nebo zamrzne, vysílání **nepřestane** – poběží tabulka „Technické potíže“, režie se sama znovu otevře a program se vrátí do vysílání.
+
 ## 1. Jednorázová instalace
 1. **Node.js** – stáhni z nodejs.org (verze LTS) a nainstaluj.
 2. **FFmpeg** – potřeba jen pro vysílání:

@@ -603,5 +603,5 @@ const GFX = (() => {
     for (const k in RT) delete RT[k];
   }
   return {init, load, save:save_, tick, drawOverlay, renderCtl, renderPage, editorTick, key, toggle, setIn, kill,
-    byIndex:i => S.gfx.list[i], byId:gById, onAirNames};
+    byIndex:i => S.gfx.list[i], byId:gById, onAirNames, isOn:G => { const st = G && RT[G.id]; return !!(st && st.ph !== 'out'); }};
 })();

@@ -7,6 +7,9 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
+const https = require('https');
+const os = require('os');
+const crypto = require('crypto');
 
 const PORT = +process.env.PORT || 8080;
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
@@ -89,6 +92,99 @@ function startFf({targets, url, vb = 4500, fps = 30, res = '1080', enc = 'libx26
   p.on('close', code => { console.log('■ FFmpeg skončil (kód ' + code + ')'); if (ff === p) ff = null; });
 }
 
+/* ================= MÍSTNÍ SÍŤ: dálkové ovládání (iPad, mobil, druhý počítač) a hosté přes odkaz =================
+   Zapíná se až z režie (záložka 📱 Dálkově). Běží na zvláštním portu přes HTTPS (kamera v mobilu jinak nejde).
+   Přístup jen s tajným klíčem v odkazu – bez něj nejde nic ovládat ani se připojit. Vysílání a klíče jsou jen pro tento počítač. */
+const appClients = new Set();      // okno režie (SSE)
+const remotes = new Set();         // připojená dálková ovládání
+const guests = new Map();          // id → {res, name}
+let lan = null, lanState = '{}';
+const LAN_FILES = ['/remote.html', '/guest.html', '/js/remote-client.js', '/js/guest-client.js', '/js/qr.js', '/css/remote.css'];
+const toApp = o => { const m = 'data: ' + JSON.stringify(o) + '\n\n'; appClients.forEach(c => c.write(m)); };
+const sse = (req, res, set, extra) => {
+  res.writeHead(200, {'Content-Type':'text/event-stream', 'Cache-Control':'no-cache', Connection:'keep-alive', 'X-Accel-Buffering':'no'});
+  res.write(': ok\n\n'); if (set) set.add(res);
+  const ping = setInterval(() => res.write(': ping\n\n'), 15000);
+  req.on('close', () => { clearInterval(ping); if (set) set.delete(res); extra && extra(); });
+};
+function certFiles() {
+  const dir = process.env.CERT_DIR || path.join(os.homedir(), '.rezie-live');
+  const key = path.join(dir, 'lan-key.pem'), crt = path.join(dir, 'lan-cert.pem');
+  try { if (fs.existsSync(key) && fs.existsSync(crt)) return {key:fs.readFileSync(key), cert:fs.readFileSync(crt)}; } catch (e) {}
+  try {
+    fs.mkdirSync(dir, {recursive:true});
+    const r = spawnSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256', '-days', '3650', '-subj', '/CN=Rezie Live', '-keyout', key, '-out', crt], {timeout:20000});
+    if (r.status === 0) return {key:fs.readFileSync(key), cert:fs.readFileSync(crt)};
+  } catch (e) {}
+  return null;   // bez OpenSSL → obyčejné HTTP (ovládání funguje, kamera hosta v mobilu ne)
+}
+function lanIps() {
+  const out = [];
+  for (const [name, list] of Object.entries(os.networkInterfaces())) for (const a of list || []) if (a.family === 'IPv4' && !a.internal) out.push({ip:a.address, name});
+  return out.sort((a, b) => (/^(en|wl|eth)/.test(b.name) ? 1 : 0) - (/^(en|wl|eth)/.test(a.name) ? 1 : 0));
+}
+const lanInfo = () => lan ? {on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
+function lanHandler(req, res) {
+  res.setHeader('Cache-Control', 'no-cache');
+  const u = new URL(req.url, 'http://x'), p = u.pathname, k = u.searchParams.get('k') || '';
+  const ok = (key) => key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key));
+  if (req.method === 'GET' && (p === '/' || p === '/remote')) return serveFile(res, '/remote.html');
+  if (req.method === 'GET' && p === '/guest') return serveFile(res, '/guest.html');
+  if (req.method === 'GET' && LAN_FILES.includes(p)) return serveFile(res, p);
+  // dálkové ovládání
+  if (p === '/r/events') {
+    if (!ok(lan.pin)) return send(res, 403, 'Špatný klíč');
+    if (req.method === 'HEAD') return send(res, 200, '');
+    sse(req, res, remotes, () => toApp({t:'remotes', n:remotes.size}));
+    res.write('data: ' + lanState + '\n\n'); toApp({t:'remotes', n:remotes.size}); return;
+  }
+  if (p === '/r/act' && req.method === 'POST') {
+    if (!ok(lan.pin)) return send(res, 403, 'Špatný klíč');
+    return readJson(req).then(d => { if (typeof d.a === 'string' && d.a.length < 80) toApp({t:'act', a:d.a, v:d.v}); send(res, 200, appClients.size ? 'ok' : 'režie neběží'); }).catch(() => send(res, 400, 'chyba'));
+  }
+  // hosté
+  if (p === '/g/events') {
+    if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz');
+    if (req.method === 'HEAD') return send(res, 200, '');
+    const id = (u.searchParams.get('id') || '').replace(/[^\w-]/g, '').slice(0, 40); if (!id) return send(res, 400, 'chybí id');
+    const old = guests.get(id); if (old) try { old.res.end(); } catch (e) {}
+    const g = {res, name:(u.searchParams.get('name') || 'Host').slice(0, 40)}; guests.set(id, g);
+    sse(req, res, null, () => { if (guests.get(id) === g) { guests.delete(id); toApp({t:'leave', id}); } });
+    return;
+  }
+  if (p === '/g/offer' && req.method === 'POST') {
+    if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz');
+    return readJson(req).then(d => {
+      if (!d.id || !guests.has(d.id) || typeof d.sdp !== 'string' || d.sdp.length > 100000) return send(res, 400, 'chyba');
+      if (!appClients.size) return send(res, 503, 'Režie teď neběží');
+      toApp({t:'offer', id:d.id, name:String(d.name || 'Host').slice(0, 40), sdp:d.sdp}); send(res, 200, 'ok');
+    }).catch(() => send(res, 400, 'chyba'));
+  }
+  send(res, 404, 'nenalezeno');
+}
+function serveFile(res, rel) {
+  const file = path.join(__dirname, rel);
+  fs.readFile(file, (e, buf) => e ? send(res, 404, 'nenalezeno') : send(res, 200, buf, MIME[path.extname(file)] || 'application/octet-stream'));
+}
+function lanStart(cfg) {
+  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; return Promise.resolve(lanInfo()); }
+  const c = certFiles();
+  const srv = c ? https.createServer(c, lanHandler) : http.createServer(lanHandler);
+  return new Promise((ok, fail) => {
+    const tryPort = port => {
+      srv.once('error', e => { if (e.code === 'EADDRINUSE' && port < PORT + 120) tryPort(port + 1); else fail(e); });
+      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
+    };
+    tryPort(+process.env.LAN_PORT || PORT + 363);
+  });
+}
+function lanStop() {
+  if (!lan) return; const s = lan.srv; lan = null;
+  remotes.forEach(r => { try { r.end(); } catch (e) {} }); remotes.clear();
+  guests.forEach(g => { try { g.res.end(); } catch (e) {} }); guests.clear();
+  try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch (e) {}
+}
+
 http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -103,6 +199,27 @@ http.createServer(async (req, res) => {
     const ping = setInterval(() => res.write(': ping\n\n'), 20000);
     req.on('close', () => { clearInterval(ping); clients.delete(res); });
     return;
+  }
+  // --- místní síť (jen z tohoto počítače) ---
+  if (/^\/(lan|app-events)/.test(url)) {
+    const o = req.headers.origin;   // cizí webová stránka v prohlížeči nesmí síť zapnout ani číst
+    if (o && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)) return send(res, 403, 'zakázáno');
+  }
+  if (url === '/app-events') { sse(req, res, appClients); return; }
+  if (url === '/lan' && req.method === 'POST') {
+    try { const d = await readJson(req); if (d.on) return send(res, 200, JSON.stringify(await lanStart(d)), 'application/json'); lanStop(); return send(res, 200, JSON.stringify(lanInfo()), 'application/json'); }
+    catch (e) { return send(res, 500, 'Síť se nespustila: ' + e.message); }
+  }
+  if (url === '/lan' && req.method === 'GET') return send(res, 200, JSON.stringify(lanInfo()), 'application/json');
+  if (url === '/lan/state' && req.method === 'POST') {
+    let d = ''; req.on('data', c => { d += c; if (d.length > 2e6) req.destroy(); });
+    req.on('end', () => { lanState = d || '{}'; const m = 'data: ' + lanState + '\n\n'; remotes.forEach(r => r.write(m)); send(res, 200, String(remotes.size)); });
+    return;
+  }
+  const gm = /^\/lan\/guest\/([\w-]+)$/.exec(url);
+  if (gm && req.method === 'POST') {
+    try { const d = await readJson(req), g = guests.get(gm[1]); if (!g) return send(res, 404, 'host není připojen'); g.res.write('data: ' + JSON.stringify(d) + '\n\n'); return send(res, 200, 'ok'); }
+    catch (e) { return send(res, 400, 'chyba'); }
   }
   const act = /^\/action\/([\w.-]+)$/.exec(url);
   if (act) {
