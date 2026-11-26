@@ -38,6 +38,7 @@ const DISK = (() => {
       <div class="btns"><button id="dkPick">Změnit složku</button><button id="dkForget">Přestat ukládat do složky</button></div>`;
     else if (ST.dir) b.innerHTML = `<p>📁 Složka „${esc(ST.dir.name)}“ je vybraná, ale prohlížeč potřebuje znovu potvrdit přístup.</p><div class="btns"><button id="dkRegrant" class="primary">Povolit přístup ke složce</button><button id="dkPick">Vybrat jinou</button></div>`;
     else b.innerHTML = `<p class="dim">Teď se nahrávky drží v paměti a stáhnou se po zastavení (na dlouhé nahrávání to není ideální).</p><div class="btns"><button id="dkPick" class="primary">📁 Vybrat složku pro nahrávky</button></div>`;
+    b.insertAdjacentHTML('beforeend', `<p class="dim" style="margin-top:8px">Formát nahrávek v tomhle prohlížeči: ${recFormatInfo()}</p>`);
     const p = $('#dkPick'), f = $('#dkForget'), g = $('#dkRegrant'); if (p) p.onclick = pick; if (f) f.onclick = forget; if (g) g.onclick = regrant;
   }
   async function init() {

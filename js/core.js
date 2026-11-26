@@ -725,9 +725,17 @@ function tickPrompter(dt) {
 
 /* ================= Nahrávání ================= */
 function pickMime(kind) {
-  const list = kind === 'audio' ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
-    : ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  const list = kind === 'audio' ? ['audio/mp4;codecs=mp4a.40.2', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+    : ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.4d0028,mp4a.40.2', 'video/mp4;codecs=avc1.42e01f,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2',
+       'video/mp4;codecs=avc1.640028,opus', 'video/mp4;codecs=avc1,opus', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
   return list.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+}
+function recFormatInfo() {
+  const m = pickMime('video');
+  if (/avc1.*mp4a/.test(m)) return '✅ MP4 · H.264 + AAC – otevře ho Premiere, DaVinci, Final Cut i telefon.';
+  if (/avc1/.test(m)) return '🟡 MP4 · H.264 + zvuk Opus – obraz jde všude, zvuk některé střihové programy (Premiere) neumí. DaVinci a VLC ano.';
+  if (m.includes('mp4')) return '🟠 MP4 · tenhle prohlížeč neumí H.264 – uloží se VP9. Pro střih použij Chrome nebo Edge na Windows/Macu, nebo soubor převeď (HandBrake).';
+  return '🟠 WebM – přehraje VLC a DaVinci, pro Premiere převeď (HandBrake).';
 }
 let pgTrack = null;
 function outStream() {
