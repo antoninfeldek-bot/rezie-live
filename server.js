@@ -41,7 +41,7 @@ const ENC_ARGS = {
 };
 
 function send(res, code, body, type = 'text/plain; charset=utf-8') {
-  res.writeHead(code, { 'Content-Type': type });
+  res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
   res.end(body);
 }
 
