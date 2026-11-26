@@ -31,7 +31,7 @@ const CTL = (() => {
     add('page.audio', 'Stránka Zvuk', () => showPage('audio'), 'Stránky'); add('page.color', 'Stránka Barvy', () => showPage('color'), 'Stránky');
     return A;
   }
-  function tbar(v) { const tb = $('#tbar'); tb.value = Math.round(v * 1000); tb.dispatchEvent(new Event('input')); }
+  function tbar(v) { TR.tbar(Math.round(v * 1000)); }
   function run(id, v) {
     const a = actions().find(x => x.id === id); if (!a) return false;
     try { a.cont ? a.run(v == null ? 1 : v) : a.run(); } catch (e) { console.error(e); }

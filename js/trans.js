@@ -12,7 +12,7 @@ const TR = (() => {
 
   const cv = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
   const A = cv(), B = cv(), T = cv(), ax = A.getContext('2d'), bx = B.getContext('2d'), tx = T.getContext('2d');
-  let tbDir = 1;
+  let tbDir = 1, tbVal = 0, tbSet = () => {};
   const cur = () => S.trs.list.find(t => t.id === S.trs.cur) || S.trs.list[0];
 
   function start(from, to, manual) {
@@ -132,20 +132,43 @@ const TR = (() => {
   function init() {
     renderSel();
     $('#trSel').onchange = e => select(e.target.value);
-    const tb = $('#tbar');
-    // T-bar jako v televizi: po dokončení zůstane nahoře a další přechod se dělá stažením dolů
-    tb.addEventListener('input', () => {
-      const raw = +tb.value / 1000, v = tbDir > 0 ? raw : 1 - raw, rest = () => { tb.value = tbDir > 0 ? 0 : 1000; };
+    // T-bar jako v televizi: po dokončení zůstane nahoře a další přechod se dělá stažením dolů.
+    // Vlastní ovládací prvek (ne <input type=range>), aby fungoval v každém prohlížeči.
+    const tb = $('#tbar'), fill = tb.querySelector('.tbfill'), handle = tb.querySelector('.tbhandle');
+    const show = () => { const pct = tbVal / 10; handle.style.bottom = `calc(${pct}% - ${pct * 0.34}px)`; fill.style.height = pct + '%'; };
+    const rest = () => { tbVal = tbDir > 0 ? 0 : 1000; show(); };
+    const blocked = () => {
+      if (!S.previewId || S.previewId === S.programId) return 'V náhledu je stejná scéna jako v programu – nejdřív vyber jinou scénu do náhledu.';
+      if (cur() && cur().type === 'cut') return 'Vybraný přechod je „Střih“ – T-bar potřebuje přechod s délkou (např. Prolínačka).';
+      return '';
+    };
+    tbSet = raw => {   // raw 0..1000 (0 = dole)
+      tbVal = clamp(raw, 0, 1000); show();
+      const v = tbDir > 0 ? tbVal / 1000 : 1 - tbVal / 1000;
       if (!S.active) {
         if (v <= 0.002) return;
-        if (!S.previewId || S.previewId === S.programId) { rest(); return; }
+        if (blocked()) { rest(); return; }
         take('manual'); if (!S.active || !S.active.manual) { S.active = null; rest(); return; }
       }
       if (!S.active.manual) return;
       S.active.p = v;
-      if (v >= 0.998) { S.active = null; tbDir = -tbDir; tb.value = tbDir > 0 ? 0 : 1000; }
+      if (v >= 0.998) { S.active = null; tbDir = -tbDir; rest(); }
       else if (v <= 0) { const a = S.active; S.active = null; S.programId = a.from; S.previewId = a.to; renderScenes(); renderLayers(); renderProps(); }
+    };
+    let dragging = false;
+    const fromY = e => { const r = tb.getBoundingClientRect(), hh = 34; return (1 - (e.clientY - r.top - hh / 2) / Math.max(1, r.height - hh)) * 1000; };
+    tb.addEventListener('pointerdown', e => {
+      if (!(S.active && S.active.manual)) { const why = blocked(); if (why) { toast(why); return; } }
+      dragging = true; tb.setPointerCapture(e.pointerId); tb.classList.add('drag'); tbSet(fromY(e)); e.preventDefault();
     });
+    tb.addEventListener('pointermove', e => { if (dragging) tbSet(fromY(e)); });
+    const end = () => {
+      if (!dragging) return; dragging = false; tb.classList.remove('drag');
+      if (S.active && S.active.manual) { const v = S.active.p; if (v >= 0.95) tbSet(tbDir > 0 ? 1000 : 0); else if (v <= 0.05) tbSet(tbDir > 0 ? 0 : 1000); }   // dotažení až na konec
+      if (!S.active) rest();
+    };
+    tb.addEventListener('pointerup', end); tb.addEventListener('pointercancel', end);
+    show();
     const box = $('#tab-trans');
     box.addEventListener('click', async e => {
       const act = e.target.dataset.ta; if (!act) return;
@@ -172,5 +195,5 @@ const TR = (() => {
     S.trs = d && d.list && d.list.length ? {cur:d.cur, list:d.list.map(t => Object.assign(mk(t.name, t.type, t.dur), t))} : {list:defaults(), cur:null};
     if (!S.trs.list.find(t => t.id === S.trs.cur)) S.trs.cur = S.trs.list[0].id;
   }
-  return {start, compose, init, renderTab, renderSel, select, save:save_, load, cur, TYPES};
+  return {start, compose, init, renderTab, renderSel, select, save:save_, load, cur, TYPES, tbar:v => tbSet(v)};
 })();

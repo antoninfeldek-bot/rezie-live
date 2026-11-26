@@ -347,6 +347,10 @@ function removeSource(s) {
   renderAll(); save();
 }
 
+function toast(msg) {
+  let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3500);
+}
 /* ---------- dialogy ---------- */
 function dialog(title, html, info) {
   return new Promise(res => {
@@ -437,13 +441,14 @@ function take(mode) {
   const from = S.programId;
   const before = sceneSources(sceneById(from), new Set()), after = sceneSources(sceneById(to), new Set());
   S.programId = to;
-  if (mode !== 'cut' && from && from !== to) TR.start(from, to, mode === 'manual');
+  if (mode !== 'cut' && from !== to) TR.start(from, to, mode === 'manual');
   for (const id of after) {
     if (before.has(id)) continue;
     const s = srcById(id);
     if (s && s.type === 'video' && s.el instanceof HTMLVideoElement) { s._manual = false; if (s.props.restart) s.el.currentTime = 0; s.el.play().catch(() => {}); }
   }
   if (S.trans.swap && from && from !== to) { S.previewId = from; S.selLayer = null; }
+  else if (S.trans.swap && !from && S.scenes.length > 1) { const i = S.scenes.findIndex(s => s.id === to); S.previewId = S.scenes[(i + 1) % S.scenes.length].id; S.selLayer = null; }
   renderScenes(); renderLayers(); renderProps(); save();
 }
 function takeScene(id, mode) { S.previewId = id; take(mode); }
@@ -806,8 +811,9 @@ function frame(now) {
   if (gl) {
     if (S.active && !TR.compose(now)) S.active = null;
     if (!S.active) { renderScene(prg); pgx.drawImage(glc, 0, 0); }
+    const slow = frameCost > 25 || document.hidden;   // slabší počítač / skryté okno: náhled stačí kreslit méně často
     if (prv === prg && !S.active) pvbx.drawImage(pg, 0, 0, 960, 540);
-    else { renderScene(prv); pvbx.drawImage(glc, 0, 0, 960, 540); }
+    else if (!slow || frameNo % 3 === 0) { renderScene(prv); pvbx.drawImage(glc, 0, 0, 960, 540); }
     GFX.tick(dt, now); GFX.drawOverlay(pgx, now);
     pvx.drawImage(pvBuf, 0, 0); drawOverlay();
   }
@@ -825,21 +831,29 @@ function frame(now) {
   }
   if (masterAn) { R._mm = R._mm || {}; $('#vuMaster').style.height = (100 - meterPct(masterAn, R._mm) * 100) + '%'; }
   const wp = R.wins.program; if (wp && !wp.closed) wp._c._x.drawImage(pg, 0, 0);
-  const wm = R.wins.multi; if (wm && !wm.closed && frameNo % 2 === 0) drawMulti(wm._c, onAir);
+  const wm = R.wins.multi; if (wm && !wm.closed && frameNo % (frameCost > 25 ? 4 : 2) === 0) drawMulti(wm._c, onAir);
   tickPrompter(dt);
   for (const f of [() => AUD.tick(), () => GR.tick(now), () => RUN.tick(now), () => GFX.editorTick(dt, now)]) { try { f(); } catch (e) { if (!frame._e) { console.error(e); frame._e = 1; } } }
 }
 /* Smyčka: normálně requestAnimationFrame. Když je okno zakryté nebo minimalizované, prohlížeč ho zastaví –
    pak převezme časovač ve Workeru (ten se nebrzdí), takže vysílání, nahrávání i okna Program/Multiview běží dál. */
-let lastFrameT = 0, lastRafT = 0;
-function rafLoop(now) { lastRafT = performance.now(); frame(lastRafT); requestAnimationFrame(rafLoop); }
-const bgTick = () => { const n = performance.now(); if ((document.hidden || n - lastRafT > 250) && n - lastFrameT > 30) frame(n); };
+let lastFrameT = 0, lastRafT = 0, frameCost = 0;
+function timedFrame(n) { const t0 = performance.now(); frame(n); frameCost = frameCost * 0.9 + (performance.now() - t0) * 0.1; }
+function rafLoop() { lastRafT = performance.now(); timedFrame(lastRafT); requestAnimationFrame(rafLoop); }
+/* Záloha běží JEN když je okno skryté (nebo rAF úplně stojí přes 1 s) a nikdy se nehromadí:
+   Worker pošle další tik až poté, co hlavní vlákno ten předchozí vyřídí (ping-pong). */
+function bgTick(wk) {
+  const n = performance.now();
+  if ((document.hidden || n - lastRafT > 1000) && n - lastFrameT > 30) timedFrame(n);
+  if (wk) wk.postMessage(0);
+}
 function startLoop() {
   requestAnimationFrame(rafLoop);
   try {
-    const wk = new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),33)'], {type:'text/javascript'})));
-    wk.onmessage = bgTick;
-  } catch (e) { setInterval(bgTick, 33); }
+    const code = 'let wait=false;onmessage=()=>{wait=false};setInterval(()=>{if(!wait){wait=true;postMessage(0)}},40)';
+    const wk = new Worker(URL.createObjectURL(new Blob([code], {type:'text/javascript'})));
+    wk.onmessage = () => bgTick(wk);
+  } catch (e) { setInterval(() => bgTick(null), 40); }
 }
 function drawOverlay() {
   const l = selLayerObj(); if (!l) return; const s = srcById(l.sourceId); const r = layerRect(l, s), k = 0.5;
