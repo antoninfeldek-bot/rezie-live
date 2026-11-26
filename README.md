@@ -2,7 +2,7 @@
 
 **Online:** https://antoninfeldek-bot.github.io/rezie-live/
 
-Webová režie pro živé vysílání: webkamery, scény s vrstvami, klíč na zeleném pozadí, LUTy (.cube) a barevné korekce, titulky, znělky, mix zvuku, čtečka (teleprompter), více monitorů, nahrávání (program + ISO) a stream na YouTube / Twitch / Facebook.
+Webová režie pro živé vysílání se 4 pracovními stránkami: **Režie** (scény, klíč, přechody vč. stingeru a T-baru, scénář), **Grafika** (editor animovaných titulků s klíčovými snímky), **Zvuk** (mix pult s modulárními efekty: noise reduction, gate, EQ, kompresor, de-esser, limiter, LUFS) a **Barvy** (lift/gamma/gain, křivky, LUT, waveform, parade, vektorskop, histogram). Dále ovládání klávesami, MIDI a Stream Deckem, nahrávání rovnou na disk, titulky, znělky, mix zvuku, čtečka (teleprompter), více monitorů, nahrávání (program + ISO) a stream na YouTube / Twitch / Facebook.
 
 ## Rychlý start
 ```

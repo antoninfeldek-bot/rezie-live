@@ -1,11 +1,11 @@
 # 🎬 Režie Live – návod
 
 ## Co je ve složce
-- **index.html** – samotná režie (běží v prohlížeči Chrome / Edge)
+- **index.html** + složky **css/** a **js/** – samotná režie (běží v prohlížeči Chrome / Edge)
 - **server.js** – malý pomocný program, který posílá vysílání na YouTube / Twitch / Facebook
 - **NAVOD.md** – tenhle návod
 
-Všechny tři soubory dej do **jedné složky**.
+Všechno nech pohromadě v **jedné složce** (tak, jak je to na GitHubu).
 
 ## 1. Jednorázová instalace
 1. **Node.js** – stáhni z nodejs.org (verze LTS) a nainstaluj.
@@ -34,12 +34,45 @@ Režie je taky online: **https://antoninfeldek-bot.github.io/rezie-live/** – k
 2. Klikni na **🎯** a potom do zeleného pozadí v náhledu.
 3. Posuň **Podobnost**, až zelená zmizí. Pod kameru dej vrstvu s pozadím (obrázek, video nebo barvu).
 
-### LUTy a barvy
-1. Vyber vrstvu s kamerou → záložka **Vlastnosti** → sekce **🎨 Barvy a LUT**.
-2. **📂 Nahrát LUT (.cube)** – LUT z DaVinci (pravý klik na snímek → Generate LUT → 33 Point Cube) nebo převodní LUT ze S-Logu do Rec.709.
-3. Dolaď **Sílu LUTu**, expozici, teplotu, tint, kontrast a saturaci.
-4. **Použít na všechny kamery** – stejné barvy na všechny kamery najednou.
-Barvy platí pro kameru ve všech scénách. LUTy se ukládají v prohlížeči i v projektu (💾).
+### Čtyři pracovní stránky (nahoře v liště)
+- **🎬 Režie** – přepínání scén, náhled a program, všechny záložky dole.
+- **✨ Grafika** – editor titulků a animací (jako After Effects).
+- **🎚 Zvuk** – mix pult s efekty.
+- **🎨 Barvy** – grading, LUTy a scopy.
+
+### Grafika a animace (stránka ✨ Grafika)
+- Grafika = vrstvy (text, obdélník, obrázek, běžící lišta). Vlevo hotové šablony: jmenovka, logo, ŽIVĚ, lišta se zprávami, velký titulek, odpočet, hodiny.
+- **Časová osa dole:** zelená část = příjezd (IN), pak grafika čeká, červená = odjezd (OUT). Značky IN a OUT posuneš na pravítku.
+- **◆ = klíčový snímek.** Posuň přehrávací hlavu, změň hodnotu (X, Y, krytí, měřítko, rotace, ořez, rozostření…) a klikni na ◆. Snímky jdou tahat myší, u každého jde nastavit průběh (plynule, s překmitem…).
+- **Rychlá animace:** vyber vrstvu → „Příjezd“ a „Odjezd“ (vjezd zleva, odkrytí, zvětšení…) → Použít.
+- **Pole:** napiš do textu třeba `{jmeno}` a v Režii → záložka **Grafika** to přepíšeš za běhu bez otevírání editoru. Speciální: `{time}`, `{hm}`, `{date}`, `{cd}` (odpočet), `{elapsed}`.
+- Do vysílání: Režie → záložka **Grafika** → ON AIR, nebo klávesy **F1–F8**. Grafika jde přes všechny scény.
+- Ctrl+Z = zpět, mezerník = přehrát animaci.
+
+### Přechody (záložka Přechody)
+Prolínačka, přes barvu, stíračka, najetí, vytlačení, zoom, kruh, rozmazání a **stinger** (vlastní animace – video s průhledností, např. WebM z After Effects, + bod střihu). Každý jde upravit a uložit. Vybraný přechod jede na **AUTO (Enter)** a **T-bar** (svislý jezdec uprostřed – táhni ručně).
+
+### Mix pult (stránka 🎚 Zvuk)
+- Každý kanál má **řetězec efektů**, který si poskládáš sám: Ořez basů, Potlačení šumu, Gate, EQ, Kompresor, De-esser, Limiter, Zpoždění, Mono, Zesílení. Pořadí měníš šipkami, každý jde vypnout.
+- **Předvolby:** 🎙 Hlas, 🌬 Hlas v hlučném prostředí, 🎵 Hudba – a můžeš si uložit vlastní.
+- **Potlačení šumu:** buď 2 s potichu a klikni „Naučit šum“.
+- **EQ:** tahej body v grafu, kolečko myši mění šířku.
+- **S (solo)** = poslech jen jednoho kanálu ve sluchátkách (do vysílání nejde). **GR** = kolik kompresor/limiter ubírá.
+- Na **MASTERU** je limiter na −1 dB, aby vysílání nikdy nepřebudilo. Nahoře je měřák hlasitosti v **LUFS** (YouTube ≈ −14).
+
+### Barvy (stránka 🎨 Barvy)
+- Vlevo vyber kameru. Kola **Lift / Gamma / Gain / Offset** (Shift = jemně, dvojklik = vynulovat), **křivky** Y/R/G/B, expozice, teplota, tint, kontrast s pivotem, saturace, posun odstínů a **LUT (.cube)** se silou.
+- **Scopy:** waveform, RGB parade, vektorskop (žlutá čára = tón pleti), histogram.
+- **Před / po**, kopírovat a vložit grade, „Na všechny kamery“, galerie uložených gradů.
+- LUT z DaVinci: pravý klik na snímek → Generate LUT → 33 Point Cube.
+
+### Scénář (záložka Scénář)
+Bloky pořadu s délkou, scénou, grafikou, textem do čtečky a poznámkami. **N** = další blok, **B** = předchozí. Ukazuje, kolik zbývá (červeně přesah) a kdy pořad skončí. Při přechodu na blok se sama přepne scéna, zapne grafika a nahraje text do čtečky.
+
+### Ovládání (záložka Ovládání)
+- **Klávesy:** u každé akce „Naučit“ → zmáčkni klávesu.
+- **MIDI ovladač:** „Připojit MIDI“ → „Naučit MIDI“ → zmáčkni tlačítko / pohni faderem. Fadery jdou na hlasitost a T-bar.
+- **Stream Deck / Companion:** spusť `node server.js`, zaškrtni „Povolit ovládání přes server.js“ a na Stream Decku dej tlačítku akci **Website** (GET na pozadí) s adresou z tabulky, např. `http://localhost:8080/action/take.cut`. Funguje i když okno není aktivní.
 
 ### Znělka, která se sama přepne
 1. Udělej scénu „Znělka“ a dej do ní video.
@@ -66,10 +99,9 @@ Záložka **Zvuk**: hlasitost každého mikrofonu, ztlumení (M), zpoždění (k
 ⚠ Klíč streamu nikomu neukazuj – kdo ho má, může vysílat na tvůj kanál. Aplikace si ho neukládá.
 
 ## 5. Nahrávání
-- **● Nahrávat program** – nahraje to, co jde ven.
-- **● Nahrávat vše (ISO)** – program + každou kameru a mikrofon zvlášť, ve stejnou chvíli. Potom to můžeš znovu sestříhat.
-- Soubory se po zastavení samy stáhnou (Chrome se může zeptat na „stahování více souborů“ – povol).
-- Nahrávka se drží v paměti počítače, dokud ji nezastavíš. Na hodně dlouhé nahrávání (víc než ~1 hodina) potřebuješ dost RAM.
+- **● Program** – nahraje to, co jde ven. **● Vše (ISO)** – program + každou kameru a mikrofon zvlášť, ve stejnou chvíli.
+- **Doporučeno:** záložka Nahrávky → **📁 Vybrat složku pro nahrávky**. Pak se všechno zapisuje **průběžně rovnou na disk** – nic se nedrží v paměti, jde nahrávat hodiny a při pádu prohlížeče soubor zůstane. Po novém spuštění jen potvrdíš přístup ke složce.
+- Bez vybrané složky se nahrávka drží v paměti a po zastavení se stáhne.
 
 ## 6. Když něco nejde
 - **Kamera je černá** – jedna kamera jde většinou otevřít jen jednou. Zavři jiné programy, které ji používají (Zoom, OBS, Teams).

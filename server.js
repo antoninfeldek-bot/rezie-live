@@ -12,6 +12,8 @@ const PORT = +process.env.PORT || 8080;
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 let ff = null;
 let last = '';
+const clients = new Set();   // Server-Sent Events – vzdálené ovládání (Stream Deck, Companion)
+const MIME = {'.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml', '.ico':'image/x-icon'};
 
 function hasFfmpeg() {
   try { return spawnSync(FFMPEG, ['-version']).status === 0; } catch (e) { return false; }
@@ -69,9 +71,24 @@ http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
   const url = req.url.split('?')[0];
 
-  if (req.method === 'GET' && (url === '/' || url === '/index.html' || url === '/rezie.html')) {
-    return fs.readFile(path.join(__dirname, 'index.html'), (e, buf) =>
-      e ? send(res, 404, 'index.html nenalezen vedle server.js') : send(res, 200, buf, 'text/html; charset=utf-8'));
+  if (url === '/events') {
+    res.writeHead(200, {'Content-Type':'text/event-stream', 'Cache-Control':'no-cache', Connection:'keep-alive'});
+    res.write(': ok\n\n'); clients.add(res);
+    const ping = setInterval(() => res.write(': ping\n\n'), 20000);
+    req.on('close', () => { clearInterval(ping); clients.delete(res); });
+    return;
+  }
+  const act = /^\/action\/([\w.-]+)$/.exec(url);
+  if (act) {
+    const q = new URL(req.url, 'http://x').searchParams, v = q.has('v') ? +q.get('v') : undefined;
+    const msg = 'data: ' + JSON.stringify({a:act[1], v}) + '\n\n'; clients.forEach(c => c.write(msg));
+    return send(res, 200, clients.size ? 'ok' : 'Režie není připojená (zapni v Ovládání „Povolit ovládání přes server.js“)');
+  }
+  if (req.method === 'GET' && !['/status'].includes(url)) {
+    const rel = url === '/' ? '/index.html' : decodeURIComponent(url);
+    const file = path.normalize(path.join(__dirname, rel));
+    if (!file.startsWith(__dirname + path.sep) || /server\.js$|\.md$|\.git/.test(file)) return send(res, 404, 'nenalezeno');
+    return fs.readFile(file, (e, buf) => e ? send(res, 404, 'nenalezeno') : send(res, 200, buf, MIME[path.extname(file)] || 'application/octet-stream'));
   }
   if (req.method === 'GET' && url === '/status') {
     return send(res, 200, JSON.stringify({ running: !!ff, ffmpeg: hasFfmpeg(), last }), 'application/json');
