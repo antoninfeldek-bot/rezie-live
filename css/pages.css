@@ -115,3 +115,47 @@ code.url.copied{background:#14532d;color:#fff}
 .rdt tr.cur td{background:#14321f}
 .rdt tr.done td{opacity:.5}
 .rdt td button{padding:1px 6px}
+
+/* ===== opravy rozložení a responzivita ===== */
+header{gap:5px;min-width:0;overflow:hidden}
+header>button{flex:0 0 auto}
+#clock{white-space:nowrap;flex:0 0 auto}
+#rdMini{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;min-width:0}
+#page-rezie.act{grid-template-rows:minmax(0,1fr) clamp(250px,36vh,400px)}
+#trans{gap:6px;min-height:0;overflow:hidden;justify-content:flex-start;padding-top:22px}
+#trans .tbig{flex:0 0 auto}
+.tbarw{flex:1 1 90px;min-height:40px;height:auto}
+.vmeter{flex:0 1 110px;min-height:24px;height:auto;margin:0 auto}
+.tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;padding:5px 9px}
+.panel{overflow:hidden}
+.tabc{overscroll-behavior:contain}
+.lbl{white-space:nowrap;overflow:hidden}
+.lbl span{overflow:hidden;text-overflow:ellipsis}
+.scene{word-break:break-word}
+.layer .nm{min-width:0}
+@media (max-width:1560px){ header .t2{display:none} }
+@media (max-width:1300px){ header .t{display:none} #pages button{padding:5px 9px} #bottom{grid-template-columns:190px 220px minmax(0,1fr)} #monitors{grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr)} }
+@media (max-height:820px){ .tbig{padding:8px 4px;font-size:14px} .tbig small{display:none} }
+/* opravy po kontrole */
+.ph{gap:6px}
+.ph>span{display:flex;gap:2px;flex-wrap:nowrap}
+.ph button{padding:2px 5px;font-size:11px}
+.strip>*{flex-shrink:0}
+.strip .fxs{flex:0 1 auto;min-height:26px}
+.strip .fadw{flex:1 1 60px;min-height:60px}
+.fxb{flex:0 0 auto}
+.gx{grid-template-rows:minmax(0,1fr) clamp(170px,28vh,260px)}
+.trc .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+.srclist{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.rdnow{flex:1 1 100%;order:5}
+.rdt td:last-child{white-space:nowrap;width:1%}
+.rdt td:first-child{width:1%}
+.cx-ctl{grid-template-columns:auto 270px minmax(260px,1fr)}
+@media (max-width:1560px){
+  .cx-wheels{gap:8px} .wh{width:128px} .wheel{width:116px;height:116px} .whm{width:116px} .whv{font-size:9px}
+  .cx{grid-template-columns:190px minmax(0,1fr) 330px}
+  .cx-sl .rng{grid-template-columns:110px 1fr 44px}
+}
+@media (max-height:820px){ .cx{grid-template-rows:minmax(0,1fr) 270px} .wheel{width:110px;height:110px} #cxCrv{height:170px} }
+.whl{white-space:nowrap;overflow:hidden;font-size:10px}

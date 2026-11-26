@@ -355,9 +355,10 @@ function removeSource(s) {
 }
 
 /* ---------- dialogy ---------- */
-function dialog(title, html) {
+function dialog(title, html, info) {
   return new Promise(res => {
     const d = $('#dlg'); $('#dlgT').textContent = title; $('#dlgB').innerHTML = html; d.returnValue = '';
+    const bs = d.querySelectorAll('menu button'); bs[0].style.display = info ? 'none' : ''; bs[1].textContent = info ? 'Zavřít' : 'OK';
     d.onclose = () => {
       if (d.returnValue !== 'ok') return res(null);
       const o = {}; d.querySelectorAll('#dlgB [name]').forEach(el => o[el.name] = el.type === 'checkbox' ? el.checked : el.value);
@@ -662,7 +663,18 @@ function drawMulti(c, onAir) {
   tallyBox(x, 0, 0, 960, 540, '#22c55e', 'NÁHLED' + (pvS ? ': ' + pvS.name : ''));
   tallyBox(x, 960, 0, 960, 540, '#ef4444', 'PROGRAM' + (pgS ? ': ' + pgS.name : ''));
   const inPv = sceneSources(pvS, new Set());
-  S.sources.filter(s => s.hasVideo && s.el && s.type !== 'color').slice(0, 8).forEach((s, i) => {
+  // poslední políčko: hodiny, stav vysílání a hlasitost
+  { const bx = 1440, by = 810, now = performance.now(); x.fillStyle = '#111318'; x.fillRect(bx + 4, by + 4, 472, 262);
+    x.fillStyle = '#fff'; x.font = '600 64px ui-monospace, Menlo, Consolas, monospace'; x.textAlign = 'center'; x.fillText(new Date().toLocaleTimeString('cs-CZ'), bx + 240, by + 100);
+    x.font = '600 26px system-ui, sans-serif';
+    const st = [R.stream ? '● ŽIVĚ ' + fmtT(now - R.stream.start) : '', R.rec ? 'REC ' + fmtT(now - R.rec.start) : '', R.iso.length ? 'ISO ' + fmtT(now - R.isoStart) : ''].filter(Boolean).join('   ');
+    x.fillStyle = st ? '#ef4444' : '#6b7280'; x.fillText(st || 'nevysílá se', bx + 240, by + 150);
+    const gn = GFX.onAirNames(); x.fillStyle = '#fde68a'; x.font = '22px system-ui, sans-serif'; if (gn.length) x.fillText('✨ ' + gn.join(', ').slice(0, 40), bx + 240, by + 190);
+    x.textAlign = 'left';
+    if (masterAn) { R._mvm = R._mvm || {}; const p = meterPct(masterAn, R._mvm); const gg = x.createLinearGradient(bx + 30, 0, bx + 450, 0); gg.addColorStop(0, '#16a34a'); gg.addColorStop(0.7, '#16a34a'); gg.addColorStop(0.72, '#eab308'); gg.addColorStop(0.88, '#eab308'); gg.addColorStop(0.9, '#ef4444');
+      x.fillStyle = '#23262c'; x.fillRect(bx + 30, by + 220, 420, 18); x.fillStyle = gg; x.fillRect(bx + 30, by + 220, 420 * p, 18); }
+    x.strokeStyle = '#3a3d44'; x.lineWidth = 5; x.strokeRect(bx + 3, by + 3, 474, 264); }
+  S.sources.filter(s => s.hasVideo && s.el && s.type !== 'color').slice(0, 7).forEach((s, i) => {
     const bx = (i % 4) * 480, by = 540 + Math.floor(i / 4) * 270;
     drawContain(x, s.el, bx + 5, by + 5, 470, 260);
     tallyBox(x, bx, by, 480, 270, onAir.has(s.id) ? '#ef4444' : inPv.has(s.id) ? '#22c55e' : '#3a3d44', s.name);
@@ -823,7 +835,8 @@ const pv = $('#pv'), pg = $('#pg'); pv.width = 960; pv.height = 540; pg.width = 
 const pvx = pv.getContext('2d'), pgx = pg.getContext('2d');
 const pvBuf = document.createElement('canvas'); pvBuf.width = 960; pvBuf.height = 540; const pvbx = pvBuf.getContext('2d');
 let lastT = performance.now();
-function loop(now) {
+function frame(now) {
+  if (now - lastFrameT < 4) return; lastFrameT = now;
   frameNo++; const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
   const prv = prevScene(), prg = sceneById(S.programId);
   if (gl) {
@@ -850,8 +863,19 @@ function loop(now) {
   const wp = R.wins.program; if (wp && !wp.closed) wp._c._x.drawImage(pg, 0, 0);
   const wm = R.wins.multi; if (wm && !wm.closed && frameNo % 2 === 0) drawMulti(wm._c, onAir);
   tickPrompter(dt);
-  for (const f of [() => AUD.tick(), () => GR.tick(now), () => RUN.tick(now), () => GFX.editorTick(dt, now)]) { try { f(); } catch (e) { if (!loop._e) { console.error(e); loop._e = 1; } } }
-  requestAnimationFrame(loop);
+  for (const f of [() => AUD.tick(), () => GR.tick(now), () => RUN.tick(now), () => GFX.editorTick(dt, now)]) { try { f(); } catch (e) { if (!frame._e) { console.error(e); frame._e = 1; } } }
+}
+/* Smyčka: normálně requestAnimationFrame. Když je okno zakryté nebo minimalizované, prohlížeč ho zastaví –
+   pak převezme časovač ve Workeru (ten se nebrzdí), takže vysílání, nahrávání i okna Program/Multiview běží dál. */
+let lastFrameT = 0, lastRafT = 0;
+function rafLoop(now) { lastRafT = performance.now(); frame(lastRafT); requestAnimationFrame(rafLoop); }
+const bgTick = () => { const n = performance.now(); if ((document.hidden || n - lastRafT > 250) && n - lastFrameT > 30) frame(n); };
+function startLoop() {
+  requestAnimationFrame(rafLoop);
+  try {
+    const wk = new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),33)'], {type:'text/javascript'})));
+    wk.onmessage = bgTick;
+  } catch (e) { setInterval(bgTick, 33); }
 }
 function drawOverlay() {
   const l = selLayerObj(); if (!l) return; const s = srcById(l.sourceId); const r = layerRect(l, s), k = 0.5;
@@ -990,19 +1014,20 @@ function showHelp() {
   <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>scéna do náhledu</td></tr>
   <tr><td><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd></td><td>scéna rovnou do vysílání</td></tr>
   <tr><td><kbd>mezerník</kbd></td><td>CUT – okamžité přepnutí náhled → program</td></tr>
-  <tr><td><kbd>Enter</kbd></td><td>PŘECHOD – plynulé prolnutí</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>AUTO – vybraný přechod (T-bar = ručně)</td></tr>
   <tr><td><kbd>P</kbd></td><td>čtečka start / pauza</td></tr>
   <tr><td><kbd>F1</kbd>–<kbd>F8</kbd></td><td>grafika 1–8 IN / OUT</td></tr>
   <tr><td><kbd>N</kbd> / <kbd>B</kbd></td><td>scénář: další / předchozí blok</td></tr>
-  <tr><td colspan="2" class="dim">Všechny klávesy, MIDI a Stream Deck nastavíš v záložce <b>Ovládání</b>. Na stránce Grafika je mezerník přehrát/zastavit animaci.</td></tr>
+
   <tr><td>šipky</td><td>posun vybrané vrstvy (Shift = o 10 px)</td></tr>
   <tr><td><kbd>Delete</kbd></td><td>odebrat vybranou vrstvu ze scény</td></tr>
   <tr><td>dvojklik na scénu</td><td>rovnou do vysílání</td></tr>
   <tr><td>Alt při tažení</td><td>vypne přichytávání k okrajům</td></tr>
   </table>
+  <p class="dim">Všechny klávesy, MIDI a Stream Deck nastavíš v záložce <b>Ovládání</b>. Na stránce Grafika je mezerník přehrát / zastavit animaci a Ctrl+Z zpět.</p>
   <p class="dim">Upravuješ vždy scénu v <b>NÁHLEDU</b> (zelená). Ven jde jen <b>PROGRAM</b> (červená).<br>
   Okno „Program“ přetáhni na druhý monitor / projektor a dvojklikem ho dej na celou obrazovku.<br>
-  Hlavní okno režie nech viditelné (neminimalizuj ho), jinak prohlížeč zpomalí obraz.</p>`);
+  Režie běží dál, i když je okno zakryté nebo minimalizované.</p>`, true);
 }
 
 /* ================= Statické prvky a události ================= */
@@ -1137,5 +1162,5 @@ $('#startBtn').onclick = async () => {
   await loadProject(); fillStatic(); bindEvents();
   for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
-  setInterval(tickClock, 500); requestAnimationFrame(loop);
+  setInterval(tickClock, 500); startLoop();
 };

@@ -1,10 +1,10 @@
 'use strict';
 /* ================= PŘECHODY ================= */
 const TR = (() => {
-  const TYPES = {cut:'Střih', fade:'Prolínačka', dip:'Přes barvu (dip)', wipe:'Stíračka (wipe)', slide:'Najetí (slide)',
-    push:'Vytlačení (push)', zoom:'Zoom', iris:'Kruh (iris)', blur:'Rozmazání', stinger:'Stinger (animace / video)'};
+  const TYPES = {cut:'Střih', fade:'Prolínačka', dip:'Přes barvu', wipe:'Stíračka', slide:'Najetí',
+    push:'Vytlačení', zoom:'Zoom', iris:'Kruh', blur:'Rozmazání', stinger:'Stinger (video)'};
   const DIRS = {left:'zleva', right:'zprava', up:'zdola', down:'shora'};
-  const EASES = {inout:'plynule (začátek i konec)', out:'zpomalit na konci', in:'zrychlit', linear:'rovnoměrně'};
+  const EASES = {inout:'plynule', out:'zpomalit', in:'zrychlit', linear:'rovnoměrně'};
   const EF = {linear:t => t, in:t => t * t * t, out:t => 1 - Math.pow(1 - t, 3), inout:ease};
   const mk = (name, type, dur, extra) => Object.assign({id:uid(), name, type, dur, ease:'inout', dir:'left', soft:0.08, color:'#000000', cut:0.5, sound:true}, extra || {});
   const defaults = () => [mk('Prolínačka', 'fade', 600), mk('Přes černou', 'dip', 1000), mk('Stíračka', 'wipe', 700),
@@ -12,6 +12,7 @@ const TR = (() => {
 
   const cv = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
   const A = cv(), B = cv(), T = cv(), ax = A.getContext('2d'), bx = B.getContext('2d'), tx = T.getContext('2d');
+  let tbDir = 1;
   const cur = () => S.trs.list.find(t => t.id === S.trs.cur) || S.trs.list[0];
 
   function start(from, to, manual) {
@@ -29,7 +30,7 @@ const TR = (() => {
     const a = S.active, tr = a.tr;
     let p = a.manual ? a.p : (now - a.start) / a.dur;
     if (tr.type === 'stinger' && !a.manual && tr._v && tr._v.ended) p = 1;
-    if (p >= 1) { if (a.manual) $('#tbar').value = 0; return false; }
+    if (p >= 1) return false;
     p = clamp(p, 0, 1); const e = (EF[tr.ease] || ease)(p);
     renderScene(sceneById(a.from)); ax.drawImage(glc, 0, 0);
     renderScene(sceneById(a.to)); bx.drawImage(glc, 0, 0);
@@ -132,12 +133,17 @@ const TR = (() => {
     renderSel();
     $('#trSel').onchange = e => select(e.target.value);
     const tb = $('#tbar');
+    // T-bar jako v televizi: po dokončení zůstane nahoře a další přechod se dělá stažením dolů
     tb.addEventListener('input', () => {
-      const v = +tb.value / 1000;
-      if (!S.active) { if (v <= 0) return; if (!S.previewId || S.previewId === S.programId) { tb.value = 0; return; } take('manual'); if (!S.active) { tb.value = 0; return; } }
+      const raw = +tb.value / 1000, v = tbDir > 0 ? raw : 1 - raw, rest = () => { tb.value = tbDir > 0 ? 0 : 1000; };
+      if (!S.active) {
+        if (v <= 0.002) return;
+        if (!S.previewId || S.previewId === S.programId) { rest(); return; }
+        take('manual'); if (!S.active || !S.active.manual) { S.active = null; rest(); return; }
+      }
       if (!S.active.manual) return;
       S.active.p = v;
-      if (v >= 1) { S.active = null; tb.value = 0; }
+      if (v >= 0.998) { S.active = null; tbDir = -tbDir; tb.value = tbDir > 0 ? 0 : 1000; }
       else if (v <= 0) { const a = S.active; S.active = null; S.programId = a.from; S.previewId = a.to; renderScenes(); renderLayers(); renderProps(); }
     });
     const box = $('#tab-trans');

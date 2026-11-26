@@ -294,7 +294,7 @@ const GFX = (() => {
   function renderPage() {
     if (!pageBuilt) buildPage();
     if (!curG() && S.gfx.list.length) ED.gid = S.gfx.list[0].id;
-    const G = curG(); if (G) ED.gid = G.id;
+    const G = curG(); if (G) { if (ED.gid !== G.id || ED.t0 !== G.id) { ED.t = G.inEnd; ED.t0 = G.id; } ED.gid = G.id; }
     $('#gxList').innerHTML = S.gfx.list.map((g, i) => `<div class="layer ${g.id === ED.gid ? 'sel' : ''}" data-gid="${g.id}"><span class="fkey">${i < 8 ? 'F' + (i + 1) : ''}</span><span class="nm">${esc(g.name)}</span>${RT[g.id] ? '<span class="tag red">AIR</span>' : ''}</div>`).join('') || '<p class="dim" style="padding:8px">Žádná grafika – klikni +</p>';
     $('#gxEls').innerHTML = G ? [...G.els].reverse().map(E => `<div class="layer ${E.id === ED.sel ? 'sel' : ''}" data-eid="${E.id}"><button data-ge="vis">${E.vis ? '👁' : '—'}</button><span class="nm">${{text:'🔤', rect:'▭', image:'🖼', ticker:'📰'}[E.type]} ${esc(E.name)}</span><button data-ge="eup">▲</button><button data-ge="edown">▼</button><button data-ge="edel">✕</button></div>`).join('') : '';
     renderProps(); renderCtlState(); sizeTl();
@@ -369,7 +369,7 @@ const GFX = (() => {
     const G = curG();
     if (b.dataset.kf) { const E = elById(G, ED.sel); if (!E) return; pushUndo(); toggleKey(E, b.dataset.kf, ED.t); lastPropT = -1; renderProps(); save(); return; }
     const act = b.dataset.ge;
-    if (!act && b.dataset.gid) { ED.gid = b.dataset.gid; ED.sel = null; ED.selKf = null; ED.t = 0; renderPage(); return; }
+    if (!act && b.dataset.gid) { ED.gid = b.dataset.gid; ED.sel = null; ED.selKf = null; ED.t = curG().inEnd; ED.playing = false; renderPage(); return; }
     if (!act && b.dataset.eid) { ED.sel = b.dataset.eid; ED.selKf = null; renderPage(); return; }
     const row = e.target.closest('[data-eid]'), E = row ? elById(G, row.dataset.eid) : elById(G, ED.sel);
     switch (act) {

@@ -50,7 +50,7 @@ Režie je taky online: **https://antoninfeldek-bot.github.io/rezie-live/** – k
 - Ctrl+Z = zpět, mezerník = přehrát animaci.
 
 ### Přechody (záložka Přechody)
-Prolínačka, přes barvu, stíračka, najetí, vytlačení, zoom, kruh, rozmazání a **stinger** (vlastní animace – video s průhledností, např. WebM z After Effects, + bod střihu). Každý jde upravit a uložit. Vybraný přechod jede na **AUTO (Enter)** a **T-bar** (svislý jezdec uprostřed – táhni ručně).
+Prolínačka, přes barvu, stíračka, najetí, vytlačení, zoom, kruh, rozmazání a **stinger** (vlastní animace – video s průhledností, např. WebM z After Effects, + bod střihu). Každý jde upravit a uložit. Vybraný přechod jede na **AUTO (Enter)** a **T-bar** (svislý jezdec uprostřed – táhni ručně; po dokončení zůstane nahoře a další přechod uděláš stažením dolů, jako v televizi).
 
 ### Mix pult (stránka 🎚 Zvuk)
 - Každý kanál má **řetězec efektů**, který si poskládáš sám: Ořez basů, Potlačení šumu, Gate, EQ, Kompresor, De-esser, Limiter, Zpoždění, Mono, Zesílení. Pořadí měníš šipkami, každý jde vypnout.
@@ -80,9 +80,9 @@ Bloky pořadu s délkou, scénou, grafikou, textem do čtečky a poznámkami. **
 
 ### Více monitorů
 - **🖥 Okno Program** = čistý obraz (bez ovládání). Přetáhni ho na projektor nebo druhý monitor a dej dvojklik → celá obrazovka.
-- **▦ Multiview** = všechny kamery najednou + náhled + program.
+- **▦ Multiview** = všechny kamery najednou + náhled + program + hodiny, stav vysílání a hlasitost.
 - **📜 Okno čtečky** = text pro moderátora. Pro skleněnou čtečku zapni **Zrcadlit**.
-- Hlavní okno režie **neminimalizuj** – jinak prohlížeč zpomalí obraz i vysílání.
+- Režie běží dál, i když hlavní okno zakryješ nebo minimalizuješ (vysílání, nahrávání i okna Program a Multiview jedou dál).
 
 ### Zvuk
 Záložka **Zvuk**: hlasitost každého mikrofonu, ztlumení (M), zpoždění (když zvuk předbíhá obraz), MASTER a odposlech do sluchátek.
