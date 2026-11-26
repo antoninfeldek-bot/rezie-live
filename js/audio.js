@@ -113,7 +113,9 @@ registerProcessor('rz-limiter',Lim);`;
   function rebuildAll() { S.sources.forEach(s => s.audio && s.audio.gainN && rebuildCh(s.audio)); rebuildMaster(); }
 
   function init() {
-    actx = new (window.AudioContext || window.webkitAudioContext)({latencyHint:'interactive'});
+    const AC = window.AudioContext || window.webkitAudioContext;
+    try { actx = new AC({latencyHint:'interactive', sampleRate:CFG.audio.rate}); } catch (e) { actx = new AC({latencyHint:'interactive'}); }
+    CFG.setMonitorDevice();
     master = actx.createGain(); masterFader = actx.createGain(); masterAn = actx.createAnalyser(); masterAn.fftSize = 1024;
     dest = actx.createMediaStreamDestination(); monOut = actx.createGain(); monOut.gain.value = 0;
     monProg = actx.createGain(); monPfl = actx.createGain(); monPfl.gain.value = 0; pflBus = actx.createGain();

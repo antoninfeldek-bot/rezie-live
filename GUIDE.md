@@ -19,6 +19,16 @@ In the Streaming tab choose **🚀 Native streaming**:
 - video is driven by the audio clock → **sound and picture never drift apart**, even when the window is hidden,
 - for YouTube you can turn on the **backup server** (backup ingest).
 
+### ⚙ Settings (⚙ button at the top)
+- **Video:** canvas resolution (720p, 1080p, 1440p, 4K, **vertical 9:16 for TikTok/Reels/Shorts**, square, 4:3), output resolution, **FPS 24/25/30/50/60**, default camera resolution.
+- **Stream:** encoder (GPU / CPU), CBR/VBR, keyframe interval, H.264 profile, audio bitrate, low latency.
+- **Recording:** program and ISO quality, MP4/WebM, audio, auto-record while streaming.
+- **Audio:** 48 / 44.1 kHz, monitoring output device.
+- **General:** confirm before starting/stopping the stream, keep the computer awake.
+- **Advanced:** **stream delay** (e.g. 10 s), wait between reconnects, preview economy/smooth.
+
+After changing the canvas or FPS the studio restarts itself and layers are recalculated for the new format.
+
 ### 📱 Remote control and guests (Remote tab)
 Tick **Allow on the local network** – two QR codes appear:
 - **Remote** – scan with an iPad or phone (same Wi-Fi). A second person can switch scenes (CUT, AUTO, T-bar), run graphics, mix audio, control the rundown and prompter.

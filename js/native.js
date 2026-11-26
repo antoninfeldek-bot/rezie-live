@@ -11,11 +11,13 @@ registerProcessor('rz-tap',Tap);`;
   let tapReady = null;
   const available = () => !!window.rzNative;
 
-  async function pickCodec(w, h, vb) {
-    for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.42e01f']) {
-      for (const hw of ['prefer-hardware', 'no-preference']) {
-        for (const bm of ['constant', undefined]) {
-          const c = {codec, width:w, height:h, bitrate:vb, framerate:30, latencyMode:'realtime', hardwareAcceleration:hw, avc:{format:'annexb'}};
+  async function pickCodec(w, h, vb, fps) {
+    const S_ = CFG.stream, hws = S_.hw === 'hw' ? ['prefer-hardware'] : S_.hw === 'sw' ? ['prefer-software'] : ['prefer-hardware', 'no-preference'];
+    const bms = S_.rc === 'vbr' ? ['variable', undefined] : ['constant', undefined];
+    for (const codec of CFG.codecs()) {
+      for (const hw of hws) {
+        for (const bm of bms) {
+          const c = {codec, width:w, height:h, bitrate:vb, framerate:fps, latencyMode:S_.lowLatency ? 'realtime' : 'quality', hardwareAcceleration:hw, avc:{format:'annexb'}};
           if (bm) c.bitrateMode = bm;
           try { const r = await VideoEncoder.isConfigSupported(c); if (r.supported) return r.config || c; } catch (e) {}
         }
@@ -27,11 +29,11 @@ registerProcessor('rz-tap',Tap);`;
   async function start(opts) {
     if (ST.on) return;
     if (!window.VideoEncoder) throw new Error('Chybí WebCodecs – aktualizuj aplikaci.');
-    const fps = 30, h = opts.res === '720' ? 720 : 1080, w = Math.round(h * 16 / 9), vb = opts.vb * 1000;
-    const cfg = await pickCodec(w, h, vb);
+    const fps = CFG.video.fps, [w, h] = CFG.out(), vb = opts.vb * 1000;
+    const cfg = await pickCodec(w, h, vb, fps); ST.gop = Math.max(1, Math.round(fps * CFG.stream.keyint));
     const sr = actx.sampleRate;
     if (opts.resume) { const r = await window.rzNative.resume({fps, rate:sr, w, h}); if (!r || !r.running) throw new Error('Vysílání už neběží'); }
-    else await window.rzNative.start({fps, rate:sr, w, h, targets:opts.targets, record:opts.record, slateText:L('Technické potíže – hned jsme zpět')});
+    else await window.rzNative.start({fps, rate:sr, w, h, targets:opts.targets, record:opts.record, ab:CFG.stream.ab, delay:CFG.stream.delay, retryMax:CFG.stream.retryMax, slateText:L('Technické potíže – hned jsme zpět')});
     ST.cfg = cfg; ST.vb = ST.vbTarget = vb; ST.sent = 0; ST.samples = 0; ST.forceKey = true; ST.late = 0; ST.queueMax = 0; ST.okSince = performance.now(); ST.codec = cfg.codec;
     // kodér
     ST.enc = new VideoEncoder({
@@ -39,7 +41,7 @@ registerProcessor('rz-tap',Tap);`;
       error:e => { stLog('Kodér: ' + e.message); }
     });
     ST.enc.configure(cfg);
-    ST.scale = h !== H ? Object.assign(document.createElement('canvas'), {width:w, height:h}) : null;
+    ST.scale = (h !== H || w !== W) ? Object.assign(document.createElement('canvas'), {width:w, height:h}) : null;
     ST.sx = ST.scale && ST.scale.getContext('2d');
     // zvukové hodiny: AudioWorklet odebírá master a zároveň určuje, kdy přijde další snímek
     if (!tapReady) tapReady = actx.audioWorklet.addModule(URL.createObjectURL(new Blob([TAP], {type:'application/javascript'})));
@@ -66,7 +68,7 @@ registerProcessor('rz-tap',Tap);`;
     if (enc.encodeQueueSize > 6) ST.late++;
     let src = pg; if (ST.scale) { ST.sx.drawImage(pg, 0, 0, ST.scale.width, ST.scale.height); src = ST.scale; }
     const fr = new VideoFrame(src, {timestamp:Math.round(ST.sent * 1e6 / fps), duration:Math.round(1e6 / fps)});
-    const key = ST.forceKey || ST.sent % (fps * 2) === 0; ST.forceKey = false;   // klíčový snímek každé 2 s (požadavek YouTube)
+    const key = ST.forceKey || ST.sent % ST.gop === 0; ST.forceKey = false;   // klíčový snímek podle nastavení (YouTube chce 2 s)
     try { enc.encode(fr, {keyFrame:key}); } catch (e) { stLog('Kodér: ' + e.message); }
     fr.close(); ST.sent++; ST.fpsN++;
   }

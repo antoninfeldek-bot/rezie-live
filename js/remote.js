@@ -65,6 +65,7 @@ const REM = (() => {
     else if (k === 'tr') TR.select(id);
     else if (k === 'gfx') GFX.toggle(GFX.byId(id));
     else if (k === 'vol') { const g = pos2gain(clamp(+v || 0, 0, 1)); if (id === 'master') masterFader.gain.value = g; else { const s = srcById(id); if (s && s.audio) s.audio.vol = g; } audioChanged(); }
+    else if (k === 'stream') { R.stream ? STR.stop(true) : STR.start(true); }   // ovladač se už zeptal sám
     else if (k === 'mute') { const s = srcById(id); if (s && s.audio) { s.audio.mute = !s.audio.mute; audioChanged(); } }
     else CTL.run(a, v);
     ST.lastJson = '';   // stav poslat hned

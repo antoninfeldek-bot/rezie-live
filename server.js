@@ -63,17 +63,20 @@ function stopFf() {
   setTimeout(() => { try { p.kill('SIGKILL'); } catch (e) {} }, 4000);
 }
 
-function startFf({targets, url, vb = 4500, fps = 30, res = '1080', enc = 'libx264'}) {
+function startFf({targets, url, vb = 4500, fps = 30, res = '1080', out, keyint = 2, profile = 'high', ab = 160, rc = 'cbr', enc = 'libx264'}) {
   stopFf();
   targets = (targets && targets.length ? targets : [url]).filter(Boolean);
-  vb = Math.max(500, +vb || 4500); fps = +fps || 30;
+  vb = Math.max(500, +vb || 4500); fps = Math.min(120, Math.max(10, +fps || 30));
+  const gop = Math.max(1, Math.round(fps * (+keyint || 2))); ab = Math.min(320, Math.max(64, +ab || 160));
+  if (!['high', 'main', 'baseline'].includes(profile)) profile = 'high';
+  const scale = Array.isArray(out) && out.length === 2 && out.every(n => Number.isInteger(n) && n >= 160 && n <= 4096) ? ['-vf', `scale=${out[0]}:${out[1]}`] : res === '720' ? ['-vf', 'scale=-2:720'] : [];
   if (!ENC_ARGS[enc] || !detectEncoders().includes(enc)) enc = 'libx264';
   const args = ['-hide_banner', '-loglevel', 'info', '-fflags', '+genpts', '-probesize', '1000000', '-analyzeduration', '1000000', '-i', 'pipe:0',
     '-map', '0:v:0', '-map', '0:a:0?', ...ENC_ARGS[enc],
-    ...(res === '720' ? ['-vf', 'scale=-2:720'] : []),
-    '-pix_fmt', 'yuv420p', '-r', String(fps), '-g', String(fps * 2), '-keyint_min', String(fps * 2), ...(enc === 'libx264' ? ['-sc_threshold', '0'] : []),
-    '-b:v', vb + 'k', '-maxrate', vb + 'k', '-bufsize', vb * 2 + 'k',
-    '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-ac', '2'];
+    ...scale, ...(enc !== 'h264_amf' ? ['-profile:v', profile] : []),
+    '-pix_fmt', 'yuv420p', '-r', String(fps), '-g', String(gop), '-keyint_min', String(gop), ...(enc === 'libx264' ? ['-sc_threshold', '0'] : []),
+    '-b:v', vb + 'k', '-maxrate', (rc === 'vbr' ? Math.round(vb * 1.5) : vb) + 'k', '-bufsize', vb * 2 + 'k',
+    '-c:a', 'aac', '-b:a', ab + 'k', '-ar', '44100', '-ac', '2'];
   if (targets.length === 1) args.push('-f', 'flv', targets[0]);
   else args.push('-f', 'tee', targets.map(t => '[f=flv:onfail=ignore]' + t).join('|'));   // víc míst najednou; když jedno spadne, ostatní jedou dál
   console.log(`▶ Start vysílání (${enc}, ${res}p, ${vb} kbps) →`, targets.map(t => t.replace(/[^/]+$/, '••••')).join(', '));

@@ -204,3 +204,18 @@ pre.errlog{max-height:220px;overflow:auto;background:#0b0c0f;padding:8px;border-
 .remcard code.url.copied{color:#86efac}
 .guest{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line,#2a2e37)}
 .guest span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* --- ⚙ Nastavení --- */
+dialog.settings{width:min(860px,94vw);max-width:none;max-height:88vh;padding:0}
+dialog.settings form{display:flex;flex-direction:column;max-height:88vh;padding:16px}
+dialog.settings h3{margin:0 0 12px}
+.setw{display:grid;grid-template-columns:170px 1fr;gap:16px;min-height:380px;overflow:hidden}
+.setw nav{display:flex;flex-direction:column;gap:4px}
+.setw nav button{text-align:left}
+.setb{overflow:auto;padding-right:4px}
+.setb label{display:block;margin-bottom:10px}
+.setb label select,.setb label input:not([type=checkbox]){display:block;width:100%;margin-top:4px}
+.setb label.chk{display:flex}
+.setb .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.btns.end{justify-content:flex-end;margin-top:12px}
+.stfmt{grid-column:span 2;display:flex;align-items:center;gap:8px}
+@media (max-width:700px){.setw{grid-template-columns:1fr}.setw nav{flex-direction:row;flex-wrap:wrap}.setb .grid2{grid-template-columns:1fr}}

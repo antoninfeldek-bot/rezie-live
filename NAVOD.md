@@ -26,6 +26,16 @@ V záložce Vysílání vyber **🚀 Nativní vysílání**:
 - obraz je řízený zvukovými hodinami → **zvuk a obraz se nikdy nerozjedou**, i když je okno schované,
 - u YouTube jde zapnout **záložní server** (backup ingest).
 
+### ⚙ Nastavení (tlačítko ⚙ nahoře)
+- **Obraz:** rozlišení plátna (720p, 1080p, 1440p, 4K, **na výšku 9:16 pro TikTok/Reels/Shorts**, čtverec, 4:3), výstupní rozlišení, **FPS 24/25/30/50/60**, výchozí rozlišení kamer.
+- **Vysílání:** kodér (grafika / procesor), CBR/VBR, interval klíčových snímků, profil H.264, datový tok zvuku, nízké zpoždění.
+- **Nahrávání:** kvalita programu i ISO, formát MP4/WebM, zvuk, automatické nahrávání při vysílání.
+- **Zvuk:** 48 / 44,1 kHz, výstupní zařízení pro odposlech.
+- **Obecné:** dotaz před spuštěním/ukončením vysílání, počítač během vysílání neusne.
+- **Pokročilé:** **zpoždění vysílání** (např. 10 s), čekání mezi znovupřipojeními, náhled úsporně/plynule.
+
+Po změně plátna nebo FPS se studio samo restartuje a vrstvy se přepočítají na nový formát.
+
 ### 📱 Dálkové ovládání a hosté (záložka Dálkově)
 Zaškrtni **Povolit v místní síti** – objeví se dva QR kódy:
 - **Ovladač** – naskenuj iPadem nebo mobilem (stejná Wi-Fi). Druhý člověk pak přepíná scény (CUT, AUTO, T-bar), pouští grafiku, míchá zvuk, ovládá scénář a čtečku.

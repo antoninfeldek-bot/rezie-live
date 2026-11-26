@@ -1,6 +1,6 @@
 // Režie Live – desktopová aplikace (Electron)
 // Spustí vestavěný server (vysílání přes FFmpeg) a otevře režii v okně aplikace.
-const { app, BrowserWindow, systemPreferences, session, shell, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, systemPreferences, session, shell, dialog, ipcMain, powerSaveBlocker } = require('electron');
 const { Streamer } = require('./streamer.js');
 const net = require('net');
 const path = require('path');
@@ -68,7 +68,12 @@ app.whenReady().then(async () => {
   // ---- nativní vysílání ----
   const streamer = new Streamer({ ffmpeg: ff || 'ffmpeg' });
   const send = (ch, d) => { if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send(ch, d); };
-  streamer.on('status', s => send('rz:status', s));
+  let blocker = null;   // Mac během vysílání neusne (ani když zaklapneš displej s připojeným monitorem)
+  streamer.on('status', s => {
+    send('rz:status', s);
+    if (s.running && blocker === null) blocker = powerSaveBlocker.start('prevent-app-suspension');
+    if (!s.running && blocker !== null) { try { powerSaveBlocker.stop(blocker); } catch (e) {} blocker = null; }
+  });
   streamer.on('needKey', () => send('rz:needKey'));
   streamer.on('log', l => send('rz:log', l));
   // ---- ochrana proti pádu: když okno režie spadne nebo zamrzne, vysílání jede dál se záložním obrazem a režie se sama obnoví ----

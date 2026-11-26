@@ -74,8 +74,8 @@ const STR = (() => {
         <label class="chk"><input type="checkbox" data-c="remember" ${c.remember ? 'checked' : ''}> Pamatovat klíče v tomto počítači</label></div></div>
     <div class="sec"><h4>Kvalita</h4><div class="grid4">
       <label>Datový tok videa (kbps)<input type="number" data-c="vb" min="500" step="500" value="${c.vb}" ${live ? 'disabled' : ''}></label>
-      <label>Rozlišení<select data-c="res" ${live ? 'disabled' : ''}>${opt({'1080':'1080p (Full HD)', '720':'720p (slabší internet)'}, c.res)}</select></label>
-      ${c.mode === 'app' ? `<div style="grid-column:span 2" class="dim">Kódování: <b>H.264 na grafické kartě</b> (jen jednou, bez překódování) · 30 fps · klíčový snímek každé 2 s · datový tok se sám sníží, když internet nestíhá.</div>` : `<label style="grid-column:span 2">Kódování<select data-c="enc" ${live ? 'disabled' : ''}>${Object.entries(ENCODERS).map(([k, n]) => { const ok = !ST.srv || !ST.srv.encoders || ST.srv.encoders.includes(k); return `<option value="${k}" ${c.enc === k ? 'selected' : ''} ${ok ? '' : 'disabled'}>${n}${ok ? '' : ' – není k dispozici'}</option>`; }).join('')}</select></label>`}</div>
+      <div class="stfmt"><span class="dim">${L('Výstup')}</span> <b>${CFG.out().join('×')} · ${CFG.video.fps} fps</b> <button data-ta="settings" title="${L('Rozlišení, FPS, kodér, klíčové snímky, zvuk…')}">⚙ ${L('Nastavení')}</button></div>
+      ${c.mode === 'app' ? `<div style="grid-column:span 2" class="dim">${L('Kódování:')} <b>${L('H.264 na grafické kartě')}</b> ${L('(jen jednou, bez překódování)')} · ${L('klíčový snímek každé')} ${CFG.stream.keyint} s · ${CFG.stream.rc.toUpperCase()} · ${L('zvuk')} ${CFG.stream.ab} kbps${CFG.stream.delay ? ` · ⏱ ${L('zpoždění')} ${CFG.stream.delay} s` : ''} · ${L('datový tok se sám sníží, když internet nestíhá.')}</div>` : `<label style="grid-column:span 2">Kódování<select data-c="enc" ${live ? 'disabled' : ''}>${Object.entries(ENCODERS).map(([k, n]) => { const ok = !ST.srv || !ST.srv.encoders || ST.srv.encoders.includes(k); return `<option value="${k}" ${c.enc === k ? 'selected' : ''} ${ok ? '' : 'disabled'}>${n}${ok ? '' : ' – není k dispozici'}</option>`; }).join('')}</select></label>`}</div>
       <p class="dim">Doporučení: 1080p → 4500–6000 kbps, 720p → 2500–4000 kbps. Rychlost nahrávání internetu by měla být aspoň 1,5× vyšší. Na víc míst najednou se počítá součet. Kódování na grafice ulehčí procesoru.</p></div>
     ${c.mode === 'app' ? `<div class="sec"><h4>💾 Pojistná nahrávka</h4>
       <label class="chk"><input type="checkbox" data-a="record" ${c.app.record ? 'checked' : ''} ${live ? 'disabled' : ''}> Při vysílání zároveň nahrávat na disk (MKV, stejná kvalita jako stream, nezávislé na internetu)</label>
@@ -138,7 +138,7 @@ const STR = (() => {
   }
   async function rtmpStart(st) {
     const c = C(), relay = relayUrl();
-    const r = await fetch(relay + '/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({targets:st.targets, vb:c.vb, fps:30, res:c.res, enc:c.enc})});
+    const r = await fetch(relay + '/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({targets:st.targets, vb:c.vb, fps:CFG.video.fps, out:CFG.out(), keyint:CFG.stream.keyint, profile:CFG.stream.profile, ab:CFG.stream.ab, rc:CFG.stream.rc, enc:c.enc})});
     if (!r.ok) throw new Error(await r.text());
     const mime = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
     const rec = new MediaRecorder(outStream(), {mimeType:mime, videoBitsPerSecond:Math.max(8000, c.vb * 2) * 1000, audioBitsPerSecond:192000});
@@ -184,7 +184,7 @@ const STR = (() => {
     st.pc = pc;
     const vt = ms.getVideoTracks()[0], at = ms.getAudioTracks()[0];
     try { vt.contentHint = 'motion'; } catch (e) {}
-    const vtr = pc.addTransceiver(vt, {direction:'sendonly', streams:[ms], sendEncodings:[{maxBitrate:w.vb * 1000, maxFramerate:30}]});
+    const vtr = pc.addTransceiver(vt, {direction:'sendonly', streams:[ms], sendEncodings:[{maxBitrate:w.vb * 1000, maxFramerate:CFG.video.fps}]});
     if (at) pc.addTransceiver(at, {direction:'sendonly', streams:[ms]});
     if (w.codec === 'h264' && window.RTCRtpSender && RTCRtpSender.getCapabilities && vtr.setCodecPreferences) {
       const cs = RTCRtpSender.getCapabilities('video').codecs, h = cs.filter(x => /h264/i.test(x.mimeType));
@@ -233,8 +233,9 @@ const STR = (() => {
   }
 
   /* ---------- start / stop ---------- */
-  async function start() {
+  async function start(force) {
     const c = C(); if (R.stream) return;
+    if (!force && CFG.gen.confirmStart && !confirm(L('Spustit vysílání?'))) return;
     const st = {mode:c.mode, relay:relayUrl(), start:performance.now(), retries:0};
     try {
       if (c.mode === 'rtmp') { st.targets = rtmpTargets(); if (!st.targets.length) throw new Error('Zapni aspoň jedno místo, kam vysílat.'); }
@@ -244,7 +245,7 @@ const STR = (() => {
     try {
       if (c.mode === 'app') {
         const rec = c.app.record ? {dir:c.app.recDir || (ST.info && ST.info.videos), name:`Rezie_${stamp()}.mkv`} : null;
-        await NAT.start({targets:st.targets, record:rec, vb:c.vb, res:c.res});
+        await NAT.start({targets:st.targets, record:rec, vb:c.vb});
         stLog(`Nativní vysílání spuštěno → ${st.targets.map(t => t.name).join(', ')}${rec ? ' + pojistná nahrávka' : ''}`);
       }
       else if (c.mode === 'rtmp') { await rtmpStart(st); stLog(`Vysílání spuštěno → ${st.targets.map(t => t.replace(/[^/]+$/, '••••')).join(', ')}`); st.poll = setInterval(() => rtmpPoll(st), 2000); }
@@ -257,9 +258,13 @@ const STR = (() => {
       return;
     }
     keepLog(); renderTab();
+    if (CFG.rec.autoRec && !R.rec) { toggleRec(); st.autoRec = !!R.rec; }
   }
-  async function stop() {
-    const st = R.stream; if (!st) return; st.stopping = true; R.stream = null; clearInterval(st.poll);
+  async function stop(force) {
+    const st0 = R.stream; if (!st0) return;
+    if (!force && CFG.gen.confirmStop && !confirm(L('Opravdu ukončit vysílání?'))) return;
+    const st = R.stream; if (!st) return; st.stopping = true;
+    if (st.autoRec && CFG.rec.stopWithStream && R.rec) toggleRec(); R.stream = null; clearInterval(st.poll);
     if (st.mode === 'app') { await NAT.stop(); stLog('Vysílání ukončeno.'); }
     else if (st.mode === 'rtmp') {
       try { if (st.rec && st.rec.state !== 'inactive') st.rec.stop(); } catch (e) {}
@@ -274,7 +279,7 @@ const STR = (() => {
     if (!s || !s.running || R.stream) return;
     const c = C(), st = {mode:'app', relay:relayUrl(), start:performance.now(), retries:0, targets:[], resumed:true};
     R.stream = st; setStatus('connecting', ''); updateHeader();
-    try { await NAT.resume({vb:c.vb, res:s.cfg && s.cfg.h === 720 ? '720' : '1080'}); stLog('Režie obnovena – vysílání pokračuje (' + (s.targets || []).join(', ') + ')'); toast(L('Režie se obnovila – vysílání nepřestalo')); }
+    try { await NAT.resume({vb:c.vb}); stLog('Režie obnovena – vysílání pokračuje (' + (s.targets || []).join(', ') + ')'); toast(L('Režie se obnovila – vysílání nepřestalo')); }
     catch (e) { R.stream = null; setStatus('error', ''); stLog('Obnovení vysílání selhalo: ' + e.message); }
     keepLog(); renderTab(); updateHeader();
   }
@@ -285,6 +290,7 @@ const STR = (() => {
       const t = e.target.closest('button'); if (!t) return;
       if (t.id === 'stGo') return toggleStream();
       if (t.id === 'stTest') return test();
+      if (t.dataset.ta === 'settings') return CFG.open('video');
       if (t.dataset.sm) { C().mode = t.dataset.sm; C().modeChosen = true; renderTab(); save(); return; }
       if (t.dataset.ta === 'recdir') { window.rzNative.pickFolder().then(p => { if (p) { C().app.recDir = p; renderTab(); save(); } }); return; }
       if (t.dataset.ta === 'recopen') { window.rzNative.openFolder(C().app.recDir || (ST.info && ST.info.videos)); return; }

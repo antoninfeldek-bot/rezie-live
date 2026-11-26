@@ -38,7 +38,7 @@ class Output {
     return ['-hide_banner', '-loglevel', 'info', '-nostdin',
       '-thread_queue_size', '4096', '-probesize', '200000', '-analyzeduration', '0', '-f', 'h264', '-framerate', String(fps), '-i', 'pipe:3',
       '-thread_queue_size', '4096', '-f', 's16le', '-ar', String(rate), '-ac', '2', '-i', 'pipe:4',
-      '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', this.kind === 'file' ? '256k' : '160k', '-ar', arOut,
+      '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', this.kind === 'file' ? Math.max(256, this.p.cfg.ab || 160) + 'k' : (this.p.cfg.ab || 160) + 'k', '-ar', arOut,
       ...(fmt === 'flv' ? ['-flvflags', 'no_duration_filesize'] : []),
       ...(fmt === 'mpegts' && this.kind === 'net' ? ['-mpegts_flags', 'resend_headers', '-pes_payload_size', '0'] : []),
       '-f', fmt, url];
@@ -63,7 +63,7 @@ class Output {
       if (this.proc !== p) return; this.proc = null;
       if (this.stopping) { this.state = 'stopped'; return; }
       this.restarts++; this.state = 'reconnecting'; if (this.kind === 'file') this.part++;
-      const wait = Math.min(10000, this.backoff); this.backoff *= 2;
+      const wait = Math.min((this.p.cfg.retryMax || 10) * 1000, this.backoff); this.backoff *= 2;
       this.p.log(`${this.name}: spojení přerušeno (kód ${code}) – znovu za ${Math.round(wait / 1000)} s`);
       setTimeout(() => this.spawn(), wait);
     });
@@ -149,7 +149,8 @@ class Streamer extends EventEmitter {
   start(cfg) {
     if (this.running) this.stop();
     if (!this.available()) throw new Error('FFmpeg nenalezen');
-    this.cfg = { fps: cfg.fps || 30, rate: cfg.rate || 48000, w: cfg.w || 1920, h: cfg.h || 1080 };
+    this.cfg = { fps: cfg.fps || 30, rate: cfg.rate || 48000, w: cfg.w || 1920, h: cfg.h || 1080, ab: Math.min(320, Math.max(64, +cfg.ab || 160)), retryMax: Math.min(60, Math.max(2, +cfg.retryMax || 10)), delay: Math.min(120, Math.max(0, +cfg.delay || 0)) };
+    this.dq = []; clearInterval(this.dqT); this.dqT = null;
     this.startCfg = cfg; this.slate.stop(); if (cfg.slateText) this.slateText = cfg.slateText;
     const targets = (cfg.targets || []).filter(t => t.url);
     if (cfg.record && cfg.record.path) targets.push({ id: 'record', name: 'Pojistná nahrávka', url: cfg.record.path, kind: 'file' });
@@ -157,12 +158,23 @@ class Streamer extends EventEmitter {
     const protos = this.protocols();
     for (const t of targets) { const m = /^(\w+):/.exec(t.url); if (m && !['file'].includes(m[1]) && protos.length && !protos.includes(m[1].toLowerCase())) throw new Error(`Tahle verze FFmpeg neumí protokol ${m[1]}`); }
     this.running = true; this.outs = targets.map(t => new Output(this, t));
-    this.log(`Vysílání spuštěno: ${targets.map(t => t.name).join(', ')}`);
+    this.log(`Vysílání spuštěno: ${targets.map(t => t.name).join(', ')}${this.cfg.delay ? ` (zpoždění ${this.cfg.delay} s)` : ''}`);
     this.timer = setInterval(() => this.emit('status', this.status()), 1000);
     return this.status();
   }
-  feedVideo(b, key) { for (const o of this.outs) o.feed(true, b, key); }
-  feedAudio(b) { for (const o of this.outs) o.feed(false, b, false); }
+  // zpoždění vysílání: síťová místa dostanou data o N sekund později, pojistná nahrávka hned
+  route(video, b, key) {
+    const d = this.cfg.delay;
+    for (const o of this.outs) if (!d || o.kind !== 'net') o.feed(video, b, key);
+    if (!d) return;
+    this.dq.push({ t: Date.now() + d * 1000, video, b, key });
+    if (!this.dqT) this.dqT = setInterval(() => {
+      const now = Date.now();
+      while (this.dq.length && this.dq[0].t <= now) { const x = this.dq.shift(); for (const o of this.outs) if (o.kind === 'net') o.feed(x.video, x.b, x.key); }
+    }, 10);
+  }
+  feedVideo(b, key) { this.route(true, b, key); }
+  feedAudio(b) { this.route(false, b, false); }
   video(buf, key) { if (!this.running || this.slate.on) return; this.feedVideo(Buffer.from(buf), key); }
   audio(buf) { if (!this.running || this.slate.on) return; this.feedAudio(Buffer.from(buf)); }
   // okno režie spadlo / načítá se → záložní obraz, vysílání jede dál
@@ -183,7 +195,7 @@ class Streamer extends EventEmitter {
   needsKey() { return this.outs.some(o => o.proc && o.needKey); }
   status() { return { running: this.running, slate: this.slate.on, outs: this.outs.map(o => o.info()), log: this.logs.slice(-6) }; }
   stop() {
-    this.slate.stop();
+    this.slate.stop(); clearInterval(this.dqT); this.dqT = null; this.dq = [];
     if (!this.running) return; this.running = false; clearInterval(this.timer);
     this.outs.forEach(o => o.stop()); this.log('Vysílání ukončeno'); this.emit('status', this.status());
   }

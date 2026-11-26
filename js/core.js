@@ -2,7 +2,8 @@
 /* ============================================================
    RÉŽIE LIVE – webová režie pro živé vysílání
    ============================================================ */
-const W = 1920, H = 1080;
+const [W, H] = CFG.base();   // rozlišení plátna (⚙ Nastavení → Obraz)
+const PVH = 540, PVW = Math.round(540 * W / H / 2) * 2;   // náhled se stejným poměrem stran
 const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -248,9 +249,9 @@ function attachVideoStream(s, st) {
   if (vt) { s.devLabel = vt.label; vt.onended = () => { s.missing = true; s.hasVideo = false; renderSources(); }; }
 }
 async function openCamera(s) {
-  const h = s.res || 720, w = Math.round(h * 16 / 9);
+  const h = s.res || CFG.video.camRes, w = Math.round(h * 16 / 9);
   const st = await navigator.mediaDevices.getUserMedia({video:{deviceId:s.deviceId ? {exact:s.deviceId} : undefined,
-    width:{ideal:w}, height:{ideal:h}, frameRate:{ideal:30}}, audio:false});
+    width:{ideal:w}, height:{ideal:h}, frameRate:{ideal:CFG.video.fps}}, audio:false});
   attachVideoStream(s, st);
 }
 async function openMic(s) {
@@ -263,7 +264,7 @@ async function openMic(s) {
   attachAudio(s, actx.createMediaStreamSource(st));
 }
 async function openScreen(s) {
-  const st = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:30}}, audio:true});
+  const st = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:CFG.video.fps}}, audio:true});
   attachVideoStream(s, st);
   const at = st.getAudioTracks();
   if (at.length) attachAudio(s, actx.createMediaStreamSource(new MediaStream(at)));
@@ -374,7 +375,7 @@ async function chooseCamera(s) {
   const ds = await devices('videoinput');
   if (!ds.length) { alert('Nenašel jsem žádnou kameru.'); return null; }
   return dialog('Kamera', `<label>Kamera<select name="dev">${ds.map((d, i) => `<option value="${d.deviceId}" ${s && s.deviceId === d.deviceId ? 'selected' : ''}>${esc(d.label || 'Kamera ' + (i + 1))}</option>`).join('')}</select></label>
-    <label>Rozlišení<select name="res"><option value="1080">1080p (Full HD)</option><option value="720" selected>720p (HD)</option><option value="480">480p</option></select></label>
+    <label>Rozlišení<select name="res">${[[2160, '4K (2160p)'], [1080, '1080p (Full HD)'], [720, '720p (HD)'], [480, '480p']].map(([v, n]) => `<option value="${v}" ${(s && s.res ? s.res : CFG.video.camRes) === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
     <p class="dim">Tip: stejná kamera nejde většinou otevřít dvakrát. Když ji chceš ve více scénách, přidej ji jako vrstvu do dalších scén.</p>`);
 }
 async function chooseMic(s) {
@@ -637,7 +638,7 @@ function openWin(name, title, w = 1280, h = 720) {
 function openCanvasWin(key, name, title) {
   let w = R.wins[key]; if (w && !w.closed) { w.focus(); return; }
   w = openWin(name, title); if (!w) return;
-  const c = w.document.createElement('canvas'); c.width = W; c.height = H; c._x = c.getContext('2d');
+  const c = w.document.createElement('canvas'); c.width = key === 'multi' ? 1920 : W; c.height = key === 'multi' ? 1080 : H; c._x = c.getContext('2d');
   w.document.body.appendChild(c); w._c = c; R.wins[key] = w;
 }
 function elSize(el) {
@@ -657,9 +658,9 @@ function tallyBox(x, bx, by, bw, bh, col, label) {
   x.fillStyle = 'rgba(0,0,0,.72)'; x.fillRect(bx + 10, by + 10, tw + 20, 34); x.fillStyle = '#fff'; x.fillText(label, bx + 20, by + 35);
 }
 function drawMulti(c, onAir) {
-  const x = c._x; x.fillStyle = '#0b0b0d'; x.fillRect(0, 0, W, H);
+  const x = c._x; x.fillStyle = '#0b0b0d'; x.fillRect(0, 0, 1920, 1080);
   const pvS = prevScene(), pgS = sceneById(S.programId);
-  x.drawImage(pvBuf, 0, 0, 960, 540); x.drawImage(pg, 960, 0, 960, 540);
+  drawContain(x, pvBuf, 0, 0, 960, 540); drawContain(x, pg, 960, 0, 960, 540);
   tallyBox(x, 0, 0, 960, 540, '#22c55e', L('NÁHLED') + (pvS ? ': ' + pvS.name : ''));
   tallyBox(x, 960, 0, 960, 540, '#ef4444', 'PROGRAM' + (pgS ? ': ' + pgS.name : ''));
   const inPv = sceneSources(pvS, new Set());
@@ -728,7 +729,8 @@ function pickMime(kind) {
   const list = kind === 'audio' ? ['audio/mp4;codecs=mp4a.40.2', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
     : ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1.4d0028,mp4a.40.2', 'video/mp4;codecs=avc1.42e01f,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2',
        'video/mp4;codecs=avc1.640028,opus', 'video/mp4;codecs=avc1,opus', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-  return list.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  const pref = CFG.rec.fmt === 'webm' ? [...list.filter(m => m.includes('webm')), ...list.filter(m => !m.includes('webm'))] : list;
+  return pref.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
 }
 function recFormatInfo() {
   const m = pickMime('video');
@@ -739,12 +741,12 @@ function recFormatInfo() {
 }
 let pgTrack = null;
 function outStream() {
-  if (!pgTrack || pgTrack.readyState === 'ended') pgTrack = pg.captureStream(30).getVideoTracks()[0];
+  if (!pgTrack || pgTrack.readyState === 'ended') pgTrack = pg.captureStream(CFG.video.fps).getVideoTracks()[0];
   return new MediaStream([pgTrack, ...dest.stream.getAudioTracks()]);
 }
 function makeRec(stream, name, kind, bits, st) {
   const mime = pickMime(kind), opts = {}; if (mime) opts.mimeType = mime;
-  if (kind === 'audio') opts.audioBitsPerSecond = bits; else { opts.videoBitsPerSecond = bits; opts.audioBitsPerSecond = 192000; }
+  if (kind === 'audio') opts.audioBitsPerSecond = bits; else { opts.videoBitsPerSecond = bits; opts.audioBitsPerSecond = CFG.rec.ab * 1000; }
   const r = new MediaRecorder(stream, opts), chunks = [];
   const type = mime || 'video/webm', ext = type.includes('mp4') ? (kind === 'audio' ? 'm4a' : 'mp4') : 'webm';
   const fname = `${safe(name)}_${st}.${ext}`, w = DISK.open(fname);
@@ -765,17 +767,17 @@ function renderRecs() {
 }
 function toggleRec() {
   if (R.rec) { R.rec.r.stop(); R.rec = null; }
-  else { try { R.rec = {r:makeRec(outStream(), 'program', 'video', 10e6, stamp()), start:performance.now()}; } catch (e) { alert('Nahrávání nejde spustit: ' + e.message); } }
+  else { try { R.rec = {r:makeRec(outStream(), 'program', 'video', CFG.rec.vb * 1000, stamp()), start:performance.now()}; } catch (e) { alert('Nahrávání nejde spustit: ' + e.message); } }
   updateHeader();
 }
 function toggleIso() {
   if (R.iso.length) { R.iso.forEach(r => r.stop()); R.iso = []; R.isoStart = 0; updateHeader(); return; }
   const st = stamp();
   try {
-    R.iso.push(makeRec(outStream(), 'PROGRAM', 'video', 10e6, st));
+    R.iso.push(makeRec(outStream(), 'PROGRAM', 'video', CFG.rec.vb * 1000, st));
     for (const s of S.sources) {
       if (!s.stream || s.missing) continue;
-      if ((s.type === 'camera' || s.type === 'screen') && s.stream.getVideoTracks().length) R.iso.push(makeRec(new MediaStream(s.stream.getTracks()), 'ISO_' + s.name, 'video', 8e6, st));
+      if ((s.type === 'camera' || s.type === 'screen') && s.stream.getVideoTracks().length) R.iso.push(makeRec(new MediaStream(s.stream.getTracks()), 'ISO_' + s.name, 'video', CFG.rec.isoVb * 1000, st));
       if (s.type === 'mic') R.iso.push(makeRec(new MediaStream(s.stream.getAudioTracks()), 'ISO_' + s.name, 'audio', 256000, st));
     }
     R.isoStart = performance.now();
@@ -791,6 +793,7 @@ function updateHeader() {
   bR.classList.toggle('on', !!R.rec); bR.textContent = R.rec ? '■ Stop program' : '● Program';
   bI.classList.toggle('on', R.iso.length > 0); bI.textContent = R.iso.length ? `■ Stop vše (${R.iso.length})` : '● Vše (ISO)';
   bS.classList.toggle('on', !!R.stream); bS.textContent = R.stream ? '■ Ukončit vysílání' : '⦿ Vysílat';
+  CFG.awake(!!(R.stream || R.rec || R.iso.length));
 }
 function tickClock() {
   const now = performance.now(); let t = new Date().toLocaleTimeString('cs-CZ');
@@ -802,9 +805,9 @@ function tickClock() {
 }
 
 /* ================= Hlavní smyčka ================= */
-const pv = $('#pv'), pg = $('#pg'); pv.width = 960; pv.height = 540; pg.width = W; pg.height = H;
+const pv = $('#pv'), pg = $('#pg'); pv.width = PVW; pv.height = PVH; pg.width = W; pg.height = H;
 const pvx = pv.getContext('2d'), pgx = pg.getContext('2d');
-const pvBuf = document.createElement('canvas'); pvBuf.width = 960; pvBuf.height = 540; const pvbx = pvBuf.getContext('2d');
+const pvBuf = document.createElement('canvas'); pvBuf.width = PVW; pvBuf.height = PVH; const pvbx = pvBuf.getContext('2d');
 let lastT = performance.now();
 function frame(now) {
   if (now - lastFrameT < 4) return; lastFrameT = now;
@@ -813,9 +816,9 @@ function frame(now) {
   if (gl) {
     if (S.active && !TR.compose(now)) S.active = null;
     if (!S.active) { renderScene(prg); pgx.drawImage(glc, 0, 0); }
-    const slow = frameCost > 25 || document.hidden;   // slabší počítač / skryté okno: náhled stačí kreslit méně často
-    if (prv === prg && !S.active) pvbx.drawImage(pg, 0, 0, 960, 540);
-    else if (!slow || frameNo % 3 === 0) { renderScene(prv); pvbx.drawImage(glc, 0, 0, 960, 540); }
+    const slow = CFG.gen.preview === 'low' || (CFG.gen.preview !== 'full' && frameCost > 25) || document.hidden;   // slabší počítač / skryté okno: náhled stačí kreslit méně často
+    if (prv === prg && !S.active) pvbx.drawImage(pg, 0, 0, PVW, PVH);
+    else if (!slow || frameNo % 3 === 0) { renderScene(prv); pvbx.drawImage(glc, 0, 0, PVW, PVH); }
     GFX.tick(dt, now); GFX.drawOverlay(pgx, now);
     pvx.drawImage(pvBuf, 0, 0); drawOverlay();
   }
@@ -858,7 +861,7 @@ function startLoop() {
   } catch (e) { setInterval(() => bgTick(null), 40); }
 }
 function drawOverlay() {
-  const l = selLayerObj(); if (!l) return; const s = srcById(l.sourceId); const r = layerRect(l, s), k = 0.5;
+  const l = selLayerObj(); if (!l) return; const s = srcById(l.sourceId); const r = layerRect(l, s), k = PVW / W;
   pvx.strokeStyle = '#facc15'; pvx.lineWidth = 2; pvx.setLineDash([6, 4]); pvx.strokeRect(r.x * k, r.y * k, r.w * k, r.h * k); pvx.setLineDash([]);
   pvx.fillStyle = '#facc15';
   [[r.x, r.y], [r.x + r.w, r.y], [r.x, r.y + r.h], [r.x + r.w, r.y + r.h]].forEach(([x, y]) => pvx.fillRect(x * k - 5, y * k - 5, 10, 10));
@@ -939,7 +942,7 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
+  return {v:1, canvas:[W, H], sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
@@ -967,8 +970,22 @@ async function restore(d) {
   if (d.prompter) Object.assign(R.prompter, d.prompter);
   STR.load(d.streamCfg); REM.load(d.rem);
   AUD.load(d.aud || (d.masterVol != null ? {fader:d.masterVol} : null)); GFX.load(d.gfx); TR.load(d.trs); RUN.load(d.rundown); CTL.load(d.ctl); GR.load(d.grades);
+  const oc = Array.isArray(d.canvas) ? d.canvas : [1920, 1080];
+  if (oc[0] !== W || oc[1] !== H) rescaleProject(oc[0], oc[1]);
   if (!sceneById(S.previewId)) S.previewId = S.scenes[0] && S.scenes[0].id;
   if (!sceneById(S.programId)) S.programId = null;
+}
+// jiné rozlišení plátna než při uložení → vrstvy a grafiku přepočítat (poměr stran se zachová, obsah se vycentruje)
+function rescaleProject(ow, oh) {
+  const k = Math.min(W / ow, H / oh), ox = (W - ow * k) / 2, oy = (H - oh * k) / 2;
+  const fx = o => { if (!o || typeof o.x !== 'number') return; o.x = Math.round(o.x * k + ox); o.y = Math.round(o.y * k + oy); if (typeof o.w === 'number') o.w = Math.round(o.w * k); if (typeof o.h === 'number') o.h = Math.round(o.h * k); };
+  S.scenes.forEach(sc => sc.layers.forEach(l => {
+    const full = Math.abs(l.x) < 2 && Math.abs(l.y) < 2 && Math.abs(l.w - ow) < 2 && Math.abs(l.h - oh) < 2;
+    if (full) { l.x = 0; l.y = 0; l.w = W; l.h = H; } else fx(l);   // přes celé plátno zůstane přes celé plátno
+  }));
+  (S.gfx && S.gfx.list || []).forEach(G => (G.els || []).forEach(E => { const wasFull = E.p && Math.abs(E.p.w - ow) < 2; fx(E.p); if (wasFull) { E.p.x = 0; E.p.w = W; } if (E.p && typeof E.p.size === 'number') E.p.size = Math.max(8, Math.round(E.p.size * k));
+    for (const [prop, ks] of Object.entries(E.kf || {})) for (const q of ks) { if (typeof q.v !== 'number') continue; q.v = prop === 'x' ? q.v * k + ox : prop === 'y' ? q.v * k + oy : ['w', 'h', 'size'].includes(prop) ? q.v * k : q.v; } }));
+  setTimeout(() => toast(L('Plátno má nové rozlišení – vrstvy jsem přepočítal. Zkontroluj rozložení scén.')), 1500);
 }
 async function loadProject() {
   try { S.luts = lutsFromJson(JSON.parse(localStorage.getItem('rezie-luts'))); } catch (e) { S.luts = []; }
@@ -1044,7 +1061,7 @@ function bindEvents() {
   $('#bWinMv').onclick = () => openCanvasWin('multi', 'rz_multi', 'Multiview');
   $('#bWinPr').onclick = openPrompter; $('#prOpen').onclick = openPrompter;
   $('#bRec').onclick = toggleRec; $('#bIso').onclick = toggleIso; $('#bStream').onclick = toggleStream;
-  $('#bSave').onclick = exportProject; $('#bLoad').onclick = importProject; $('#bHelp').onclick = showHelp;
+  $('#bSet').onclick = () => CFG.open(); $('#bSave').onclick = exportProject; $('#bLoad').onclick = importProject; $('#bHelp').onclick = showHelp;
 
   // vrstvy
   $('#layers').onclick = e => {
@@ -1123,7 +1140,7 @@ function bindEvents() {
 
   navigator.mediaDevices.ondevicechange = () => renderSources();
   document.addEventListener('pointerdown', () => { if (actx && actx.state === 'suspended') actx.resume(); });
-  window.addEventListener('beforeunload', e => { if (R.stream || R.rec || R.iso.length) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if (!window.__rzRestart && (R.stream || R.rec || R.iso.length)) { e.preventDefault(); e.returnValue = ''; } });
   window.addEventListener('pagehide', () => { Object.values(R.wins).forEach(w => w && !w.closed && w.close()); if (R.prompter.win && !R.prompter.win.closed) R.prompter.win.close(); });
 }
 

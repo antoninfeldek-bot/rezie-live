@@ -31,7 +31,7 @@ const GFX = (() => {
   /* ---------- model ---------- */
   function newEl(type, extra) {
     const E = {id:uid(), type, name:L(TNAME[type]), vis:true, p:Object.assign({}, BASE, JSON.parse(JSON.stringify(TYPEDEF[type]))), kf:{}};
-    if (type === 'ticker') Object.assign(E.p, {x:0, y:980, w:W, h:70});
+    if (type === 'ticker') Object.assign(E.p, {x:0, y:H - 100, w:W, h:70});
     if (typeof E.p.text === 'string' && !/^\{/.test(E.p.text)) E.p.text = L(E.p.text);
     if (extra) { if (extra.name) E.name = L(extra.name); if (extra.p && typeof extra.p.text === 'string' && !/^\{/.test(extra.p.text)) extra.p.text = L(extra.p.text); Object.assign(E.p, extra.p || {}); }
     return E;
@@ -110,10 +110,10 @@ const GFX = (() => {
     }],
     ticker:['Lišta se zprávami', () => {
       const G = newG('Lišta'); G.fields = {zpravy:L('Vítejte u živého vysílání  •  Pište nám do komentářů  •  Sledujte nás i příště')};
-      const bar = newEl('rect', {name:'Lišta', p:{x:0, y:990, w:W, h:70, fill:'#0b1220', op:0.95}});
+      const bar = newEl('rect', {name:'Lišta', p:{x:0, y:H - 90, w:W, h:70, fill:'#0b1220', op:0.95}});
       const lab = newEl('rect', {name:'Štítek', p:{x:0, y:990, w:200, h:70, fill:'#dc2626'}});
       const lt = newEl('text', {name:'Štítek text', p:{x:0, y:990, w:200, h:70, text:'ZPRÁVY', size:34, align:'center'}});
-      const tk = newEl('ticker', {name:'Běžící text', p:{x:210, y:990, w:W - 210, h:70, text:'{zpravy}'}});
+      const tk = newEl('ticker', {name:'Běžící text', p:{x:210, y:H - 90, w:W - 210, h:70, text:'{zpravy}'}});
       G.els = [bar, lab, lt, tk];
       applyPreset(G, bar, 'revealL', 'revealR', {dur:0.5}); applyPreset(G, lab, 'slideL', 'slideL', {delay:0.2, dur:0.4, dist:220});
       applyPreset(G, lt, 'slideL', 'slideL', {delay:0.2, dur:0.4, dist:220}); applyPreset(G, tk, 'fade', 'fade', {delay:0.4, dur:0.4});
@@ -130,8 +130,8 @@ const GFX = (() => {
     countdown:['Odpočet', () => {
       const G = newG('Odpočet'); G.cdMin = 5;
       const bg = newEl('rect', {name:'Pozadí', p:{x:0, y:0, w:W, h:H, fill:'#0b1220', grad:true, fill2:'#1e3a8a', gradAngle:90}});
-      const l = newEl('text', {name:'Popisek', p:{x:0, y:380, w:W, h:80, text:'ZAČÍNÁME ZA', size:56, align:'center', weight:600, ls:8, color:'#93c5fd'}});
-      const c = newEl('text', {name:'Čas', p:{x:0, y:470, w:W, h:220, text:'{cd}', size:200, align:'center', weight:800}});
+      const l = newEl('text', {name:'Popisek', p:{x:0, y:Math.round(H * 0.35), w:W, h:80, text:'ZAČÍNÁME ZA', size:56, align:'center', weight:600, ls:8, color:'#93c5fd'}});
+      const c = newEl('text', {name:'Čas', p:{x:0, y:Math.round(H * 0.435), w:W, h:220, text:'{cd}', size:Math.round(Math.min(200, W / 6)), align:'center', weight:800}});
       G.els = [bg, l, c]; applyPreset(G, bg, 'fade', 'fade', {dur:0.5}); applyPreset(G, l, 'slideD', 'fade', {delay:0.2, dur:0.5, dist:80}); applyPreset(G, c, 'zoom', 'fade', {delay:0.3, dur:0.6});
       return G;
     }],
