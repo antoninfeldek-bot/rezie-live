@@ -6,6 +6,9 @@
 
 Webová režie pro živé vysílání se 4 pracovními stránkami: **Režie** (scény, klíč, přechody vč. stingeru a T-baru, scénář), **Grafika** (editor animovaných titulků s klíčovými snímky), **Zvuk** (mix pult s modulárními efekty: noise reduction, gate, EQ, kompresor, de-esser, limiter, LUFS) a **Barvy** (lift/gamma/gain, křivky, LUT, waveform, parade, vektorskop, histogram). Dále ovládání klávesami, MIDI a Stream Deckem, nahrávání rovnou na disk, titulky, znělky, mix zvuku, čtečka (teleprompter), více monitorů, nahrávání (program + ISO) a stream na YouTube / Twitch / Facebook.
 
+## 🍎 Mac aplikace / Mac app
+Stáhni DMG z [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) (arm64 = M1–M4, x64 = Intel), přetáhni do Aplikací, při prvním spuštění **Nastavení systému → Soukromí a zabezpečení → Přesto otevřít**. V aplikaci je **🚀 Nativní vysílání**: kódování na grafice, víc míst najednou, SRT, automatické znovupřipojení, pojistná nahrávka. Návod: [NAVOD.md](NAVOD.md) · [GUIDE.md](GUIDE.md).
+
 ## Rychlý start
 Windows: dvojklik na `start-windows.bat` · Mac: `start-mac.command` · nebo `node server.js` a v Chrome http://localhost:8080.
 

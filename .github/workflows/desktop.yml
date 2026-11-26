@@ -1,0 +1,53 @@
+name: Desktop app (Mac)
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x64]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install (FFmpeg for ${{ matrix.arch }})
+        run: npm install --no-audit --no-fund
+        env:
+          npm_config_arch: ${{ matrix.arch }}
+      - name: Check bundled FFmpeg
+        run: file node_modules/ffmpeg-static/ffmpeg
+      - name: Build app
+        run: npx electron-builder --mac dir --${{ matrix.arch }} --publish never
+      - name: Ad-hoc sign + DMG
+        run: |
+          APP=$(ls -d dist/mac*/*.app | head -1)
+          echo "App: $APP"
+          xattr -cr "$APP"
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --verbose=2 "$APP"
+          mkdir -p out
+          STAGE=$(mktemp -d); cp -R "$APP" "$STAGE/"; ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "Rezie Live" -srcfolder "$STAGE" -ov -format UDZO "out/Rezie-Live-mac-${{ matrix.arch }}.dmg"
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rezie-Live-mac-${{ matrix.arch }}
+          path: out/*.dmg
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.dmg
+          name: Režie Live ${{ github.ref_name }}
+          body: |
+            **Mac s čipem M1/M2/M3/M4 (Apple Silicon):** stáhni `Rezie-Live-mac-arm64.dmg`
+            **Starší Mac s Intelem:** stáhni `Rezie-Live-mac-x64.dmg`
+
+            Otevři .dmg a přetáhni Rezie Live do Aplikací. Při prvním spuštění: Nastavení systému → Soukromí a zabezpečení → „Přesto otevřít“. Podrobně v NAVOD.md.

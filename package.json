@@ -1,0 +1,44 @@
+{
+  "name": "rezie-live",
+  "productName": "Rezie Live",
+  "version": "1.0.0",
+  "description": "Režie Live – režie pro živé vysílání (kamery, scény, klíč, grafika, mix pult, grading, stream)",
+  "main": "electron/main.js",
+  "author": "antoninfeldek-bot",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "server": "node server.js",
+    "dist:mac": "electron-builder --mac dir --publish never",
+    "dist:win": "electron-builder --win nsis --publish never"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "latest"
+  },
+  "build": {
+    "appId": "live.rezie.app",
+    "productName": "Rezie Live",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["index.html", "css/**", "js/**", "server.js", "electron/**", "package.json"],
+    "asarUnpack": ["node_modules/ffmpeg-static/**"],
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "build/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "CFBundleDisplayName": "Režie Live",
+        "NSCameraUsageDescription": "Režie Live používá kameru pro živé vysílání a nahrávání.",
+        "NSMicrophoneUsageDescription": "Režie Live používá mikrofon pro živé vysílání a nahrávání.",
+        "NSScreenCaptureUsageDescription": "Režie Live umí snímat obrazovku jako zdroj obrazu."
+      }
+    },
+    "win": { "target": "nsis", "icon": "build/icon.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}

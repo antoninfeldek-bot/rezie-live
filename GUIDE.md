@@ -2,6 +2,23 @@
 
 The app is bilingual – switch **🌐 EN / 🌐 CZ** in the top bar (or on the start screen).
 
+## 🍎 Mac app (recommended)
+1. Open [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) and download **Rezie-Live-arm64.dmg** (Mac with M1/M2/M3/M4 chip) or **Rezie-Live-x64.dmg** (older Intel Mac).
+2. Open the DMG and drag **Rezie Live** into **Applications**.
+3. On first start macOS says it doesn't know the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. (Or in Terminal: `xattr -dr com.apple.quarantine "/Applications/Rezie Live.app"`.)
+4. Allow camera and microphone. For screen sharing allow the app in **Privacy & Security → Screen Recording**.
+
+FFmpeg is already inside the app – nothing else to install.
+
+### 🚀 Native streaming (app only)
+In the Streaming tab choose **🚀 Native streaming**:
+- video is encoded **only once on the GPU** (H.264) and the same signal goes to **all destinations at once** (YouTube, Twitch, Facebook, custom RTMP/RTMPS and **SRT**),
+- each destination **reconnects by itself** if it drops – the others keep going,
+- if the internet is too slow, **the bitrate lowers itself** and later goes back up,
+- a **safety recording** (MKV) is saved to disk while streaming – even if the internet fails,
+- video is driven by the audio clock → **sound and picture never drift apart**, even when the window is hidden,
+- for YouTube you can turn on the **backup server** (backup ingest).
+
 ## 1. Install once
 1. **Node.js** – download the LTS version from nodejs.org.
 2. **FFmpeg** – only needed for RTMP streaming:

@@ -183,3 +183,9 @@ header>button{flex:0 0 auto}
 /* rukojeť T-baru bez písmene – jen úchopové rýhy */
 .tbar .tbhandle{background:linear-gradient(#e5e7eb,#9ca3af)}
 .tbar .tbhandle::before{content:"";width:60%;height:10px;background:repeating-linear-gradient(0deg,#4b5563 0 2px,transparent 2px 4px);border-radius:1px}
+.stmode.three{grid-template-columns:1.3fr 1fr 1fr}
+.stouts{display:flex;flex-direction:column;gap:4px}
+.stout{display:grid;grid-template-columns:170px 1fr;gap:4px 10px;padding:6px 8px;border-radius:6px;background:#0f1115;border:1px solid var(--line);align-items:center}
+.stout small{grid-column:2}
+.stout.live{border-color:#166534}.stout.reconnecting,.stout.starting{border-color:#a16207}.stout.cong{border-color:#b45309;background:#1f1708}
+.stout.enc{border-color:#1e40af}

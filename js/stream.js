@@ -8,7 +8,8 @@ const RTMP_PLAT = {
   facebook:{n:'Facebook', url:'rtmps://live-api-s.facebook.com:443/rtmp/', help:'Facebook → Živé video → Použít klíč streamu'},
   twitch:{n:'Twitch', url:'rtmp://live.twitch.tv/app', help:'Twitch → Ovládací panel tvůrce → Nastavení → Stream → Primární klíč streamu'},
   kick:{n:'Kick', url:'', help:'Kick → Dashboard → Settings → Stream URL + Stream Key (vlož obojí)'},
-  custom:{n:'Vlastní (Instagram, TikTok, …)', url:'', help:'Zkopíruj adresu serveru (rtmp:// nebo rtmps://) a klíč z platformy'}
+  custom:{n:'Vlastní (Instagram, TikTok, …)', url:'', help:'Zkopíruj adresu serveru (rtmp:// nebo rtmps://) a klíč z platformy'},
+  srt:{n:'SRT (profesionální)', url:'srt://', help:'SRT – profesionální protokol odolný proti výpadkům (jen v aplikaci). Vlož srt://adresa:port, klíč = streamid (pokud ho server chce).'}
 };
 const WHIP_PLAT = {
   twitch:{n:'Twitch (zkušební)', url:'https://g.webrtc.live-video.net:4443/v2/offer', tok:'Klíč streamu z Twitche', help:'Twitch WHIP není oficiálně zdokumentovaný – funguje, ale může se změnit. Token = tvůj klíč streamu.'},
@@ -26,7 +27,8 @@ async function testRelay() { return STR.test(); }
 const STR = (() => {
   const C = () => S.streamCfg;
   const ST = {srv:null, stats:'', status:'off'};
-  const defRelay = () => (location.protocol.startsWith('http') && location.port === '8080') ? location.origin : 'http://localhost:8080';
+  const IS_APP = /Electron/.test(navigator.userAgent);   // desktopová aplikace – server běží uvnitř
+  const defRelay = () => (location.protocol.startsWith('http') && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) ? location.origin : 'http://localhost:8080';
   const newTarget = plat => ({id:uid(), plat, url:RTMP_PLAT[plat].url, on:true});
   function load(d) {
     const c = {mode:'rtmp', relay:defRelay(), vb:4500, res:'1080', enc:'libx264', remember:false, targets:[newTarget('youtube')],
@@ -35,6 +37,10 @@ const STR = (() => {
       if (d.targets) Object.assign(c, d, {whip:Object.assign(c.whip, d.whip || {})});
       else if (d.url) { c.targets = [{id:uid(), plat:d.plat || 'custom', url:d.url, on:true}]; c.vb = d.vb || 4500; c.relay = d.relay || c.relay; }   // starý formát
     }
+    if (IS_APP || (location.protocol.startsWith('http') && /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) c.relay = location.origin;
+    c.app = Object.assign({record:true, recDir:''}, c.app || {});
+    if (NAT.available() && (!d || !d.modeChosen)) c.mode = 'app';
+    if (!NAT.available() && c.mode === 'app') c.mode = 'rtmp';
     c.targets.forEach(t => { if (t.key) { KEYS[t.id] = t.key; delete t.key; } });
     if (c.whip.token) { KEYS.whip = c.whip.token; delete c.whip.token; }
     S.streamCfg = c;
@@ -51,29 +57,33 @@ const STR = (() => {
     const box = $('#tab-stream'); if (!box || !C()) return; const c = C(), live = !!R.stream;
     const wp = WHIP_PLAT[c.whip.preset] || WHIP_PLAT.custom;
     box.innerHTML = `
-    <div class="stmode"><button data-sm="rtmp" class="${c.mode === 'rtmp' ? 'on2' : ''}" ${live ? 'disabled' : ''}>📡 Přes server.js (RTMP)<small>YouTube, Facebook, Twitch… i víc míst najednou</small></button>
+    <div class="stmode ${NAT.available() ? 'three' : ''}">${NAT.available() ? `<button data-sm="app" class="${c.mode === 'app' ? 'on2' : ''}" ${live ? 'disabled' : ''}>🚀 Nativní vysílání<small>doporučeno – kódování na grafice, víc míst, SRT, pojistná nahrávka</small></button>` : ''}<button data-sm="rtmp" class="${c.mode === 'rtmp' ? 'on2' : ''}" ${live ? 'disabled' : ''}>📡 Přes server.js (RTMP)<small>YouTube, Facebook, Twitch… i víc míst najednou</small></button>
       <button data-sm="whip" class="${c.mode === 'whip' ? 'on2' : ''}" ${live ? 'disabled' : ''}>🌐 Přímo z prohlížeče (WHIP)<small>bez instalace – Twitch, Restream, vlastní server</small></button></div>
     <div class="ststatus ${ST.status}"><b id="stState">${statusText()}</b><span id="stStats" class="mono">${ST.stats}</span>
       <button id="stGo" class="${live ? 'on' : 'primary'}">${live ? '■ Ukončit vysílání' : '⦿ Spustit vysílání'}</button></div>
-    ${c.mode === 'rtmp' ? `
+    ${c.mode === 'rtmp' || c.mode === 'app' ? `
     <div class="sec"><h4>Kam vysílat (můžeš zapnout víc míst najednou)</h4>
       ${c.targets.map(t => { const P = RTMP_PLAT[t.plat] || RTMP_PLAT.custom; return `<div class="sttg" data-id="${t.id}">
         <label class="chk"><input type="checkbox" data-tk="on" ${t.on ? 'checked' : ''} ${live ? 'disabled' : ''}></label>
-        <label>Platforma<select data-tk="plat" ${live ? 'disabled' : ''}>${opt(RTMP_PLAT, t.plat)}</select></label>
+        <label>Platforma<select data-tk="plat" ${live ? 'disabled' : ''}>${opt(c.mode === 'app' ? RTMP_PLAT : Object.fromEntries(Object.entries(RTMP_PLAT).filter(([k]) => k !== 'srt')), t.plat)}</select></label>
         <label>Adresa serveru<input data-tk="url" value="${esc(t.url)}" placeholder="rtmp://…" ${live ? 'disabled' : ''}></label>
         <label>Klíč streamu<input data-tk="key" type="password" autocomplete="off" value="${esc(KEYS[t.id] || '')}" placeholder="vlož klíč" ${live ? 'disabled' : ''}></label>
         <button data-ta="del" title="Odebrat" ${live || c.targets.length < 2 ? 'disabled' : ''}>✕</button>
-        <div class="dim sthelp">${esc(P.help)}</div></div>`; }).join('')}
+        <div class="dim sthelp">${esc(P.help)}${c.mode === 'app' && t.plat === 'youtube' ? ` <label class="chk" style="display:inline-flex;margin-left:8px"><input type="checkbox" data-tk="backup" ${t.backup ? 'checked' : ''} ${live ? 'disabled' : ''}> + záložní server YouTube</label>` : ''}</div></div>`; }).join('')}
       <div class="btns"><button data-ta="add" ${live ? 'disabled' : ''}>+ Přidat další místo</button>
         <label class="chk"><input type="checkbox" data-c="remember" ${c.remember ? 'checked' : ''}> Pamatovat klíče v tomto počítači</label></div></div>
     <div class="sec"><h4>Kvalita</h4><div class="grid4">
       <label>Datový tok videa (kbps)<input type="number" data-c="vb" min="500" step="500" value="${c.vb}" ${live ? 'disabled' : ''}></label>
       <label>Rozlišení<select data-c="res" ${live ? 'disabled' : ''}>${opt({'1080':'1080p (Full HD)', '720':'720p (slabší internet)'}, c.res)}</select></label>
-      <label style="grid-column:span 2">Kódování<select data-c="enc" ${live ? 'disabled' : ''}>${Object.entries(ENCODERS).map(([k, n]) => { const ok = !ST.srv || !ST.srv.encoders || ST.srv.encoders.includes(k); return `<option value="${k}" ${c.enc === k ? 'selected' : ''} ${ok ? '' : 'disabled'}>${n}${ok ? '' : ' – není k dispozici'}</option>`; }).join('')}</select></label></div>
+      ${c.mode === 'app' ? `<div style="grid-column:span 2" class="dim">Kódování: <b>H.264 na grafické kartě</b> (jen jednou, bez překódování) · 30 fps · klíčový snímek každé 2 s · datový tok se sám sníží, když internet nestíhá.</div>` : `<label style="grid-column:span 2">Kódování<select data-c="enc" ${live ? 'disabled' : ''}>${Object.entries(ENCODERS).map(([k, n]) => { const ok = !ST.srv || !ST.srv.encoders || ST.srv.encoders.includes(k); return `<option value="${k}" ${c.enc === k ? 'selected' : ''} ${ok ? '' : 'disabled'}>${n}${ok ? '' : ' – není k dispozici'}</option>`; }).join('')}</select></label>`}</div>
       <p class="dim">Doporučení: 1080p → 4500–6000 kbps, 720p → 2500–4000 kbps. Rychlost nahrávání internetu by měla být aspoň 1,5× vyšší. Na víc míst najednou se počítá součet. Kódování na grafice ulehčí procesoru.</p></div>
-    <div class="sec"><h4>Přenosový program v počítači (server.js)</h4>
+    ${c.mode === 'app' ? `<div class="sec"><h4>💾 Pojistná nahrávka</h4>
+      <label class="chk"><input type="checkbox" data-a="record" ${c.app.record ? 'checked' : ''} ${live ? 'disabled' : ''}> Při vysílání zároveň nahrávat na disk (MKV, stejná kvalita jako stream, nezávislé na internetu)</label>
+      <div class="row" style="margin-top:6px"><label>Složka<input value="${esc(c.app.recDir || ST.info && ST.info.videos || '')}" readonly></label><button data-ta="recdir" ${live ? 'disabled' : ''}>Změnit</button><button data-ta="recopen">📂 Otevřít</button></div></div>
+    <div class="sec"><h4>Stav jednotlivých míst</h4><div id="stOuts" class="stouts"><span class="dim">Spustí se po zahájení vysílání.</span></div></div>` : ''}
+    ${c.mode === 'app' ? '' : `<div class="sec"><h4>Přenosový program v počítači (server.js)</h4>
       <div class="row"><label>Adresa<input data-c="relay" value="${esc(c.relay)}"></label><button id="stTest">Otestovat spojení</button></div>
-      <p class="dim">Spusť <b>start-windows.bat</b> (Windows) nebo <b>start-mac.command</b> (Mac) – nebo v terminálu <code>node server.js</code>. Potřebuje Node.js a FFmpeg (viz NAVOD.md).</p></div>`
+      <p class="dim">${IS_APP ? '✅ Běží uvnitř aplikace (včetně FFmpeg) – nic dalšího není potřeba.' : 'Spusť <b>start-windows.bat</b> (Windows) nebo <b>start-mac.command</b> (Mac) – nebo v terminálu <code>node server.js</code>. Potřebuje Node.js a FFmpeg (viz NAVOD.md). Nebo si stáhni desktopovou aplikaci – tam je všechno uvnitř.'}</p></div>`}`
     : `
     <div class="sec"><h4>WHIP – vysílání přímo z prohlížeče</h4><div class="grid2">
       <label>Služba<select data-w="preset" ${live ? 'disabled' : ''}>${opt(WHIP_PLAT, c.whip.preset)}</select></label>
@@ -105,6 +115,26 @@ const STR = (() => {
       if (!/^rtmps?:\/\//.test(url)) throw new Error('Adresa musí začínat rtmp:// nebo rtmps://');
       return url.replace(/\/+$/, '') + '/' + key;
     });
+  }
+  function appTargets() {
+    const out = [];
+    C().targets.filter(t => t.on).forEach(t => {
+      const key = (KEYS[t.id] || '').trim(), url = (t.url || '').trim(), name = (RTMP_PLAT[t.plat] || {}).n || 'Místo';
+      if (/^srt:\/\/.+/.test(url)) { out.push({id:t.id, name, url:key && !/streamid=/.test(url) ? url + (url.includes('?') ? '&' : '?') + 'streamid=' + encodeURIComponent(key) : url}); return; }
+      if (!url || !key) throw new Error(`U místa „${name}“ chybí adresa nebo klíč.`);
+      if (!/^rtmps?:\/\//.test(url)) throw new Error('Adresa musí začínat rtmp://, rtmps:// nebo srt://');
+      out.push({id:t.id, name, url:url.replace(/\/+$/, '') + '/' + key});
+      if (t.plat === 'youtube' && t.backup) out.push({id:t.id + '-b', name:'YouTube (záloha)', url:'rtmp://b.rtmp.youtube.com/live2?backup=1/' + key});
+    });
+    return out;
+  }
+  const ST_NAME = {starting:'🟡 připojuji', live:'🟢 živě', reconnecting:'🟠 znovu se připojuje', stopped:'⚪ zastaveno'};
+  function renderOuts(s) {
+    const box = $('#stOuts'); if (!box || !s) return; const n = NAT.stats();
+    box.innerHTML = `<div class="stout enc"><b>🎛 Kodér</b><span>${n.codec ? `H.264 ${n.w}×${n.h} · ${n.fps.toFixed(1)} fps · ${Math.round(n.vb / 1000)} kbps${n.vb < n.vbTarget ? ` (sníženo z ${Math.round(n.vbTarget / 1000)})` : ''}${n.late ? ` · zpožděné snímky: ${n.late}` : ''}` : '—'}</span></div>` +
+      s.outs.map(o => `<div class="stout ${o.state}${o.congested ? ' cong' : ''}"><b>${esc(o.name)}</b><span>${ST_NAME[o.state] || o.state}${o.kbps ? ' · ' + Math.round(o.kbps) + ' kbps' : ''}${o.uptime ? ' · ' + fmtT(o.uptime * 1000) : ''}${o.restarts ? ' · znovupřipojení: ' + o.restarts : ''}${o.congested ? ' · ⚠ pomalý internet' : ''}</span>${o.last && o.state !== 'live' ? `<small class="dim" title="${esc(o.last)}">${esc(o.last.slice(0, 90))}</small>` : ''}</div>`).join('');
+    const live = s.outs.filter(o => o.kind === 'net' && o.state === 'live').length, net = s.outs.filter(o => o.kind === 'net').length;
+    if (R.stream && R.stream.mode === 'app') setStatus(live === net ? 'live' : live ? 'warn' : 'retry', `${live}/${net} míst živě${s.outs.some(o => o.kind === 'file' && o.state === 'live') ? ' · 💾 nahrává se' : ''}`);
   }
   async function rtmpStart(st) {
     const c = C(), relay = relayUrl();
@@ -208,10 +238,16 @@ const STR = (() => {
     const st = {mode:c.mode, relay:relayUrl(), start:performance.now(), retries:0};
     try {
       if (c.mode === 'rtmp') { st.targets = rtmpTargets(); if (!st.targets.length) throw new Error('Zapni aspoň jedno místo, kam vysílat.'); }
+      if (c.mode === 'app') { st.targets = appTargets(); if (!st.targets.length) throw new Error('Zapni aspoň jedno místo, kam vysílat.'); }
     } catch (e) { showTab('stream'); return alert(e.message); }
     R.stream = st; setStatus('connecting', ''); renderTab(); updateHeader();
     try {
-      if (c.mode === 'rtmp') { await rtmpStart(st); stLog(`Vysílání spuštěno → ${st.targets.map(t => t.replace(/[^/]+$/, '••••')).join(', ')}`); st.poll = setInterval(() => rtmpPoll(st), 2000); }
+      if (c.mode === 'app') {
+        const rec = c.app.record ? {dir:c.app.recDir || (ST.info && ST.info.videos), name:`Rezie_${stamp()}.mkv`} : null;
+        await NAT.start({targets:st.targets, record:rec, vb:c.vb, res:c.res});
+        stLog(`Nativní vysílání spuštěno → ${st.targets.map(t => t.name).join(', ')}${rec ? ' + pojistná nahrávka' : ''}`);
+      }
+      else if (c.mode === 'rtmp') { await rtmpStart(st); stLog(`Vysílání spuštěno → ${st.targets.map(t => t.replace(/[^/]+$/, '••••')).join(', ')}`); st.poll = setInterval(() => rtmpPoll(st), 2000); }
       else { await whipConnect(st); stLog('WHIP: nabídka přijata, navazuji spojení…'); st.poll = setInterval(() => whipPoll(st), 2000); }
     } catch (e) {
       R.stream = null; clearInterval(st.poll); if (st.pc) whipClose(st); setStatus('error', '');
@@ -224,7 +260,8 @@ const STR = (() => {
   }
   async function stop() {
     const st = R.stream; if (!st) return; st.stopping = true; R.stream = null; clearInterval(st.poll);
-    if (st.mode === 'rtmp') {
+    if (st.mode === 'app') { await NAT.stop(); stLog('Vysílání ukončeno.'); }
+    else if (st.mode === 'rtmp') {
       try { if (st.rec && st.rec.state !== 'inactive') st.rec.stop(); } catch (e) {}
       setTimeout(async () => { await st.q; try { await fetch(st.relay + '/stop', {method:'POST'}); } catch (e) {} stLog('Vysílání ukončeno.'); keepLog(); }, 700);
     } else { await whipClose(st); stLog('Vysílání ukončeno.'); }
@@ -237,17 +274,20 @@ const STR = (() => {
       const t = e.target.closest('button'); if (!t) return;
       if (t.id === 'stGo') return toggleStream();
       if (t.id === 'stTest') return test();
-      if (t.dataset.sm) { C().mode = t.dataset.sm; renderTab(); save(); return; }
+      if (t.dataset.sm) { C().mode = t.dataset.sm; C().modeChosen = true; renderTab(); save(); return; }
+      if (t.dataset.ta === 'recdir') { window.rzNative.pickFolder().then(p => { if (p) { C().app.recDir = p; renderTab(); save(); } }); return; }
+      if (t.dataset.ta === 'recopen') { window.rzNative.openFolder(C().app.recDir || (ST.info && ST.info.videos)); return; }
       if (t.dataset.ta === 'add') { C().targets.push(newTarget('facebook')); renderTab(); save(); }
       if (t.dataset.ta === 'del') { const id = t.closest('.sttg').dataset.id; C().targets = C().targets.filter(x => x.id !== id); delete KEYS[id]; renderTab(); save(); }
     });
     box.addEventListener('input', e => {
       const el = e.target, c = C();
       if (el.dataset.tk) { const tg = c.targets.find(x => x.id === el.closest('.sttg').dataset.id); if (!tg) return;
-        if (el.dataset.tk === 'key') KEYS[tg.id] = el.value; else if (el.dataset.tk === 'on') tg.on = el.checked;
+        if (el.dataset.tk === 'key') KEYS[tg.id] = el.value; else if (el.dataset.tk === 'on') tg.on = el.checked; else if (el.dataset.tk === 'backup') tg.backup = el.checked;
         else if (el.dataset.tk === 'plat') { tg.plat = el.value; tg.url = RTMP_PLAT[el.value].url || ''; renderTab(); }
         else tg[el.dataset.tk] = el.value.trim();
         save(); return; }
+      if (el.dataset.a) { c.app[el.dataset.a] = el.checked; save(); return; }
       if (el.dataset.c) { c[el.dataset.c] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Math.max(500, +el.value || 4500) : el.value.trim(); if (el.dataset.c === 'remember') renderTab(); save(); return; }
       if (el.dataset.w) { const k = el.dataset.w;
         if (k === 'token') KEYS.whip = el.value; else if (k === 'vb') c.whip.vb = Math.max(500, +el.value || 4500);
@@ -255,6 +295,11 @@ const STR = (() => {
         else c.whip[k] = el.value.trim();
         save(); }
     });
+    if (NAT.available()) {
+      window.rzNative.info().then(i => { ST.info = i; if (S.tabCur === 'stream') renderTab(); }).catch(() => {});
+      window.rzNative.onStatus(s => { NAT.onStatus(s); renderOuts(s); });
+      window.rzNative.onLog(l => { stLog(l.replace(/^\S+\s+\S*\s*/, '')); keepLog(); });
+    }
     if (C().mode === 'rtmp') fetch(relayUrl() + '/status').then(r => r.json()).then(j => { ST.srv = j; if (S.tabCur === 'stream') renderTab(); }).catch(() => {});
   }
   return {load, save:save_, renderTab, init, start, stop, test};
