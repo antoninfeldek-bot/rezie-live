@@ -10,7 +10,7 @@ Všechno nech pohromadě v **jedné složce** (tak, jak je to na GitHubu).
 Aplikace umí česky i anglicky – přepínač **🌐 EN / 🌐 CZ** je v horní liště (a na úvodní obrazovce). Anglický návod: GUIDE.md.
 
 ## 🍎 Aplikace pro Mac (doporučeno)
-1. Otevři [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) a stáhni **Rezie-Live-arm64.dmg** (Mac s čipem M1/M2/M3/M4) nebo **Rezie-Live-x64.dmg** (starší Mac s Intelem).
+1. Otevři [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) a stáhni **Rezie-Live-mac-arm64.dmg** (Mac s čipem M1/M2/M3/M4) nebo **Rezie-Live-mac-x64.dmg** (starší Mac s Intelem).
 2. Otevři DMG a přetáhni **Rezie Live** do složky **Aplikace**.
 3. Při prvním spuštění macOS napíše, že aplikaci nezná. Otevři **Nastavení systému → Soukromí a zabezpečení**, sjeď dolů a klikni **Přesto otevřít**. (Nebo v Terminálu: `xattr -dr com.apple.quarantine "/Applications/Rezie Live.app"`.)
 4. Povol kameru a mikrofon. Pro sdílení obrazovky povol aplikaci v **Soukromí a zabezpečení → Nahrávání obrazovky**.

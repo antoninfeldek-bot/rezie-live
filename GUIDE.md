@@ -3,7 +3,7 @@
 The app is bilingual – switch **🌐 EN / 🌐 CZ** in the top bar (or on the start screen).
 
 ## 🍎 Mac app (recommended)
-1. Open [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) and download **Rezie-Live-arm64.dmg** (Mac with M1/M2/M3/M4 chip) or **Rezie-Live-x64.dmg** (older Intel Mac).
+1. Open [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) and download **Rezie-Live-mac-arm64.dmg** (Mac with M1/M2/M3/M4 chip) or **Rezie-Live-mac-x64.dmg** (older Intel Mac).
 2. Open the DMG and drag **Rezie Live** into **Applications**.
 3. On first start macOS says it doesn't know the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. (Or in Terminal: `xattr -dr com.apple.quarantine "/Applications/Rezie Live.app"`.)
 4. Allow camera and microphone. For screen sharing allow the app in **Privacy & Security → Screen Recording**.

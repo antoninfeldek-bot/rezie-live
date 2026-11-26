@@ -2,7 +2,9 @@ name: Desktop app (Mac)
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ['v*']
+    paths: ['electron/**', 'js/**', 'css/**', 'index.html', 'server.js', 'package.json', '.github/workflows/desktop.yml']
 permissions:
   contents: write
 jobs:
@@ -41,11 +43,13 @@ jobs:
           name: Rezie-Live-mac-${{ matrix.arch }}
           path: out/*.dmg
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: out/*.dmg
-          name: Režie Live ${{ github.ref_name }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          name: Režie Live ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
           body: |
             **Mac s čipem M1/M2/M3/M4 (Apple Silicon):** stáhni `Rezie-Live-mac-arm64.dmg`
             **Starší Mac s Intelem:** stáhni `Rezie-Live-mac-x64.dmg`
