@@ -1105,6 +1105,9 @@ function showHelp() {
   <tr><td><kbd>Delete</kbd></td><td>odebrat vybranou vrstvu ze scény</td></tr>
   <tr><td>dvojklik na scénu</td><td>rovnou do vysílání</td></tr>
   <tr><td>Alt při tažení</td><td>vypne přichytávání k okrajům</td></tr>
+  <tr><td>⊞ nahoře</td><td>rozložení: dvě záložky vedle sebe, výchozí velikosti panelů</td></tr>
+  <tr><td>tažení za okraj panelu</td><td>změna velikosti (dvojklik = výchozí)</td></tr>
+  <tr><td>⧉ u záložky</td><td>záložka v samostatném okně (druhý monitor)</td></tr>
   </table>
   <p class="dim">Všechny klávesy, MIDI a Stream Deck nastavíš v záložce <b>Ovládání</b>. Na stránce Grafika je mezerník přehrát / zastavit animaci a Ctrl+Z zpět.</p>
   <p class="dim">Upravuješ vždy scénu v <b>NÁHLEDU</b> (zelená). Ven jde jen <b>PROGRAM</b> (červená).<br>
