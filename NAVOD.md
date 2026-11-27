@@ -15,7 +15,12 @@ Aplikace umí česky i anglicky – přepínač **🌐 EN / 🌐 CZ** je v horn�
 3. Při prvním spuštění macOS napíše, že aplikaci nezná. Otevři **Nastavení systému → Soukromí a zabezpečení**, sjeď dolů a klikni **Přesto otevřít**. (Nebo v Terminálu: `xattr -dr com.apple.quarantine "/Applications/Rezie Live.app"`.)
 4. Povol kameru a mikrofon. Pro sdílení obrazovky povol aplikaci v **Soukromí a zabezpečení → Nahrávání obrazovky**.
 
-FFmpeg už je v aplikaci uvnitř – nic dalšího se neinstaluje.
+## 🪟 Aplikace pro Windows (10 a 11, 64bit)
+1. Na stejné stránce [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) stáhni **Rezie-Live-windows-x64-setup.exe**.
+2. Spusť instalátor. Když Windows napíše **„Systém Windows ochránil váš počítač“**, klikni na **Další informace → Přesto spustit** (aplikace zatím není podepsaná).
+3. Při prvním spuštění může brána Windows Firewall chtít povolit síť – povol **soukromé sítě** (kvůli ovladači, čtečce a hostům).
+
+Na Macu i Windows je FFmpeg už v aplikaci uvnitř – nic dalšího se neinstaluje.
 
 ### 🚀 Nativní vysílání (jen v aplikaci)
 V záložce Vysílání vyber **🚀 Nativní vysílání**:
@@ -73,7 +78,7 @@ Stránka **📊 Stav** nahoře (tečka u ní svítí 🟢 / 🟡 / 🔴) ukazuje
 1. Nainstaluj zdarma **NDI Tools** (https://ndi.video/tools/) – obsahují i NDI Runtime.
 2. V záložce **Vysílání** dole zaškrtni **Posílat program přes NDI**.
 3. Program teď uvidí každý program s NDI ve stejné síti (OBS, vMix, NDI Studio Monitor, jiný Mac…).
-4. **Virtuální kamera:** otevři z NDI Tools aplikaci **NDI Virtual Input** a vyber v ní „Režie Live – Program“. Pak si v Zoomu, Teams, FaceTimu, Meetu… vyber kameru NDI.
+4. **Virtuální kamera:** otevři z NDI Tools aplikaci **NDI Virtual Input** (na Windows **NDI Webcam Input**) a vyber v ní „Režie Live – Program“. Pak si v Zoomu, Teams, FaceTimu, Meetu… vyber kameru NDI.
 
 Převod obrazu pro NDI dělá grafika, procesor se skoro nezatíží. (Vlastní virtuální kameru bez NDI by šlo udělat jen s placeným vývojářským účtem Apple.)
 
@@ -89,7 +94,7 @@ Záložka **⏪ Replay**: zaškrtni kamery, které se mají nahrávat do paměti
 ### 📑 Titulky z tabulky (Google Sheets, CSV)
 Záložka **Grafika** dole → **Data pro titulky** → vlož odkaz na Google tabulku (stačí sdílet „Kdokoli s odkazem“) nebo přidej soubor CSV. Do textu v editoru grafiky pak napiš `{Data1!B2}` (buňka), `{Data1!Jméno}` (sloupec Jméno v aktuálním řádku) nebo `{Data1!B@+1}` (další řádek). Řádky přepínáš ◀ ▶ (nebo klávesou). Data se samy obnovují.
 
-### 🌐 Web a 💬 chat ve vysílání (jen aplikace pro Mac)
+### 🌐 Web a 💬 chat ve vysílání (jen v desktopové aplikaci)
 Zdroje → **🌐 + Web / chat**: libovolná stránka, nebo **chat z YouTube / Twitche** (vložíš odkaz na své živé vysílání nebo název kanálu). Chat má průhledné pozadí a sám se dá do rohu.
 
 ### 📃 Playlist a 🗂 prezentace

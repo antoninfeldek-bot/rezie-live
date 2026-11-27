@@ -134,7 +134,7 @@ const MON = (() => {
   async function speed() {
     if (ST.speedBusy) return;
     if (R.stream && !confirm(L('Test na pár sekund vytíží internet a může na chvíli zhoršit vysílání. Pokračovat?'))) return;
-    const b = REM.base && REM.base(); if (!b) return toast(L('Test rychlosti funguje jen v aplikaci pro Mac nebo přes node server.js.'));
+    const b = REM.base && REM.base(); if (!b) return toast(L('Test rychlosti funguje jen v desktopové aplikaci nebo přes node server.js.'));
     ST.speedBusy = true; render();
     try { const r = await fetch(b + '/net/speed', {method:'POST'}); if (!r.ok) throw new Error(await r.text()); ST.speed = await r.json(); }
     catch (e) { toast(e.message); }

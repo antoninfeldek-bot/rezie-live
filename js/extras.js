@@ -3,7 +3,7 @@
    – playlist: videa jdou automaticky za sebou (opakovat / náhodně)
    – prezentace: obrázky snímků (z PowerPointu/Keynote: Exportovat → Obrázky); další snímek PageDown / klikrem
    – web: libovolná stránka jako zdroj (skóre, počasí, grafika), i průhledná; chat z YouTube / Twitche do vysílání
-     (jen v aplikaci pro Mac – stránka se kreslí neviditelně a obraz jde rovnou do režie) */
+     (jen v desktopové aplikaci – stránka se kreslí neviditelně a obraz jde rovnou do režie) */
 const EXT = (() => {
   const files = new Map();   // id zdroje → [File] (soubory se neukládají – po restartu je vybereš znovu)
   const pickMany = accept => new Promise(res => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.multiple = true; i.onchange = () => res([...i.files]); i.click(); });
@@ -97,7 +97,7 @@ const EXT = (() => {
       await slLoad(s, list); S.sources.push(s); addToPreview(s); return true;
     }
     if (type === 'web') {
-      if (!canWeb()) { alert(L('Web a chat jako zdroj fungují jen v aplikaci pro Mac.')); return true; }
+      if (!canWeb()) { alert(L('Web a chat jako zdroj fungují jen v desktopové aplikaci.')); return true; }
       const f = await dialog(L('Web / chat jako zdroj'), `<label>${L('Co zobrazit')}<select name="kind"><option value="url">${L('Webová stránka (odkaz)')}</option><option value="youtube">${L('Chat z YouTube (živé vysílání)')}</option><option value="twitch">${L('Chat z Twitche')}</option></select></label>
         <label>${L('Odkaz / ID videa / kanál')}<input name="v" placeholder="https://… nebo youtube.com/watch?v=… nebo název kanálu"></label>
         <label>${L('Velikost')}<select name="size"><option value="1280x720">1280×720</option><option value="1920x1080">1920×1080</option><option value="480x800">480×800 (${L('chat na výšku')})</option><option value="800x600">800×600</option></select></label>
@@ -136,7 +136,7 @@ const EXT = (() => {
       <p class="dim">${L('Další snímek: PageDown / šipka klikru, předchozí: PageUp (platí pro prezentaci ve vysílání). Z PowerPointu nebo Keynote: Soubor → Exportovat → Obrázky (PNG/JPEG).')}</p></div>`;
     if (s.type === 'web') return `<div class="sec"><b>🌐 ${esc(p.kind === 'url' ? L('Webová stránka') : L('Chat'))}</b> <span class="dim">${esc(p.url.slice(0, 60))}</span>
       <div class="btns"><button data-ext="wreload">⟳ ${L('Načíst znovu')}</button><button data-ext="wurl">${L('Změnit odkaz')}</button></div>
-      ${canWeb() ? '' : `<p class="warn">${L('Web a chat jako zdroj fungují jen v aplikaci pro Mac.')}</p>`}</div>`;
+      ${canWeb() ? '' : `<p class="warn">${L('Web a chat jako zdroj fungují jen v desktopové aplikaci.')}</p>`}</div>`;
     return '';
   }
   async function act(s, a, el) {

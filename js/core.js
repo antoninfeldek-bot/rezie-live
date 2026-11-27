@@ -1231,5 +1231,5 @@ $('#startBtn').onclick = async () => {
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();
 };
-// po pádu okna (aplikace pro Mac) se studio spustí samo a naváže na běžící vysílání
+// po pádu okna (desktopová aplikace) se studio spustí samo a naváže na běžící vysílání
 if (/[?&]recover=1/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(() => { const b = $('#startBtn'); if (b) b.click(); }, 300); }

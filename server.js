@@ -125,7 +125,34 @@ function certFiles() {
     const r = spawnSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256', '-days', '3650', '-subj', '/CN=Rezie Live', '-keyout', key, '-out', crt], {timeout:20000});
     if (r.status === 0) return {key:fs.readFileSync(key), cert:fs.readFileSync(crt)};
   } catch (e) {}
+  try {   // bez OpenSSL (Windows): certifikát vyrobíme sami v Node.js
+    const c = selfSignedCert();
+    fs.writeFileSync(key, c.key, {mode:0o600}); fs.writeFileSync(crt, c.cert);
+    return c;
+  } catch (e) {}
   return null;   // bez OpenSSL → obyčejné HTTP (ovládání funguje, kamera hosta v mobilu ne)
+}
+// vlastnoruční certifikát X.509 (RSA 2048, SHA-256, 10 let) – jen pomocí vestavěného crypto
+function selfSignedCert() {
+  const crypto = require('crypto');
+  const len = n => n < 128 ? Buffer.from([n]) : (b => Buffer.concat([Buffer.from([0x80 | b.length]), b]))(Buffer.from(n.toString(16).padStart(n > 0xffff ? 6 : n > 0xff ? 4 : 2, '0'), 'hex'));
+  const tlv = (t, ...parts) => { const b = Buffer.concat(parts); return Buffer.concat([Buffer.from([t]), len(b.length), b]); };
+  const seq = (...p) => tlv(0x30, ...p), set = (...p) => tlv(0x31, ...p);
+  const oid = s => { const a = s.split('.').map(Number), out = [40 * a[0] + a[1]]; for (const v of a.slice(2)) { const t = []; let x = v; do { t.unshift(x & 0x7f); x >>= 7; } while (x); for (let i = 0; i < t.length - 1; i++) t[i] |= 0x80; out.push(...t); } return tlv(0x06, Buffer.from(out)); };
+  const utf8 = s => tlv(0x0c, Buffer.from(s, 'utf8'));
+  const time = d => { const y = d.getUTCFullYear(), p = n => String(n).padStart(2, '0'), body = p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + p(d.getUTCHours()) + p(d.getUTCMinutes()) + p(d.getUTCSeconds()) + 'Z'; return y < 2050 ? tlv(0x17, Buffer.from(String(y).slice(2) + body)) : tlv(0x18, Buffer.from(y + body)); };
+  const {publicKey, privateKey} = crypto.generateKeyPairSync('rsa', {modulusLength:2048});
+  const spki = publicKey.export({type:'spki', format:'der'});
+  const name = seq(set(seq(oid('2.5.4.3'), utf8('Rezie Live'))));
+  const algo = seq(oid('1.2.840.113549.1.1.11'), Buffer.from([0x05, 0x00]));
+  const serial = crypto.randomBytes(16); serial[0] &= 0x7f; serial[0] |= 0x01;
+  const now = new Date(Date.now() - 864e5), until = new Date(Date.now() + 3650 * 864e5);
+  const ext = tlv(0xa3, seq(seq(oid('2.5.29.19'), tlv(0x04, seq()))));   // basicConstraints: není CA
+  const tbs = seq(tlv(0xa0, tlv(0x02, Buffer.from([2]))), tlv(0x02, serial), algo, name, seq(time(now), time(until)), name, spki, ext);
+  const sig = crypto.sign('sha256', tbs, privateKey);
+  const der = seq(tbs, algo, tlv(0x03, Buffer.from([0]), sig));
+  const pem = '-----BEGIN CERTIFICATE-----\n' + der.toString('base64').match(/.{1,64}/g).join('\n') + '\n-----END CERTIFICATE-----\n';
+  return {key:privateKey.export({type:'pkcs8', format:'pem'}), cert:pem};
 }
 function lanIps() {
   const out = [];
@@ -321,7 +348,7 @@ function tunnelStart() {
       if (/failed to (request quick Tunnel|unmarshal)|429 Too Many Requests/i.test(buf) && tun.status !== 'on') tun.err = 'Cloudflare teď tunel nevytvořil – zkusím to znovu';
     };
     p.stdout.on('data', onData); p.stderr.on('data', onData);
-    p.on('error', e => { tun.proc = null; tun.want = false; tun.status = 'off'; tun.err = e.code === 'ENOENT' ? 'Chybí program cloudflared (v aplikaci pro Mac je přibalený; jinak: brew install cloudflared)' : e.message; tunEmit(); });
+    p.on('error', e => { tun.proc = null; tun.want = false; tun.status = 'off'; tun.err = e.code === 'ENOENT' ? 'Chybí program cloudflared (v desktopové aplikaci je přibalený; jinak: brew install cloudflared)' : e.message; tunEmit(); });
     p.on('close', () => {
       if (tun.proc !== p) return; tun.proc = null; tun.url = '';
       if (!tun.want) { tun.status = 'off'; tunEmit(); return; }

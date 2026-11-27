@@ -26,7 +26,7 @@
     "directories": { "output": "dist", "buildResources": "build" },
     "files": ["index.html", "remote.html", "guest.html", "prompter.html", "crew.html", "css/**", "js/**", "server.js", "electron/**", "package.json"],
     "asarUnpack": ["node_modules/ffmpeg-static/**"],
-    "extraResources": [{ "from": "bin", "to": "bin", "filter": ["cloudflared*", "ndi-send"] }],
+    "extraResources": [{ "from": "bin", "to": "bin", "filter": ["cloudflared*", "ndi-send", "ndi-send.exe"] }],
     "mac": {
       "category": "public.app-category.video",
       "icon": "build/icon.png",
@@ -40,6 +40,6 @@
       }
     },
     "win": { "target": "nsis", "icon": "build/icon.png" },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "perMachine": false, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "Režie Live" }
   }
 }

@@ -1,5 +1,5 @@
 'use strict';
-/* ================= NDI® výstup programu (jen v aplikaci pro Mac) =================
+/* ================= NDI® výstup programu (jen v desktopové aplikaci) =================
    Program se na grafice převede do formátu NV12 (to, co NDI chce) a přečte bez čekání (asynchronně),
    takže to počítač skoro nepocítí. Pomocný program ndi-send ho pak pošle do sítě přes NDI.
    Využití: jiný počítač/OBS/vMix v síti, monitor, a s bezplatným NDI Virtual Input i jako kamera pro Zoom, Teams…
@@ -116,7 +116,7 @@ const NDI = (() => {
 
   /* ---------- UI (záložka Vysílání) ---------- */
   function html() {
-    if (!available()) return `<div class="sec"><h4>📡 ${L('NDI výstup')}</h4><p class="dim">${L('NDI výstup je jen v aplikaci pro Mac.')}</p></div>`;
+    if (!available()) return `<div class="sec"><h4>📡 ${L('NDI výstup')}</h4><p class="dim">${L('NDI výstup je jen v desktopové aplikaci.')}</p></div>`;
     const s = ST.st, on = ST.on;
     const stat = s.state === 'on' ? `🟢 ${L('NDI vysílá jako')} „${esc(C().name)}“ · ${ST.size ? ST.size.join('×') : ''} · ${CFG.video.fps} fps · ${L('připojení')}: <b>${s.conns || 0}</b>`
       : s.state === 'starting' ? '🟡 ' + L('Spouštím…')

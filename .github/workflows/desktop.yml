@@ -1,4 +1,4 @@
-name: Desktop app (Mac)
+name: Desktop app (Mac + Windows)
 on:
   workflow_dispatch:
   push:
@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Version number = release number
+        run: npm pkg set version=1.0.${{ github.run_number }}
       - name: Install (FFmpeg for ${{ matrix.arch }})
         run: npm install --no-audit --no-fund
         env:
@@ -63,5 +65,63 @@ jobs:
           body: |
             **Mac s čipem M1/M2/M3/M4 (Apple Silicon):** stáhni `Rezie-Live-mac-arm64.dmg`
             **Starší Mac s Intelem:** stáhni `Rezie-Live-mac-x64.dmg`
+            **Windows 10/11 (64bit):** stáhni `Rezie-Live-windows-x64-setup.exe`
 
-            Otevři .dmg a přetáhni Rezie Live do Aplikací. Při prvním spuštění: Nastavení systému → Soukromí a zabezpečení → „Přesto otevřít“. Podrobně v NAVOD.md.
+            **Mac:** otevři .dmg a přetáhni Rezie Live do Aplikací. Při prvním spuštění: Nastavení systému → Soukromí a zabezpečení → „Přesto otevřít“.
+            **Windows:** spusť instalátor. Když se objeví „Systém Windows ochránil váš počítač“, klikni na „Další informace“ → „Přesto spustit“.
+            Podrobně v NAVOD.md.
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Version number = release number
+        run: npm pkg set version=1.0.${{ github.run_number }}
+      - name: Install (FFmpeg for Windows)
+        run: npm install --no-audit --no-fund
+      - name: Check bundled FFmpeg
+        run: ls -la node_modules/ffmpeg-static/ && node_modules/ffmpeg-static/ffmpeg.exe -hide_banner -version | head -1
+      - name: Bundle cloudflared (guests over the internet)
+        run: |
+          mkdir -p bin && curl -fsSL -o bin/cloudflared.exe "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+          bin/cloudflared.exe --version || true
+      - name: Build NDI helper (loads the user's NDI runtime at run time)
+        continue-on-error: true
+        run: |
+          mkdir -p bin
+          (gcc -O2 -static -o bin/ndi-send.exe electron/ndi/ndi-send.c || clang -O2 -o bin/ndi-send.exe electron/ndi/ndi-send.c) && ls -la bin/ndi-send.exe
+          ./bin/ndi-send.exe "test" 64 64 30 1 48000 < /dev/null || true
+      - name: Build app
+        run: npx electron-builder --win nsis --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Collect installer
+        run: |
+          ls -la dist
+          mkdir -p out && cp "$(ls dist/*.exe | head -1)" out/Rezie-Live-windows-x64-setup.exe && ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Rezie-Live-windows-x64
+          path: out/*.exe
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.exe
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          name: Režie Live ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          body: |
+            **Mac s čipem M1/M2/M3/M4 (Apple Silicon):** stáhni `Rezie-Live-mac-arm64.dmg`
+            **Starší Mac s Intelem:** stáhni `Rezie-Live-mac-x64.dmg`
+            **Windows 10/11 (64bit):** stáhni `Rezie-Live-windows-x64-setup.exe`
+
+            **Mac:** otevři .dmg a přetáhni Rezie Live do Aplikací. Při prvním spuštění: Nastavení systému → Soukromí a zabezpečení → „Přesto otevřít“.
+            **Windows:** spusť instalátor. Když se objeví „Systém Windows ochránil váš počítač“, klikni na „Další informace“ → „Přesto spustit“.
+            Podrobně v NAVOD.md.

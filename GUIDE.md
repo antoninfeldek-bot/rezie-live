@@ -8,7 +8,12 @@ The app is bilingual – switch **🌐 EN / 🌐 CZ** in the top bar (or on the 
 3. On first start macOS says it doesn't know the app. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. (Or in Terminal: `xattr -dr com.apple.quarantine "/Applications/Rezie Live.app"`.)
 4. Allow camera and microphone. For screen sharing allow the app in **Privacy & Security → Screen Recording**.
 
-FFmpeg is already inside the app – nothing else to install.
+## 🪟 Windows app (10 and 11, 64-bit)
+1. On the same [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) page download **Rezie-Live-windows-x64-setup.exe**.
+2. Run the installer. If Windows says **“Windows protected your PC”**, click **More info → Run anyway** (the app isn't signed yet).
+3. On first start Windows Firewall may ask about network access – allow **private networks** (for the remote, prompter and guests).
+
+On Mac and Windows FFmpeg is already inside the app – nothing else to install.
 
 ### 🚀 Native streaming (app only)
 In the Streaming tab choose **🚀 Native streaming**:
@@ -66,7 +71,7 @@ The **📊 Status** page at the top (its dot lights 🟢 / 🟡 / 🔴) shows in
 1. Install the free **NDI Tools** (https://ndi.video/tools/) – they include the NDI Runtime.
 2. In the **Streaming** tab tick **Send the program over NDI**.
 3. Any NDI app on the same network now sees the program (OBS, vMix, NDI Studio Monitor, another Mac…).
-4. **Virtual camera:** open **NDI Virtual Input** from NDI Tools and pick “Režie Live – Program”. Then choose the NDI camera in Zoom, Teams, FaceTime, Meet…
+4. **Virtual camera:** open **NDI Virtual Input** (on Windows **NDI Webcam Input**) from NDI Tools and pick “Režie Live – Program”. Then choose the NDI camera in Zoom, Teams, FaceTime, Meet…
 
 The conversion for NDI runs on the GPU, so the CPU barely notices. (A built-in virtual camera without NDI needs a paid Apple developer account.)
 
@@ -82,7 +87,7 @@ The app draws only as many times per second as the stream has frames (up to 4× 
 ### 📑 Titles from a sheet (Google Sheets, CSV)
 **Graphics** tab at the bottom → **Data for titles** → paste a Google Sheet link (shared “Anyone with the link”) or add a CSV file. In the graphics editor type `{Data1!B2}` (cell), `{Data1!Name}` (column Name in the current row) or `{Data1!B@+1}` (next row). Switch rows with ◀ ▶ (or a key). Data refreshes itself.
 
-### 🌐 Web and 💬 chat on air (Mac app only)
+### 🌐 Web and 💬 chat on air (desktop app only)
 Sources → **🌐 + Web / chat**: any page, or **YouTube / Twitch chat** (paste your live stream link or channel name). The chat has a transparent background and goes to a corner by itself.
 
 ### 📃 Playlist and 🗂 slides

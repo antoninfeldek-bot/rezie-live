@@ -121,7 +121,7 @@ app.whenReady().then(async () => {
   // ---- NDI výstup: pomocný program ndi-send (knihovnu NDI si najde v počítači) ----
   let ndi = null;
   const ndiSend = st => send('rz:ndi:status', st);
-  const ndiBin = () => [path.join(process.resourcesPath || '', 'bin', 'ndi-send'), path.join(__dirname, 'ndi', 'ndi-send')].find(f => { try { return fs.existsSync(f); } catch (e) { return false; } });
+  const ndiBin = () => [...['ndi-send', 'ndi-send.exe'].flatMap(n => [path.join(process.resourcesPath || '', 'bin', n), path.join(__dirname, 'ndi', n)])].find(f => { try { return fs.existsSync(f); } catch (e) { return false; } });
   const pkt = (t, buf) => { const h = Buffer.alloc(5); h[0] = t.charCodeAt(0); h.writeUInt32LE(buf.length, 1); return [h, buf]; };
   ipcMain.handle('rz:ndi:start', (e, c) => new Promise(res => {
     if (ndi) { try { ndi.kill(); } catch (er) {} ndi = null; }

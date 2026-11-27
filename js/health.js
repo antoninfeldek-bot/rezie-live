@@ -67,7 +67,7 @@ const HLT = (() => {
       <tr><td>${L('Paměť')}</td><td>${d.mem}</td></tr>
       <tr><td>${L('Zvuk')}</td><td>${d.audio}</td></tr>
       <tr><td>${L('Chybějící zdroje')}</td><td>${d.miss.length ? esc(d.miss.join(', ')) : '—'}</td></tr></table>
-      <p class="dim">${L('Projekt se ukládá automaticky. Odpojená kamera nebo mikrofon se po zapojení samy znovu připojí. V aplikaci pro Mac vysílání nepřestane, ani když okno spadne – mezitím běží tabulka „Technické potíže“.')}</p>
+      <p class="dim">${L('Projekt se ukládá automaticky. Odpojená kamera nebo mikrofon se po zapojení samy znovu připojí. V desktopové aplikaci vysílání nepřestane, ani když okno spadne – mezitím běží tabulka „Technické potíže“.')}</p>
       <h4>${L('Poslední chyby')}</h4><pre class="errlog">${H.errs.length ? esc(H.errs.slice(-15).join('\n')) : L('žádné')}</pre>`, true);
   }
   function init() {

@@ -60,7 +60,7 @@ const CFG = (() => {
       <label>${L('Snímková frekvence (FPS)')}<select data-k="video.fps">${opt({24:'24', 25:'25 (PAL – Evropa, TV)', 30:'30', 50:'50 (PAL)', 60:'60'}, v.fps)}</select></label>
       <label>${L('Výchozí rozlišení nových kamer')}<select data-k="video.camRes">${opt({480:'480p', 720:'720p', 1080:'1080p', 2160:'4K (2160p)'}, v.camRes)}</select></label>
       <p class="dim">${L('Na výšku (9:16) je pro TikTok, Instagram Reels a YouTube Shorts. 60 fps je plynulejší (sport, hry), ale potřebuje silnější počítač a o ~50 % vyšší datový tok. 25/50 fps sedí k evropskému osvětlení (nebliká).')}</p>
-      <p class="warn" ${v.base !== C.video.base || +v.fps !== C.video.fps ? '' : 'hidden'}>⟳ ${L('Změna plátna nebo FPS se projeví po restartu studia (projekt se uloží).')}${live ? ' ' + L('V aplikaci pro Mac vysílání během restartu nespadne – poběží záložní obraz.') : ''}</p>`;
+      <p class="warn" ${v.base !== C.video.base || +v.fps !== C.video.fps ? '' : 'hidden'}>⟳ ${L('Změna plátna nebo FPS se projeví po restartu studia (projekt se uloží).')}${live ? ' ' + L('V desktopové aplikaci vysílání během restartu nespadne – poběží záložní obraz.') : ''}</p>`;
     if (cur === 'stream') return `
       <div class="grid2">
       <label>${L('Kodér')}<select data-k="stream.hw">${opt({auto:L('Automaticky (grafika, když je)'), hw:L('Grafická karta (hardware)'), sw:L('Procesor (software, x264)')}, s.hw)}</select></label>
@@ -84,7 +84,7 @@ const CFG = (() => {
       <p class="dim">${L('Zpoždění jednotlivých mikrofonů (když zvuk předbíhá obraz) a efekty nastavíš na stránce Zvuk.')}</p>`;
     if (cur === 'adv') return `
       <label>${L('Zpoždění vysílání (s)')}<input type="number" min="0" max="120" step="1" data-k="stream.delay" value="${s.delay}"></label>
-      <p class="dim">${L('Vysílání půjde ven o tolik sekund později (pojistka proti nechtěným věcem ve vysílání, nebo proti napovídání v soutěžích). Pojistná nahrávka se nezpožďuje. Jen v aplikaci pro Mac.')}</p>
+      <p class="dim">${L('Vysílání půjde ven o tolik sekund později (pojistka proti nechtěným věcem ve vysílání, nebo proti napovídání v soutěžích). Pojistná nahrávka se nezpožďuje. Jen v desktopové aplikaci.')}</p>
       <label>${L('Nejdelší čekání mezi pokusy o znovupřipojení (s)')}<input type="number" min="2" max="60" step="1" data-k="stream.retryMax" value="${s.retryMax}"></label>
       <label>${L('Náhled v režii')}<select data-k="gen.preview">${opt({auto:L('Automaticky (při zátěži méně často)'), full:L('Vždy plynule'), low:L('Úsporně (šetří výkon pro vysílání)')}, g.preview)}</select></label>
       <div class="btns"><button data-do="reset">↺ ${L('Vrátit výchozí nastavení')}</button></div>`;

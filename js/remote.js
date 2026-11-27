@@ -27,7 +27,7 @@ const REM = (() => {
 
   /* ---------- zapnutí / vypnutí ---------- */
   async function enable() {
-    const b = base(); if (!b) { ST.err = L('Funguje jen v aplikaci pro Mac nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
+    const b = base(); if (!b) { ST.err = L('Funguje jen v desktopové aplikaci nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
     ST.starting = true; ST.err = ''; renderTab();
     try {
       const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})});
