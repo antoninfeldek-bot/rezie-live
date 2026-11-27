@@ -178,8 +178,14 @@ Záložka **🏆 Živě**:
 ### ✂ Střihový list, kapitoly a ISO
 Při nahrávání nebo vysílání se zapisuje každý střih. V záložce **Nahrávky** stáhneš **EDL** (Premiere, DaVinci – přestřih z ISO nahrávek), **kapitoly pro YouTube** nebo CSV. Klávesa **M** = značka. ISO nahrávka teď nahraje zvlášť i hosty a síťové vstupy.
 
-### 🖥 Výstupy 2–4
-Tlačítko **2️⃣ Výstupy** nahoře – až tři další okna, každé může ukazovat něco jiného (program, náhled, scénu, jeden zdroj). V aplikaci vybereš **Na obrazovku…** a okno se samo roztáhne na projektor nebo televizi.
+### 🎛 Vedlejší programy (Výstupy 2–4 přepínané jako hlavní program)
+Nad tlačítkem CUT je přepínač **PGM · 2 · 3 · 4**. **PGM** = hlavní program (to, co jde do vysílání a nahrávání). Klikni na **2**, **3** nebo **4** a režie teď ovládá **vedlejší program** toho výstupu:
+- monitory NÁHLED a PROGRAM ukazují náhled a program výstupu (nadpis „· Výstup 2“, modrý rámeček – není to vysílání),
+- klik na scénu = do náhledu výstupu, dvojklik = rovnou do jeho programu, **CUT**, **AUTO** (vybraným přechodem jako prolínačka), **T-bar**, klávesy 1–9 / Shift+1–9, Enter, mezerník a MIDI fungují stejně jako u hlavního programu,
+- **hlavní vysílání a nahrávání jedou dál beze změny** – vedlejší program je jen pro sál, pódium, projektor, druhou obrazovku…
+- **🪟** otevře / zavře okno výstupu, **↗🖥** ho pošle rovnou přes celou plochu na vybraný monitor nebo projektor (v aplikaci; v prohlížeči okno přetáhni a dej dvojklik), **✨** přidá i grafiku (titulky).
+- Zpátky na hlavní program: **PGM**.
+Makra, automatizace, scénář, Stream Deck a mobilní ovladač dál ovládají hlavní program. Pro výstupy mají vlastní akce (Ovládání → skupina „Vedlejší programy“): *Výstup 2: CUT / AUTO / scéna N do náhledu / scéna N rovnou do programu / okno*, a *Ovládat Výstup 2* (přepne režii). Vedlejší program je jen obraz (zvuk jde dál z hlavního mixu nebo sběrnic).
 
 ### 📱 Role ovladačů
 V záložce **📱 Dálkově** vybereš, co smí ovladač ovládat: **všechno**, **jen grafiku, titulky, skóre a scénář** (grafik) nebo **jen zvuk** (zvukař). Každá role má vlastní QR kód.

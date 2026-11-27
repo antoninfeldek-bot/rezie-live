@@ -534,12 +534,15 @@ async function reloadSource(s) {
 function sceneSources(sc, set) { if (sc) for (const l of sc.layers) if (l.visible) set.add(l.sourceId); return set; }
 function onAirSet() { const set = sceneSources(sceneById(S.programId), new Set()); if (S.active) sceneSources(sceneById(S.active.from), set); return set; }
 
+const ui = fn => { R.ui = true; try { return fn(); } finally { R.ui = false; } };   // akce z ovládání v režii (může jít na vedlejší program)
 function setPreview(id) {
+  if (typeof SIDE !== 'undefined' && SIDE.route()) return SIDE.cur().setPv(id);
   if (S.previewId === id) return;
   S.previewId = id; S.selLayer = null;
   renderScenes(); renderLayers(); renderProps(); save();
 }
 function take(mode) {
+  if (typeof SIDE !== 'undefined' && SIDE.route()) return SIDE.cur().take(mode);
   const to = S.previewId; if (!to) return;
   if (S.active) S.active = null;
   const from = S.programId;
@@ -555,7 +558,7 @@ function take(mode) {
   else if (S.trans.swap && !from && S.scenes.length > 1) { const i = S.scenes.findIndex(s => s.id === to); S.previewId = S.scenes[(i + 1) % S.scenes.length].id; S.selLayer = null; }
   renderScenes(); renderLayers(); renderProps(); save();
 }
-function takeScene(id, mode) { S.previewId = id; take(mode); }
+function takeScene(id, mode) { if (typeof SIDE !== 'undefined' && SIDE.route()) { const o = SIDE.cur(); o.setPv(id); o.take(mode); return; } S.previewId = id; take(mode); }
 
 function addScene() {
   const sc = {id:uid(), name:L('Scéna ') + (S.scenes.length + 1), layers:[], autoNext:null};
@@ -587,6 +590,7 @@ function renderScenes() {
     `<button class="scene ${sc.id === S.previewId ? 'pv' : ''} ${sc.id === S.programId ? 'pg' : ''}" data-id="${sc.id}" title="Klik = náhled, dvojklik = rovnou do vysílání"><span class="n">${i < 9 ? i + 1 : ''}</span>${esc(sc.name)}</button>`).join('');
   const pv = prevScene(), pg = sceneById(S.programId);
   $('#pvName').textContent = pv ? '– ' + pv.name : ''; $('#pgName').textContent = pg ? '– ' + pg.name : '';
+  if (typeof SIDE !== 'undefined' && SIDE.cur()) SIDE.draw();
 }
 function renderLayers() {
   const sc = prevScene(), box = $('#layers');
@@ -947,7 +951,8 @@ function frame(now) {
     GFX.tick(dt, now); GFX.drawOverlay(pgx, now);
     NDI.frame();   // hotový program → NDI (když je zapnuté)
     RPL.tick(now); // replay: kamery do paměti + přehrávání
-    OUTS.frame();  // výstup 2 (jen když je okno otevřené)
+    OUTS.frame(now);  // výstupy 2–4 a vedlejší programy (jen když je okno otevřené nebo je výstup vybraný)
+    SIDE.tick();
     if (!document.hidden && (pvNew || R.pvOverlayDirty)) { pvx.drawImage(pvBuf, 0, 0); drawOverlay(); R.pvOverlayDirty = false; }
   }
   const onAir = onAirSet();
@@ -1190,13 +1195,13 @@ function showPage(name) {
 
 function bindEvents() {
   document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => showTab(b.dataset.tab));
-  $('#bCut').onclick = () => take('cut'); $('#bFade').onclick = () => take('auto');
+  $('#bCut').onclick = () => ui(() => take('cut')); $('#bFade').onclick = () => ui(() => take('auto'));
   document.querySelectorAll('#pages button').forEach(b => b.onclick = () => showPage(b.dataset.page));
   $('#tSwap').onchange = e => { S.trans.swap = e.target.checked; save(); };
   $('#bAddScene').onclick = addScene; $('#bDupScene').onclick = dupScene; $('#bDelScene').onclick = delScene;
   $('#bMvL').onclick = () => moveScene(-1); $('#bMvR').onclick = () => moveScene(1);
-  $('#scenes').onclick = e => { const b = e.target.closest('.scene'); if (b) setPreview(b.dataset.id); };
-  $('#scenes').ondblclick = e => { const b = e.target.closest('.scene'); if (b) takeScene(b.dataset.id, 'cut'); };
+  $('#scenes').onclick = e => { const b = e.target.closest('.scene'); if (b) ui(() => setPreview(b.dataset.id)); };
+  $('#scenes').ondblclick = e => { const b = e.target.closest('.scene'); if (b) ui(() => takeScene(b.dataset.id, 'cut')); };
   $('#bWinPg').onclick = () => openCanvasWin('program', 'rz_program', L('Program – výstup'));
   $('#bWinMv').onclick = () => openCanvasWin('multi', 'rz_multi', 'Multiview');
   $('#bWinPr').onclick = openPrompter; $('#prOpen').onclick = openPrompter;
@@ -1296,7 +1301,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, MAC, SS, OUTS, BUS, NIN, UPD, CUT, LIVE, V360, POP, LAY]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, MAC, SS, OUTS, SIDE, BUS, NIN, UPD, CUT, LIVE, V360, POP, LAY]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();

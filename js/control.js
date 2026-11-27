@@ -15,7 +15,7 @@ const CTL = (() => {
     add('replay.go', '⏪ Replay do vysílání', () => RPL.go(), 'Replay');
     add('replay.mark', '★ Replay – značka', () => RPL.mark(), 'Replay'); RPL.ctl(add);
     add('out2', '🖥 Výstup 2 – otevřít / zavřít', () => OUT2.toggle(), 'Okna'); add('out3', '🖥 Výstup 3 – otevřít / zavřít', () => OUT3.toggle(), 'Okna'); add('out4', '🖥 Výstup 4 – otevřít / zavřít', () => OUT4.toggle(), 'Okna');
-    LIVE.ctl(add); V360.ctl(add); if (typeof MAC !== 'undefined') MAC.ctl(add); if (typeof SS !== 'undefined') SS.ctl(add);
+    LIVE.ctl(add); V360.ctl(add); if (typeof MAC !== 'undefined') MAC.ctl(add); if (typeof SS !== 'undefined') SS.ctl(add); if (typeof SIDE !== 'undefined') SIDE.ctl(add);
     add('tbar', 'T-bar (MIDI fader)', v => tbar(v), 'Přepínání', true);
     for (let i = 0; i < 9; i++) {
       const sc = S.scenes[i], n = sc ? sc.name : '(prázdné)';
@@ -69,7 +69,7 @@ const CTL = (() => {
     }
     if (e.repeat) return false;
     const m = S.ctl.map.find(m => m.k && kmatch(m.k, e));
-    if (m) return run(m.a);
+    if (m) return ui(() => run(m.a));
     return false;
   }
 
@@ -93,9 +93,9 @@ const CTL = (() => {
     for (const map of S.ctl.map) {
       if (!map.m || map.m.type !== m.type || map.m.ch !== ch || map.m.n !== n) continue;
       const a = actions().find(x => x.id === map.a); if (!a) continue;
-      if (a.cont) a.run(v / 127);
-      else if (m.type === 'note') a.run();
-      else { const key = ch + ':' + n, prev = ST.cc[key] || 0; ST.cc[key] = v; if (v >= 64 && prev < 64) a.run(); }
+      if (a.cont) ui(() => a.run(v / 127));
+      else if (m.type === 'note') ui(() => a.run());
+      else { const key = ch + ':' + n, prev = ST.cc[key] || 0; ST.cc[key] = v; if (v >= 64 && prev < 64) ui(() => a.run()); }
     }
   }
   function httpConnect() {

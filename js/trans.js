@@ -145,6 +145,8 @@ const TR = (() => {
     tbSet = raw => {   // raw 0..1000 (0 = dole)
       tbVal = clamp(raw, 0, 1000); show();
       const v = tbDir > 0 ? tbVal / 1000 : 1 - tbVal / 1000;
+      // vybraný vedlejší program: T-bar ovládá jeho přechod
+      if (typeof SIDE !== 'undefined' && SIDE.cur() && (R.ui || dragging)) { if (SIDE.cur().tbar(v)) { tbDir = -tbDir; rest(); } return; }
       if (!S.active) {
         if (v <= 0.002) return;
         if (blocked()) { rest(); return; }
@@ -158,12 +160,13 @@ const TR = (() => {
     let dragging = false;
     const fromY = e => { const r = tb.getBoundingClientRect(), hh = 34; return (1 - (e.clientY - r.top - hh / 2) / Math.max(1, r.height - hh)) * 1000; };
     tb.addEventListener('pointerdown', e => {
-      if (!(S.active && S.active.manual)) { const why = blocked(); if (why) { toast(why); return; } }
+      if (!(S.active && S.active.manual) && !(typeof SIDE !== 'undefined' && SIDE.cur())) { const why = blocked(); if (why) { toast(why); return; } }
       dragging = true; tb.setPointerCapture(e.pointerId); tb.classList.add('drag'); tbSet(fromY(e)); e.preventDefault();
     });
     tb.addEventListener('pointermove', e => { if (dragging) tbSet(fromY(e)); });
     const end = () => {
       if (!dragging) return; dragging = false; tb.classList.remove('drag');
+      if (typeof SIDE !== 'undefined' && SIDE.cur()) { const o = SIDE.cur(), v = tbDir > 0 ? tbVal / 1000 : 1 - tbVal / 1000; if (o.tbarActive()) { if (v >= 0.95) { if (o.tbar(1)) tbDir = -tbDir; } else if (v <= 0.05) o.tbar(0); else { tbVal = tbDir > 0 ? v * 1000 : 1000 - v * 1000; show(); return; } } rest(); return; }
       if (S.active && S.active.manual) { const v = S.active.p; if (v >= 0.95) tbSet(tbDir > 0 ? 1000 : 0); else if (v <= 0.05) tbSet(tbDir > 0 ? 0 : 1000); }   // dotažení až na konec
       if (!S.active) rest();
     };

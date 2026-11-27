@@ -166,8 +166,14 @@ Audio from the input appears in the mixer as a normal channel.
 ### ✂ Cut list, chapters and ISO
 Every cut is logged while recording or streaming. In **Recordings** download an **EDL** (Premiere, DaVinci), **YouTube chapters** or CSV. Key **M** = marker. ISO now also records guests and network inputs separately.
 
-### 🖥 Outputs 2–4
-The **2️⃣ Outputs** button opens up to three extra windows, each showing something different. In the app choose **To screen…** and the window goes full screen on that display.
+### 🎛 Side programs (Outputs 2–4 switched like the main program)
+Above CUT there is a **PGM · 2 · 3 · 4** selector. **PGM** = main program (what goes to stream and recording). Click **2**, **3** or **4** and the director now controls that output's **side program**:
+- the PREVIEW and PROGRAM monitors show the output's preview and program (title “· Output 2”, blue frame – it isn't the stream),
+- click a scene = output preview, double-click = straight to its program, **CUT**, **AUTO** (with the selected transition as a fade), **T-bar**, keys 1–9 / Shift+1–9, Enter, Space and MIDI work just like for the main program,
+- **the main stream and recording keep running unchanged** – the side program is for the hall, stage, projector, a second screen…
+- **🪟** opens / closes the output window, **↗🖥** sends it full screen to a chosen monitor or projector (in the app; in the browser drag the window and double-click), **✨** adds graphics (titles).
+- Back to the main program: **PGM**.
+Macros, automation, rundown, Stream Deck and the phone remote still control the main program. Outputs have their own actions (Control → group “Side programs”): *Output 2: CUT / AUTO / scene N to preview / scene N straight to program / window*, and *Control Output 2* (switches the director). A side program is picture only (audio stays on the main mix or buses).
 
 ### 📱 Remote roles
 In **📱 Remote** choose what a remote may control: **everything**, **only graphics, titles, score and rundown**, or **only audio**. Each role has its own QR code.
