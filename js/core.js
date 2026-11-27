@@ -257,9 +257,12 @@ function attachVideoStream(s, st) {
 }
 async function openCamera(s) {
   if (s.fmt && s.fmt.w) {   // zvolený formát (karta pro HDMI, 50/59.94 fps, 4K…)
+    // resizeMode 'none' = bez ořezu a přepočtu v prohlížeči, přesně jak kamera posílá (důležité pro 360° obraz 2:1)
     const st = await navigator.mediaDevices.getUserMedia({video:{deviceId:s.deviceId ? {exact:s.deviceId} : undefined,
-      width:{ideal:s.fmt.w}, height:{ideal:s.fmt.h}, frameRate:{ideal:s.fmt.fps}}, audio:false});
-    attachVideoStream(s, st); return;
+      width:{ideal:s.fmt.w}, height:{ideal:s.fmt.h}, aspectRatio:{ideal:s.fmt.w / s.fmt.h}, frameRate:{ideal:s.fmt.fps}, resizeMode:{ideal:'none'}}, audio:false});
+    attachVideoStream(s, st);
+    try { const g = st.getVideoTracks()[0].getSettings(); if (g.width && (g.width !== s.fmt.w || g.height !== s.fmt.h)) toast(`${s.name}: ${L('kamera neumí')} ${s.fmt.w}×${s.fmt.h}, ${L('posílá')} ${g.width}×${g.height}`); } catch (e) {}
+    return;
   }
   const h = Math.min(s.res || CFG.video.camRes, Math.max(H, W) >= 3840 ? 2160 : Math.max(H, W) >= 2560 ? 1440 : 1080), w = Math.round(h * 16 / 9);   // kamera nikdy větší, než plátno potřebuje
   const st = await navigator.mediaDevices.getUserMedia({video:{deviceId:s.deviceId ? {exact:s.deviceId} : undefined,
@@ -387,7 +390,7 @@ async function devices(kind) { return (await navigator.mediaDevices.enumerateDev
 
 // karty pro HDMI/SDI vstup (Elgato, Blackmagic, Magewell, AJA, AVerMedia…) se na Macu hlásí jako kamera
 const CAPTURE_RE = /elgato|cam ?link|blackmagic|ultrastudio|decklink|magewell|aja |aja$|avermedia|hauppauge|hdmi|sdi|capture|usb video|uvc|game ?capture|atem|live gamer/i;
-const FMT_RES = [[3840, 2160], [2560, 1440], [1920, 1080], [1280, 720], [1024, 576], [720, 576], [720, 480], [640, 480]];
+const FMT_RES = [[7680, 3840], [5760, 2880], [4096, 2160], [3840, 2160], [3840, 1920], [2880, 1440], [2560, 1440], [1920, 1080], [1920, 960], [1440, 720], [1280, 720], [1024, 576], [720, 576], [720, 480], [640, 480]];   // 16:9 i 2:1 (360° kamery – Insta360, Ricoh Theta…)
 const FMT_FPS = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
 async function chooseCamera(s) {
   const ds = await devices('videoinput'); const mics = await devices('audioinput');
@@ -395,6 +398,9 @@ async function chooseCamera(s) {
   const curFmt = s && s.fmt ? `${s.fmt.w}x${s.fmt.h}@${s.fmt.fps}` : 'auto';
   const pr = dialog('Kamera', `<label>Kamera / karta pro HDMI vstup<select name="dev">${ds.map((d, i) => `<option value="${d.deviceId}" ${s && s.deviceId === d.deviceId ? 'selected' : ''}>${CAPTURE_RE.test(d.label) ? '🎛 ' : '📷 '}${esc(d.label || 'Kamera ' + (i + 1))}</option>`).join('')}</select></label>
     <label>Formát (rozlišení a snímky za sekundu)<select name="fmt"><option value="auto">Automaticky (podle nastavení)</option></select></label>
+    <div class="row" id="fmtCustom" hidden style="gap:6px;align-items:end"><label>${L('Šířka')}<input type="number" name="cw" min="160" max="8192" step="2" value="${s && s.fmt ? s.fmt.w : 3840}" style="width:90px"></label>
+      <label>${L('Výška')}<input type="number" name="ch" min="120" max="8192" step="2" value="${s && s.fmt ? s.fmt.h : 1920}" style="width:90px"></label>
+      <label>FPS<input type="number" name="cf" min="1" max="120" step="0.01" value="${s && s.fmt ? s.fmt.fps : 30}" style="width:70px"></label></div>
     <p class="dim" id="fmtInfo"></p>
     <label class="chk" id="capAudio" hidden><input type="checkbox" name="audio" ${s ? '' : 'checked'}> Přidat i zvuk z karty (zvuk z HDMI)</label>
     <input type="hidden" name="audioDev">
@@ -413,12 +419,17 @@ async function chooseCamera(s) {
     const mw = cap && cap.width ? cap.width.max : 1920, mh = cap && cap.height ? cap.height.max : 1080, mf = cap && cap.frameRate ? cap.frameRate.max : 30;
     const res = FMT_RES.filter(([w, hh]) => w <= mw && hh <= mh), fps = FMT_FPS.filter(f => f <= mf + 0.5);
     if (!fps.some(f => Math.abs(f - mf) < 0.6)) fps.push(Math.round(mf * 100) / 100);   // i neobvyklé maximum (např. 20 fps)
+    const top = Math.round(mf * 100) / 100;
     const opts = ['<option value="auto">' + L('Automaticky (podle nastavení)') + '</option>'];
-    for (const [w, hh] of res) for (const f of fps) opts.push(`<option value="${w}x${hh}@${f}">${w}×${hh} · ${f} fps</option>`);
+    if (cap) opts.push(`<option value="${mw}x${mh}@${top}">⭐ ${L('Maximum zařízení')} – ${mw}×${mh} · ${top} fps</option>`);
+    for (const [w, hh] of res) for (const f of fps) if (!(w === mw && hh === mh && f === top)) opts.push(`<option value="${w}x${hh}@${f}">${w}×${hh}${Math.abs(w / hh - 2) < 0.01 ? ' (2:1 · 360°)' : ''} · ${f} fps</option>`);
+    opts.push(`<option value="custom">✏️ ${L('Vlastní rozlišení…')}</option>`);
     fs.innerHTML = opts.join('');
+    const cu = () => { dlg.querySelector('#fmtCustom').hidden = fs.value !== 'custom'; };
+    fs.onchange = cu;
     // karta: rovnou nejlepší formát, který sedí k plátnu a k FPS vysílání
     const want = curFmt !== 'auto' ? curFmt : isCap ? (() => { const r = res.find(([w, hh]) => hh <= Math.max(H, 1080)) || res[0]; const f = fps.filter(x => Math.abs(x - CFG.video.fps) < 1).pop() || fps.filter(x => x <= CFG.video.fps + 0.5).pop() || fps[fps.length - 1]; return r ? `${r[0]}x${r[1]}@${f}` : 'auto'; })() : 'auto';
-    fs.value = [...fs.options].some(o => o.value === want) ? want : 'auto';
+    fs.value = [...fs.options].some(o => o.value === want) ? want : (curFmt !== 'auto' ? 'custom' : 'auto'); cu();
     info.textContent = cap ? `${isCap ? '🎛 ' + L('Karta pro HDMI vstup') + ' · ' : ''}${L('umí až')} ${mw}×${mh} · ${Math.round(mf * 100) / 100} fps` : L('Formáty se nepodařilo zjistit – použij Automaticky.');
     // zvuk z karty (stejné nebo podobné jméno zvukového zařízení)
     const key = (d.label || '').replace(/\s*\(.*\)$/, '').toLowerCase().split(/\s+/).slice(0, 2).join(' ');
@@ -428,6 +439,7 @@ async function chooseCamera(s) {
   sel.addEventListener('change', probe); probe();
   return pr;
 }
+function fmtOf(f) { return f.fmt === 'custom' ? `${Math.round(+f.cw / 2) * 2 || 1920}x${Math.round(+f.ch / 2) * 2 || 1080}@${+f.cf || 30}` : f.fmt; }
 function setFmt(s, v) {
   const m = /^(\d+)x(\d+)@([\d.]+)$/.exec(v || ''); s.fmt = m ? {w:+m[1], h:+m[2], fps:+m[3]} : null; if (m) s.res = +m[2];
 }
@@ -448,7 +460,7 @@ async function addSource(type) {
       const f = await chooseCamera(); if (!f) return;
       const ds = await devices('videoinput'); const d = ds.find(x => x.deviceId === f.dev);
       const s = newSource('camera', d && d.label ? d.label.replace(/\s*\(.*\)$/, '') : L('Kamera ') + (S.sources.filter(x => x.type === 'camera').length + 1));
-      s.deviceId = f.dev; setFmt(s, f.fmt); await openCamera(s); S.sources.push(s); addToPreview(s);
+      s.deviceId = f.dev; setFmt(s, fmtOf(f)); await openCamera(s); S.sources.push(s); addToPreview(s);
       if (f.audio && f.audioDev) { const m = newSource('mic', s.name + ' – ' + L('zvuk')); m.deviceId = f.audioDev; await openMic(m); S.sources.push(m); }
     } else if (type === 'mic') {
       const f = await chooseMic(); if (!f) return;
@@ -476,7 +488,7 @@ async function addSource(type) {
 }
 async function reloadSource(s) {
   try {
-    if (s.type === 'camera') { const f = await chooseCamera(s); if (!f) return; s.deviceId = f.dev; setFmt(s, f.fmt); await openCamera(s); }
+    if (s.type === 'camera') { const f = await chooseCamera(s); if (!f) return; s.deviceId = f.dev; setFmt(s, fmtOf(f)); await openCamera(s); }
     else if (s.type === 'mic') { const f = await chooseMic(s); if (!f) return; s.deviceId = f.dev; s.micOpts = {ns:f.ns, ec:f.ec}; await openMic(s); }
     else if (s.type === 'screen') await openScreen(s);
     else if (s.type === 'video') { const f = await pickFile('video/*'); if (!f) return; loadVideo(s, f); }
@@ -634,6 +646,7 @@ function pickColor(p) {
 const FONTS = [['system-ui, sans-serif','Systémové'],['Arial, sans-serif','Arial'],['"Arial Black", sans-serif','Arial Black'],['Impact, sans-serif','Impact'],['Georgia, serif','Georgia'],['"Times New Roman", serif','Times'],['"Courier New", monospace','Courier']];
 function srcCard(s) {
   const p = s.props; let b = '';
+  if ((s.type === 'video' || s.type === 'playlist') && s.el instanceof HTMLVideoElement && s.el.videoWidth) b += `<div class="dim" style="font-size:11px">${s.el.videoWidth}×${s.el.videoHeight}${Math.abs(s.el.videoWidth / s.el.videoHeight - 2) < 0.01 ? ' · 360° (2:1)' : ''}</div>`;
   if (s.type === 'camera' && s.actual) b += `<div class="dim" style="font-size:11px">${CAPTURE_RE.test(s.devLabel || s.name) ? '🎛 ' : ''}${esc(s.actual)}</div>`;
   b += EXT.card(s); b += NIN.card(s);
   if (s.missing) b += s.type === 'guest' ? `<div class="warn">⚠ Host není připojený – pošli mu odkaz (záložka 📱 Dálkově).</div>` : `<div class="warn">⚠ Zdroj není připojený.<button data-sa="reload">Připojit znovu</button></div>`;

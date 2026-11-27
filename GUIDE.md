@@ -78,6 +78,11 @@ The conversion for NDI runs on the GPU, so the CPU barely notices. (A built-in v
 ### 🎛 HDMI capture cards
 Elgato, Blackmagic, Magewell, AVerMedia and other cards are added as a camera (marked 🎛). The app reads which formats the card supports and offers them (e.g. 1080p 50 / 59.94 / 60, 4K 30). For a card it also offers the **HDMI audio**. The real format is shown on the source.
 
+### 🌐 360° cameras (Insta360, Ricoh Theta…) and custom resolution
+- When adding a camera, **Format** offers **⭐ Device maximum**, **2:1 · 360°** formats (1920×960, 2880×1440, 3840×1920, 5760×2880) and **✏️ Custom resolution…** (width, height, FPS).
+- The picture comes without cropping or rescaling. If the camera can't do the chosen resolution, the app tells you what it really sends.
+- Full 360° on air: ⚙ Settings → Video → canvas **3840×1920 (360° 2:1)**, then turn on **360°** for the live stream on YouTube. Put the Insta360 in USB webcam mode, 360° view.
+
 ### ⚡ Performance
 The app draws only as many times per second as the stream has frames (up to 4× less work on a 120 Hz display), draws the preview smaller, takes only new frames from cameras and uses the high-performance GPU. If it still can’t keep up: ⚙ Settings → Advanced → Preview “Economy”.
 

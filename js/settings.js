@@ -17,7 +17,7 @@ const CFG = (() => {
   // výstup (vysílání a nahrávání) – buď stejný jako plátno, nebo zmenšený se zachováním poměru stran
   const outWH = () => { const [bw, bh] = wh(C.video.base); if (C.video.out === 'same') return [bw, bh]; const [ow, oh] = wh(C.video.out); return [ow & ~1, oh & ~1]; };
   const BASES = {'1920x1080':'1920×1080 (Full HD 16:9)', '1280x720':'1280×720 (HD 16:9)', '2560x1440':'2560×1440 (2K 16:9)', '3840x2160':'3840×2160 (4K 16:9)',
-    '1080x1920':'1080×1920 (na výšku 9:16 – TikTok, Reels, Shorts)', '1080x1080':'1080×1080 (čtverec 1:1)', '1440x1080':'1440×1080 (4:3)'};
+    '1080x1920':'1080×1920 (na výšku 9:16 – TikTok, Reels, Shorts)', '1080x1080':'1080×1080 (čtverec 1:1)', '1440x1080':'1440×1080 (4:3)', '3840x1920':'3840×1920 (360° 2:1 – YouTube 360, 4K)', '2880x1440':'2880×1440 (360° 2:1)', '1920x960':'1920×960 (360° 2:1, slabší počítač)', '5760x2880':'5760×2880 (360° 2:1 – 5.7K, velmi silný počítač)'};
   function outOptions(base) {
     const [bw, bh] = wh(base || C.video.base), o = {same:`${L('Stejné jako plátno')} (${bw}×${bh})`};
     for (const k of [0.75, 2 / 3, 0.5]) { const w = Math.round(bw * k) & ~1, h = Math.round(bh * k) & ~1; o[`${w}x${h}`] = `${w}×${h}`; }

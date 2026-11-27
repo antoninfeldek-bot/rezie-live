@@ -85,6 +85,12 @@ Převod obrazu pro NDI dělá grafika, procesor se skoro nezatíží. (Vlastní 
 ### 🎛 Karty pro HDMI vstup
 Elgato, Blackmagic, Magewell, AVerMedia a další karty se přidávají jako kamera (u názvu mají 🎛). Aplikace zjistí, jaké formáty karta umí, a nabídne je (např. 1080p 50 / 59,94 / 60, 4K 30). U karty rovnou nabídne i **zvuk z HDMI**. Skutečný formát vidíš u zdroje.
 
+### 🌐 360° kamery (Insta360, Ricoh Theta…) a vlastní rozlišení
+- Při přidání kamery je ve **Formátu** položka **⭐ Maximum zařízení** (nejvyšší rozlišení, které kamera hlásí), formáty **2:1 · 360°** (1920×960, 2880×1440, 3840×1920, 5760×2880) a **✏️ Vlastní rozlišení…** (šířka, výška, FPS).
+- Obraz jde bez ořezu a přepočtu. Když kamera zvolené rozlišení neumí, aplikace napíše, co skutečně posílá. Skutečný formát je i u zdroje.
+- Celý 360° obraz ve vysílání: ⚙ Nastavení → Obraz → plátno **3840×1920 (360° 2:1)**. Na YouTube pak u živého přenosu zapni **360°**. Insta360 přepni do režimu webkamery (USB) v režimu 360°.
+- U videí ze zdrojů je vidět jejich skutečné rozlišení; přehrávají se v plném rozlišení souboru.
+
 ### ⚡ Výkon
 Aplikace kreslí jen tolikrát za sekundu, kolik má vysílání snímků (na 120Hz displeji až 4× méně práce), náhled kreslí zmenšeně, z kamer bere jen nové snímky a používá výkonnou grafiku. Když přesto nestíhá: ⚙ Nastavení → Pokročilé → Náhled „Úsporně“.
 
