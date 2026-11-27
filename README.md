@@ -8,11 +8,11 @@
 
 | | |
 |---|---|
-| ⬇ **Stažení / Download** | [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) – Mac (Apple Silicon / Intel) `.dmg`, Windows 10/11 `.exe` |
-| 🌍 **Online verze / Online version** | https://antoninfeldek-bot.github.io/rezie-live/ |
+| ⬇ **Stažení / Download** | [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) – Mac (Apple Silicon / Intel) `.dmg`, Windows 10/11 `.exe` |
+| 🌍 **Online verze / Online version** | https://feldek-apps.github.io/rezie-live/ |
 | 📖 **Návod / Guide** | [NAVOD.md](NAVOD.md) (CZ) · [GUIDE.md](GUIDE.md) (EN) |
 | 🧪 **Testovací arch / Test sheet** | [TESTING.md](TESTING.md) (CZ) · [TESTING.en.md](TESTING.en.md) (EN) · CSV: [testing/](testing/) |
-| 🐞 **Chyby / Bugs** | [Issues](https://github.com/antoninfeldek-bot/rezie-live/issues) |
+| 🐞 **Chyby / Bugs** | [Issues](https://github.com/feldek-apps/rezie-live/issues) |
 
 > Vibecoding projekt – postavený s AI (Claude). Jde hlavně o funkčnost; zpětná vazba z testování je vítaná. / A vibecoding project built with AI (Claude). Function first – feedback from testing is welcome.
 
@@ -76,7 +76,7 @@
 Program / preview switching with CUT, AUTO, T-bar and stinger · layers, crop and chroma key · **SuperSource layouts** with animated changes · **side programs** on outputs 2–4 · cameras, HDMI cards, 360° cameras with virtual shots, video, playlists, slides, web & chat · **NDI / SRT / RTMP / RTSP inputs** with audio clock-drift correction · **phone as a camera** (up to 4K60) · **guests via link** with mix-minus and tally · keyframed **graphics editor**, live fields, Google Sheets / CSV data, system fonts · **audio mixer** with modular effects, LUFS, buses, audio to Zoom / Teams · GPU **color grading** with LUTs and scopes · **Replay 2.0** (program + multiple angles, IN/OUT, smooth slow motion, stinger) · **macros**, automation, rundown, teleprompter, keys / MIDI / Stream Deck, phone remote with roles, crew intercom, scores / chat / polls, PTZ · **multistreaming** (RTMP / SRT / WHIP) with GPU encoding and auto-reconnect · program + **ISO recording**, EDL and chapters · **NDI output**, extra outputs, Multiview · 9:16 and 4K canvases · autosave, status page, crash-proof streaming on Mac. Full list: [GUIDE.md](GUIDE.md).
 
 ## Spuštění bez instalace / Run without installing
-- Online: https://antoninfeldek-bot.github.io/rezie-live/ (Chrome / Edge). Pro RTMP vysílání z online verze spusť `node server.js`. / For RTMP streaming from the online version run `node server.js`.
+- Online: https://feldek-apps.github.io/rezie-live/ (Chrome / Edge). Pro RTMP vysílání z online verze spusť `node server.js`. / For RTMP streaming from the online version run `node server.js`.
 - Ze zdrojáků / From source: `node server.js` → http://localhost:8080 (Windows: `start-windows.bat`, Mac: `start-mac.command`). Vysílání potřebuje FFmpeg. / Streaming needs FFmpeg.
 
 Technologie / Tech: HTML, CSS, JavaScript (WebGL2, Web Audio, WebCodecs, WebRTC), Node.js, Electron, FFmpeg. NDI® is a registered trademark of Vizrt NDI AB.

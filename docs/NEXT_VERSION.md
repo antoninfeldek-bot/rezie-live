@@ -9,9 +9,10 @@ Build (GitHub Actions) se spouští pushem do `main` → vznikne release `v2.0.<
   (karta na pozadí), nahrává se každý snímek; `js/replay.js` totéž pro replay.
 
 ## 2. Po přesunu repa upravit
-- `electron/update.js` – adresa pro kontrolu aktualizací (owner/repo → feldek-apps/rezie-live).
-- `README.md`, `NAVOD.md`, `GUIDE.md`, `TESTING.md`, `TESTING.en.md`, `package.json` – odkazy na repo a Releases.
-- Online verze: `https://feldek-apps.github.io/rezie-live/` (v repu Settings → Pages: deploy z `main`).
+- ✅ (na `next`) `electron/update.js` – adresa pro kontrolu aktualizací → feldek-apps/rezie-live.
+- ✅ (na `next`) `README.md`, `NAVOD.md`, `GUIDE.md`, `TESTING.md`, `TESTING.en.md`, `testing/*.csv` – odkazy na repo,
+  Releases, Issues a online verzi. `package.json` odkaz na repo nemá (`author` zůstává osoba).
+- ✅ Online verze běží: `https://feldek-apps.github.io/rezie-live/` (Pages: deploy z `main`).
 - Popis repa „About“ (Description, Website, Topics) – nastaví autor ručně, z Claude prostředí to nejde.
 
 ## 3. Nové funkce do další verze (přání autora – profi a modulárně)

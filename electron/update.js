@@ -3,7 +3,7 @@
 const { app, net, shell } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os');
 const { spawn } = require('child_process');
-const REPO = 'antoninfeldek-bot/rezie-live';
+const REPO = 'feldek-apps/rezie-live';
 
 const newer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) > (y[i] || 0)) return true; if ((x[i] || 0) < (y[i] || 0)) return false; } return false; };
 function assetName() {

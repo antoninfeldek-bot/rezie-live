@@ -10,13 +10,13 @@ Všechno nech pohromadě v **jedné složce** (tak, jak je to na GitHubu).
 Aplikace umí česky i anglicky – přepínač **🌐 EN / 🌐 CZ** je v horní liště (a na úvodní obrazovce). Anglický návod: GUIDE.md.
 
 ## 🍎 Aplikace pro Mac (doporučeno)
-1. Otevři [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) a stáhni **Rezie-Live-mac-arm64.dmg** (Mac s čipem M1/M2/M3/M4) nebo **Rezie-Live-mac-x64.dmg** (starší Mac s Intelem).
+1. Otevři [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) a stáhni **Rezie-Live-mac-arm64.dmg** (Mac s čipem M1/M2/M3/M4) nebo **Rezie-Live-mac-x64.dmg** (starší Mac s Intelem).
 2. Otevři DMG a přetáhni **Rezie Live** do složky **Aplikace**.
 3. Při prvním spuštění macOS napíše, že aplikaci nezná. Otevři **Nastavení systému → Soukromí a zabezpečení**, sjeď dolů a klikni **Přesto otevřít**. (Nebo v Terminálu: `xattr -dr com.apple.quarantine "/Applications/Rezie Live.app"`.)
 4. Povol kameru a mikrofon. Pro sdílení obrazovky povol aplikaci v **Soukromí a zabezpečení → Nahrávání obrazovky**.
 
 ## 🪟 Aplikace pro Windows (10 a 11, 64bit)
-1. Na stejné stránce [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) stáhni **Rezie-Live-windows-x64-setup.exe**.
+1. Na stejné stránce [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) stáhni **Rezie-Live-windows-x64-setup.exe**.
 2. Spusť instalátor. Když Windows napíše **„Systém Windows ochránil váš počítač“**, klikni na **Další informace → Přesto spustit** (aplikace zatím není podepsaná).
 3. Při prvním spuštění může brána Windows Firewall chtít povolit síť – povol **soukromé sítě** (kvůli ovladači, čtečce a hostům).
 
@@ -216,7 +216,7 @@ Tlačítko **⊞** nahoře: **Dvě záložky vedle sebe** (třeba Zdroje + Grafi
 
 Klikni **Spustit studio** a povol kameru a mikrofon.
 
-Režie je taky online: **https://antoninfeldek-bot.github.io/rezie-live/** – kamery, scény, nahrávání i čtečka fungují rovnou tam. Jen pro **vysílání** musí v počítači běžet `node server.js` (online stránka mu pak posílá obraz).
+Režie je taky online: **https://feldek-apps.github.io/rezie-live/** – kamery, scény, nahrávání i čtečka fungují rovnou tam. Jen pro **vysílání** musí v počítači běžet `node server.js` (online stránka mu pak posílá obraz).
 
 ## 3. Jak se s tím pracuje
 - **Zdroje** (záložka dole): přidej kamery, mikrofony, videa (znělky), obrázky (logo), texty (titulky), obrazovku.

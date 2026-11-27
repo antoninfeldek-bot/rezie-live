@@ -2,9 +2,9 @@
 
 🇬🇧 English version: [TESTING.en.md](TESTING.en.md) · Tabulka k importu (Excel / Google Sheets): [testing/test-sheet-cz.csv](testing/test-sheet-cz.csv)
 
-**Stáhni:** [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) · **Online verze:** https://antoninfeldek-bot.github.io/rezie-live/
+**Stáhni:** [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) · **Online verze:** https://feldek-apps.github.io/rezie-live/
 
-**Jak testovat:** u každé funkce udělej kroky ve sloupci „Jak spustit“ a porovnej je se sloupcem „Co má nastat“. Výsledek: ✅ OK / ⚠ Částečně / ❌ Chyba. U chyby napiš, co jsi dělal, co se stalo, na čem (Mac / Windows / web) a verzi aplikace (⚙ Nastavení → Obecné). Chyby hlas v [Issues](https://github.com/antoninfeldek-bot/rezie-live/issues). 🆕 = novinka ve verzi 2.0 – ty otestuj jako první.
+**Jak testovat:** u každé funkce udělej kroky ve sloupci „Jak spustit“ a porovnej je se sloupcem „Co má nastat“. Výsledek: ✅ OK / ⚠ Částečně / ❌ Chyba. U chyby napiš, co jsi dělal, co se stalo, na čem (Mac / Windows / web) a verzi aplikace (⚙ Nastavení → Obecné). Chyby hlas v [Issues](https://github.com/feldek-apps/rezie-live/issues). 🆕 = novinka ve verzi 2.0 – ty otestuj jako první.
 
 Celkem funkcí: **63**
 
@@ -12,7 +12,7 @@ Celkem funkcí: **63**
 |---|---|---|---|---|---|---|---|---|
 | 1 | Instalace | Instalace na Macu | Stáhni .dmg z Releases (M1–M4 = arm64, Intel = x64) → přetáhni do Aplikací → spusť. Když Mac nedovolí: Nastavení systému → Soukromí a zabezpečení → Přesto otevřít. | Aplikace se otevře a ukáže úvodní obrazovku „Spustit studio“. | Mac | — | ☐ |  |
 | 2 | Instalace | Instalace na Windows | Stáhni setup.exe z Releases → spusť → „Systém Windows ochránil váš počítač“ → Další informace → Přesto spustit. Firewallu povol soukromé sítě. | Aplikace se nainstaluje a spustí. | Windows | — | ☐ |  |
-| 3 | Instalace | Online verze v prohlížeči | V Chrome nebo Edge otevři antoninfeldek-bot.github.io/rezie-live → Spustit studio → povol kameru a mikrofon. | Studio se otevře, vidíš NÁHLED a PROGRAM. | Web | Chrome / Edge | ☐ |  |
+| 3 | Instalace | Online verze v prohlížeči | V Chrome nebo Edge otevři feldek-apps.github.io/rezie-live → Spustit studio → povol kameru a mikrofon. | Studio se otevře, vidíš NÁHLED a PROGRAM. | Web | Chrome / Edge | ☐ |  |
 | 4 | Základ | Kamera a mikrofon | Záložka Zdroje → + Kamera (vyber kameru a formát) → + Mikrofon. | Obraz kamery je v náhledu, u zdroje je skutečné rozlišení, metr mikrofonu v mix pultu se hýbe. | Web + aplikace | Webkamera, mikrofon | ☐ |  |
 | 5 | Základ | Scény, NÁHLED a PROGRAM | Klikni na scénu vlevo dole (jde do náhledu) → mezerník = CUT, Enter = AUTO. Klávesy 1–9 = scéna do náhledu, Shift+1–9 = rovnou do vysílání. | Náhled má zelený rámeček, program červený; CUT přepne hned, AUTO plynule. | Web + aplikace | — | ☐ |  |
 | 6 | Základ | T-bar | Táhni svislý jezdec uprostřed pomalu nahoru. Po dokončení další přechod stažením dolů. | Přechod jde přesně podle ruky, na konci se scény prohodí. | Web + aplikace | — | ☐ |  |

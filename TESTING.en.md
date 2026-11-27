@@ -2,9 +2,9 @@
 
 🇨🇿 Česká verze: [TESTING.md](TESTING.md) · Spreadsheet to import (Excel / Google Sheets): [testing/test-sheet-en.csv](testing/test-sheet-en.csv)
 
-**Download:** [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) · **Online version:** https://antoninfeldek-bot.github.io/rezie-live/
+**Download:** [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) · **Online version:** https://feldek-apps.github.io/rezie-live/
 
-**How to test:** for each feature follow “How to run” and compare with “Expected result”. Result: ✅ OK / ⚠ Partly / ❌ Bug. For a bug write what you did, what happened, on what (Mac / Windows / web) and the app version (⚙ Settings → General). Report bugs in [Issues](https://github.com/antoninfeldek-bot/rezie-live/issues). 🆕 = new in 2.0 – test these first.
+**How to test:** for each feature follow “How to run” and compare with “Expected result”. Result: ✅ OK / ⚠ Partly / ❌ Bug. For a bug write what you did, what happened, on what (Mac / Windows / web) and the app version (⚙ Settings → General). Report bugs in [Issues](https://github.com/feldek-apps/rezie-live/issues). 🆕 = new in 2.0 – test these first.
 
 Features in total: **63**
 
@@ -12,7 +12,7 @@ Features in total: **63**
 |---|---|---|---|---|---|---|---|---|
 | 1 | Install | Install on Mac | Download the .dmg from Releases (M1–M4 = arm64, Intel = x64) → drag to Applications → open. If macOS blocks it: System Settings → Privacy & Security → Open Anyway. | The app opens and shows the “Start studio” screen. | Mac | — | ☐ |  |
 | 2 | Install | Install on Windows | Download setup.exe from Releases → run → “Windows protected your PC” → More info → Run anyway. Allow private networks in the firewall prompt. | The app installs and starts. | Windows | — | ☐ |  |
-| 3 | Install | Online version in the browser | In Chrome or Edge open antoninfeldek-bot.github.io/rezie-live → Start studio → allow camera and microphone. | The studio opens with PREVIEW and PROGRAM. | Web | Chrome / Edge | ☐ |  |
+| 3 | Install | Online version in the browser | In Chrome or Edge open feldek-apps.github.io/rezie-live → Start studio → allow camera and microphone. | The studio opens with PREVIEW and PROGRAM. | Web | Chrome / Edge | ☐ |  |
 | 4 | Basics | Camera and microphone | Sources tab → + Camera (pick camera and format) → + Microphone. | Camera picture shows in preview, the source shows its real resolution, the mic meter moves in the mixer. | Web + app | Webcam, microphone | ☐ |  |
 | 5 | Basics | Scenes, PREVIEW and PROGRAM | Click a scene bottom left (goes to preview) → Space = CUT, Enter = AUTO. Keys 1–9 = scene to preview, Shift+1–9 = straight on air. | Preview has a green frame, program a red one; CUT switches at once, AUTO smoothly. | Web + app | — | ☐ |  |
 | 6 | Basics | T-bar | Drag the vertical slider in the middle slowly up. After it finishes, the next transition is a pull down. | The transition follows your hand; at the end the scenes swap. | Web + app | — | ☐ |  |
