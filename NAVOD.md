@@ -112,6 +112,32 @@ Tlačítko **2️⃣** nahoře otevře okno s jiným obrazem – jinou scénou, 
 ### ⚙ Automatizace
 Záložka **Ovládání** dole → **Automatizace**: „když skončí znělka → přepni na Kameru 1“, „v 19:59 → scéna Odpočet“, „když začne vysílání → logo“…
 
+### 📡 Obraz přes síť: NDI, SRT, RTMP, IP kamery
+Záložka **Zdroje → 📡 + SRT / RTMP / IP kamera** nebo **🔗 + NDI vstup** (jen v desktopové aplikaci).
+- **SRT (doporučeno pro mobil a internet):** po přidání uvidíš adresu `srt://IP:9000`. V mobilu nainstaluj zdarma **Larix Broadcaster** → Connections → New → vlož adresu, Mode: Caller → spustit. Z OBS: Nastavení → Vysílání → Vlastní.
+- **RTMP:** server `rtmp://IP:1935/live` a klíč, který ti aplikace ukáže (OBS, drony, kamery s RTMP).
+- **IP kamera / adresa:** `rtsp://…` (většina IP a PTZ kamer), `srt://…`, `https://…/stream.m3u8`.
+- **NDI:** vybereš ze seznamu zdrojů v síti (OBS s NDI, vMix, NDI HX Camera v mobilu, NDI kamery). Potřebuje zdarma **NDI Tools**.
+Zvuk ze vstupu se objeví v mix pultu jako běžný kanál. Mimo Wi-Fi je pro SRT potřeba přesměrovat port na routeru (nebo použít Tailscale).
+
+### 🏆 Živě: skóre, chat a ankety
+Záložka **🏆 Živě**:
+- **Skóre a časomíra** – body ±1/2/3, start/stop, odpočet, perioda. Do grafiky šablonou **Skóre (sport)**. Body a časomíru můžeš dát na klávesy nebo Stream Deck (záložka Ovládání).
+- **Chat diváků** – Twitch (stačí název kanálu) nebo YouTube (potřebuje zdarma API klíč). Klikneš na zprávu → ukáže se ve vysílání (šablona **Zpráva z chatu**).
+- **Anketa** – diváci hlasují v chatu číslem 1–4, výsledky živě v grafice (šablona **Anketa**).
+
+### ✂ Střihový list, kapitoly a ISO
+Při nahrávání nebo vysílání se zapisuje každý střih. V záložce **Nahrávky** stáhneš **EDL** (Premiere, DaVinci – přestřih z ISO nahrávek), **kapitoly pro YouTube** nebo CSV. Klávesa **M** = značka. ISO nahrávka teď nahraje zvlášť i hosty a síťové vstupy.
+
+### 🖥 Výstupy 2–4
+Tlačítko **2️⃣ Výstupy** nahoře – až tři další okna, každé může ukazovat něco jiného (program, náhled, scénu, jeden zdroj). V aplikaci vybereš **Na obrazovku…** a okno se samo roztáhne na projektor nebo televizi.
+
+### 📱 Role ovladačů
+V záložce **📱 Dálkově** vybereš, co smí ovladač ovládat: **všechno**, **jen grafiku, titulky, skóre a scénář** (grafik) nebo **jen zvuk** (zvukař). Každá role má vlastní QR kód.
+
+### 🆕 Aktualizace
+Aplikace sama zjistí, že je nová verze, a nabídne **Aktualizovat** (Windows ji rovnou nainstaluje, na Macu otevře novou verzi k přetažení do Aplikací). Ručně: ⚙ Nastavení → Obecné.
+
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
 - Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.

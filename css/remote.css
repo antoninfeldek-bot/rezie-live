@@ -85,3 +85,4 @@ body.crewp{min-height:100vh;overflow:hidden}
 .pttbig.on{background:#b91c1c;border-color:#ef4444}
 .crow{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px}
 .crow button.on{background:#b91c1c}.crow button.off{background:#7f1d1d}
+.rnav button[hidden],#role:empty,.wide[hidden]{display:none}

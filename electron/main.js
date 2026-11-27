@@ -116,6 +116,19 @@ app.whenReady().then(async () => {
     w.loadURL(c.url).catch(() => {});
   });
   ipcMain.on('rz:web:close', (e, id) => { const w = webs.get(id); if (w && !w.isDestroyed()) w.destroy(); webs.delete(id); });
+  // ---- okna výstupů na vybranou obrazovku ----
+  ipcMain.handle('rz:screens', () => require('electron').screen.getAllDisplays().map((d, i) => ({ id: String(d.id), label: d.label || (d.internal ? 'vestavěná' : 'obrazovka ' + (i + 1)), w: d.size.width, h: d.size.height })));
+  ipcMain.on('rz:placeWin', (e, title, id) => {
+    const d = require('electron').screen.getAllDisplays().find(x => String(x.id) === String(id)); if (!d) return;
+    const w = BrowserWindow.getAllWindows().find(x => !x.isDestroyed() && x.getTitle() === title); if (!w) return;
+    if (w.isFullScreen()) w.setFullScreen(false);
+    w.setBounds(d.bounds); setTimeout(() => { if (!w.isDestroyed()) w.setFullScreen(true); }, 250);
+  });
+  // ---- aktualizace ----
+  require('./update.js')({ ipcMain, send });
+  // ---- síťové vstupy: NDI, SRT, RTMP, RTSP, HLS ----
+  const inputs = require('./inputs.js')({ ipcMain, send, ffmpeg: ff || 'ffmpeg', binDir: path.join(process.resourcesPath || '', 'bin') });
+  app.on('before-quit', () => inputs.closeAll());
   // ---- PTZ kamery (VISCA přes síť) ----
   ipcMain.handle('rz:ptz', (e, c) => require('../server.js').ptzSend ? require('../server.js').ptzSend(c) : {ok:false});
   // ---- NDI výstup: pomocný program ndi-send (knihovnu NDI si najde v počítači) ----

@@ -53,7 +53,8 @@ const CFG = (() => {
       <label class="chk"><input type="checkbox" data-k="gen.confirmStop" ${g.confirmStop ? 'checked' : ''}> ${L('Před ukončením vysílání se zeptat')}</label>
       <label class="chk"><input type="checkbox" data-k="rec.autoRec" ${r.autoRec ? 'checked' : ''}> ${L('Při vysílání automaticky nahrávat program')}</label>
       <label class="chk"><input type="checkbox" data-k="rec.stopWithStream" ${r.stopWithStream ? 'checked' : ''}> ${L('Po skončení vysílání zastavit i automatické nahrávání')}</label>
-      <label class="chk"><input type="checkbox" data-k="gen.keepAwake" ${g.keepAwake ? 'checked' : ''}> ${L('Při vysílání a nahrávání nenechat počítač usnout ani zhasnout obrazovku')}</label>`;
+      <label class="chk"><input type="checkbox" data-k="gen.keepAwake" ${g.keepAwake ? 'checked' : ''}> ${L('Při vysílání a nahrávání nenechat počítač usnout ani zhasnout obrazovku')}</label>
+      ${typeof UPD !== 'undefined' ? UPD.box() : ''}`;
     if (cur === 'video') return `
       <label>${L('Rozlišení plátna (základní)')}<select data-k="video.base">${opt(Object.fromEntries(Object.entries(BASES).map(([k, n]) => [k, L(n)])), v.base)}</select></label>
       <label>${L('Výstupní rozlišení (vysílání a nahrávka)')}<select data-k="video.out">${opt(outOptions(v.base), v.out)}</select></label>

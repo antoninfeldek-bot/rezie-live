@@ -166,7 +166,7 @@ function lanHandler(req, res, online) {
   const ip = online ? String(req.headers['cf-connecting-ip'] || 'x') : req.socket.remoteAddress;
   const bad = badKeys.get(ip);
   if (bad && bad.n >= 30 && Date.now() - bad.t < 600000) return send(res, 429, 'Příliš mnoho pokusů – zkus to za 10 minut');
-  const ok = (key) => { const g = key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key)); if (!g && k) { const b = badKeys.get(ip) || {n:0, t:Date.now()}; if (Date.now() - b.t > 600000) { b.n = 0; b.t = Date.now(); } b.n++; badKeys.set(ip, b); } return g; };
+  const ok = (key) => { const kb = Buffer.from(k), keyb = Buffer.from(key || ''); const g = !!key && kb.length === keyb.length && crypto.timingSafeEqual(kb, keyb); if (!g && k) { const b = badKeys.get(ip) || {n:0, t:Date.now()}; if (Date.now() - b.t > 600000) { b.n = 0; b.t = Date.now(); } b.n++; badKeys.set(ip, b); } return g; };
   // přes internet (tunel) jde jen připojení hosta – ovladač a čtečka zůstávají jen v místní síti
   if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/crew' || p.startsWith('/c/') || p === '/js/crew-client.js' || p === '/css/remote.css')) return send(res, 404, 'nenalezeno');
   if (p === '/c/config' || p === '/g/config') { if (!ok(p === '/c/config' ? lan.ckey : lan.gkey)) return send(res, 403, 'Špatný odkaz'); return iceAll().then(l => send(res, 200, JSON.stringify({iceServers:l}), 'application/json')); }
@@ -201,15 +201,23 @@ function lanHandler(req, res, online) {
   }
   if (req.method === 'GET' && LAN_FILES.includes(p)) return serveFile(res, p);
   // dálkové ovládání
+  // ovladač má roli podle klíče: vše / jen grafika / jen zvuk
+  const eq = key => { if (!key) return false; const a = Buffer.from(k), b = Buffer.from(key); return a.length === b.length && crypto.timingSafeEqual(a, b); };
+  const role = () => eq(lan.pin) ? 'full' : eq(lan.gpin) ? 'gfx' : eq(lan.apin) ? 'aud' : (ok(lan.pin), null);   // špatný klíč se započítá do pokusů
   if (p === '/r/events') {
-    if (!ok(lan.pin)) return send(res, 403, 'Špatný klíč');
+    const r = role(); if (!r) return send(res, 403, 'Špatný klíč');
     if (req.method === 'HEAD') return send(res, 200, '');
     sse(req, res, remotes, () => toApp({t:'remotes', n:remotes.size}));
+    res.write('data: ' + JSON.stringify({t:'role', r}) + '\n\n');
     res.write('data: ' + lanState + '\n\n'); toApp({t:'remotes', n:remotes.size}); return;
   }
   if (p === '/r/act' && req.method === 'POST') {
-    if (!ok(lan.pin)) return send(res, 403, 'Špatný klíč');
-    return readJson(req).then(d => { if (typeof d.a === 'string' && d.a.length < 80) toApp({t:'act', a:d.a, v:d.v}); send(res, 200, appClients.size ? 'ok' : 'režie neběží'); }).catch(() => send(res, 400, 'chyba'));
+    const r = role(); if (!r) return send(res, 403, 'Špatný klíč');
+    return readJson(req).then(d => {
+      if (typeof d.a !== 'string' || d.a.length >= 80) return send(res, 400, 'chyba');
+      if (!roleAllows(r, d.a)) return send(res, 403, 'Tohle tvůj ovladač nesmí');
+      toApp({t:'act', a:d.a, v:d.v}); send(res, 200, appClients.size ? 'ok' : 'režie neběží');
+    }).catch(() => send(res, 400, 'chyba'));
   }
   // hosté
   if (p === '/g/poll') { if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz'); return mbPoll(guests, req, res, u, 'Host'); }
@@ -223,6 +231,12 @@ function lanHandler(req, res, online) {
     }).catch(() => send(res, 400, 'chyba'));
   }
   send(res, 404, 'nenalezeno');
+}
+function roleAllows(r, a) {
+  if (r === 'full') return true;
+  if (r === 'gfx') return /^(gfx[:.]|rd\.|prompter|data\.|slides\.|score\.|poll\.|chat\.)/.test(a);
+  if (r === 'aud') return /^(mute:|vol:|fader\.)/.test(a);
+  return false;
 }
 function serveFile(res, rel) {
   const file = path.join(__dirname, rel);
@@ -312,13 +326,13 @@ function ptzSend(c) {
 }
 
 function lanStart(cfg) {
-  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; if (cfg.cft) lan.cft = cfg.cft; return Promise.resolve(lanInfo()); }
+  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gpin = cfg.gpin || lan.gpin; lan.apin = cfg.apin || lan.apin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; if (cfg.cft) lan.cft = cfg.cft; return Promise.resolve(lanInfo()); }
   const c = certFiles();
   const srv = c ? https.createServer(c, lanHandler) : http.createServer(lanHandler);
   return new Promise((ok, fail) => {
     const tryPort = port => {
       srv.once('error', e => { if (e.code === 'EADDRINUSE' && port < PORT + 120) tryPort(port + 1); else fail(e); });
-      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey, ckey:cfg.ckey, cft:cfg.cft || null, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
+      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gpin:cfg.gpin, apin:cfg.apin, gkey:cfg.gkey, pkey:cfg.pkey, ckey:cfg.ckey, cft:cfg.cft || null, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
     };
     tryPort(+process.env.LAN_PORT || PORT + 363);
   });

@@ -25,12 +25,20 @@
   // plynulé posílání faderů (max ~20× za sekundu)
   function sendThrottled(a, v) { const n = performance.now(), l = lastSend[a] || {t:0}; l.v = v; lastSend[a] = l; if (n - l.t > 50) { l.t = n; send(a, v); } else { clearTimeout(l.to); l.to = setTimeout(() => { l.t = performance.now(); send(a, l.v); }, 60); } }
 
+  // role ovladače: všechno / jen grafika (+ scénář, čtečka) / jen zvuk
+  function setRole(r) {
+    const allow = r === 'gfx' ? ['gfx', 'rd', 'pr'] : r === 'aud' ? ['aud'] : null;
+    document.querySelectorAll('.rnav [data-go]').forEach(b => { b.hidden = !!allow && !allow.includes(b.dataset.go); });
+    for (const id of ['bRec', 'bStream']) { const b = $('#' + id); if (b) b.hidden = !!allow; }
+    if (allow) { const first = document.querySelector('.rnav [data-go="' + allow[0] + '"]'); if (first) first.click(); }
+    const ch = $('#role'); if (ch) ch.textContent = r === 'gfx' ? t('Grafika') : r === 'aud' ? t('Zvuk') : '';
+  }
   function connect() {
     if (es) es.close();
     es = new EventSource('/r/events?k=' + encodeURIComponent(K));
     es.onopen = () => { $('#conn').className = 'dot on'; msg(''); };
     es.onerror = () => { $('#conn').className = 'dot off'; msg(t('Spojení s režií přerušeno – připojuji znovu…')); fetch('/r/events?k=' + encodeURIComponent(K), {method:'HEAD'}).then(r => { if (r.status === 403) { es.close(); msg(t('Špatný klíč – naskenuj QR kód v režii znovu.')); } }).catch(() => {}); };
-    es.onmessage = e => { try { const d = JSON.parse(e.data); if (d && d.scenes) { S = d; render(); } } catch (er) {} };
+    es.onmessage = e => { try { const d = JSON.parse(e.data); if (d && d.t === 'role') return setRole(d.r); if (d && d.scenes) { S = d; render(); } } catch (er) {} };
   }
 
   const fmt = s => { const neg = s < 0; s = Math.abs(s); return (neg ? '-' : '') + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };

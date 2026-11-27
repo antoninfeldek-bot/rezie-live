@@ -140,13 +140,47 @@ const GFX = (() => {
       const t = newEl('text', {name:'Čas', p:{x:60, y:50, w:200, h:64, text:'{hm}', size:38, align:'center'}});
       G.els = [bg, t]; applyPreset(G, bg, 'revealL', 'revealL', {dur:0.4}); applyPreset(G, t, 'fade', 'fade', {delay:0.2, dur:0.3}); return G;
     }],
+    score:['Skóre (sport)', () => {
+      const G = newG('Skóre'); G.autoOut = 0;
+      const bg = newEl('rect', {name:'Podklad', p:{x:60, y:50, w:640, h:72, fill:'#0b1220', op:0.92, radius:10}});
+      const h = newEl('text', {name:'Domácí', p:{x:72, y:50, w:200, h:72, text:'{skore.domaci}', size:34, align:'left', weight:700}});
+      const sc = newEl('rect', {name:'Skóre podklad', p:{x:280, y:56, w:150, h:60, fill:'#1e40af', radius:8}});
+      const st = newEl('text', {name:'Stav', p:{x:280, y:50, w:150, h:72, text:'{skore.D} : {skore.H}', size:40, align:'center', weight:800}});
+      const a = newEl('text', {name:'Hosté', p:{x:440, y:50, w:150, h:72, text:'{skore.hoste}', size:34, align:'left', weight:700}});
+      const t = newEl('text', {name:'Čas', p:{x:590, y:50, w:110, h:72, text:'{skore.cas}', size:30, align:'center', color:'#fde68a'}});
+      const pe = newEl('text', {name:'Perioda', p:{x:590, y:118, w:110, h:36, text:'{skore.perioda}', size:22, align:'center', color:'#cbd5e1'}});
+      G.els = [bg, sc, h, st, a, t, pe]; applyPreset(G, bg, 'revealL', 'revealR', {dur:0.45}); for (const e of [sc, h, st, a, t, pe]) applyPreset(G, e, 'fade', 'fade', {delay:0.25, dur:0.3}); return G;
+    }],
+    chatmsg:['Zpráva z chatu', () => {
+      const G = newG('Zpráva z chatu');
+      const bg = newEl('rect', {name:'Podklad', p:{x:110, y:760, w:1100, h:200, fill:'#0f172a', op:0.92, radius:16}});
+      const acc = newEl('rect', {name:'Proužek', p:{x:110, y:760, w:12, h:200, fill:'#a855f7'}});
+      const n = newEl('text', {name:'Jméno', p:{x:150, y:778, w:1040, h:56, text:'{chat.jmeno}', size:36, align:'left', weight:700, color:'#c4b5fd'}});
+      const t = newEl('text', {name:'Zpráva', p:{x:150, y:836, w:1040, h:110, text:'{chat.text}', size:40, align:'left', weight:500}});
+      G.els = [bg, acc, n, t]; applyPreset(G, bg, 'revealL', 'fade', {dur:0.45}); applyPreset(G, acc, 'revealU', 'fade', {dur:0.3});
+      applyPreset(G, n, 'slideL', 'fade', {delay:0.2, dur:0.4, dist:50}); applyPreset(G, t, 'slideL', 'fade', {delay:0.3, dur:0.4, dist:50}); return G;
+    }],
+    poll:['Anketa (výsledky z chatu)', () => {
+      const G = newG('Anketa');
+      const bg = newEl('rect', {name:'Podklad', p:{x:1260, y:250, w:600, h:560, fill:'#0f172a', op:0.92, radius:18}});
+      const q = newEl('text', {name:'Otázka', p:{x:1290, y:270, w:540, h:110, text:'{anketa.otazka}', size:38, align:'left', weight:700}});
+      const els = [bg, q];
+      for (let i = 1; i <= 4; i++) {
+        const y = 390 + (i - 1) * 100;
+        els.push(newEl('text', {name:'Možnost ' + i, p:{x:1290, y, w:440, h:50, text:'{anketa.' + i + 'k} {anketa.' + i + '}', size:30, align:'left'}}));
+        els.push(newEl('text', {name:'Procenta ' + i, p:{x:1730, y, w:110, h:50, text:'{anketa.' + i + '%}', size:30, align:'right', weight:700, color:'#86efac'}}));
+        els.push(newEl('text', {name:'Pruh ' + i, p:{x:1290, y:y + 50, w:550, h:30, text:'{anketa.' + i + 'pruh}', size:24, align:'left', color:'#22c55e'}}));
+      }
+      els.push(newEl('text', {name:'Hlasů', p:{x:1290, y:765, w:540, h:36, text:'{anketa.hlasu}', size:22, align:'left', color:'#94a3b8'}}));
+      G.els = els; applyPreset(G, bg, 'revealL', 'revealR', {dur:0.5}); for (const e of els.slice(1)) applyPreset(G, e, 'fade', 'fade', {delay:0.25, dur:0.35}); return G;
+    }],
     empty:['Prázdná grafika', () => newG('Nová grafika')]
   };
 
   /* ---------- kreslení ---------- */
   const p2 = v => String(v).padStart(2, '0');
   function tokens(G, s, st, now) {
-    return DAT.resolve(String(s)).replace(/\{(\w+)\}/g, (m, k) => {
+    return LIVE.resolve(DAT.resolve(String(s))).replace(/\{(\w+)\}/g, (m, k) => {
       const d = new Date();
       if (k === 'time') return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
       if (k === 'hm') return `${p2(d.getHours())}:${p2(d.getMinutes())}`;

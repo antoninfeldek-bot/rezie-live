@@ -36,7 +36,8 @@ jobs:
         run: |
           A=${{ matrix.arch == 'x64' && 'x86_64' || 'arm64' }}
           mkdir -p bin && clang -O2 -arch $A -mmacosx-version-min=11.0 -o bin/ndi-send electron/ndi/ndi-send.c
-          codesign --force --sign - bin/ndi-send && file bin/ndi-send
+          clang -O2 -arch $A -mmacosx-version-min=11.0 -o bin/ndi-recv electron/ndi/ndi-recv.c
+          codesign --force --sign - bin/ndi-send && codesign --force --sign - bin/ndi-recv && file bin/ndi-send bin/ndi-recv
       - name: Build app
         run: npx electron-builder --mac dir --${{ matrix.arch }} --publish never
       - name: Ad-hoc sign + DMG
@@ -96,6 +97,8 @@ jobs:
         run: |
           mkdir -p bin
           (gcc -O2 -static -o bin/ndi-send.exe electron/ndi/ndi-send.c || clang -O2 -o bin/ndi-send.exe electron/ndi/ndi-send.c) && ls -la bin/ndi-send.exe
+          (gcc -O2 -static -o bin/ndi-recv.exe electron/ndi/ndi-recv.c || clang -O2 -o bin/ndi-recv.exe electron/ndi/ndi-recv.c) && ls -la bin/ndi-recv.exe
+          ./bin/ndi-recv.exe --find || true
           ./bin/ndi-send.exe "test" 64 64 30 1 48000 < /dev/null || true
       - name: Build app
         run: npx electron-builder --win nsis --x64 --publish never

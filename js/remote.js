@@ -10,8 +10,8 @@ const REM = (() => {
   const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join(''); };
   const C = () => S.rem;
 
-  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), ckey:(d && d.ckey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn), cft:Object.assign({id:'', token:''}, d && d.cft)}; }
-  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, online:C().online, turn:C().turn, cft:C().cft});
+  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gpin:(d && d.gpin) || rnd(10), apin:(d && d.apin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), ckey:(d && d.ckey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn), cft:Object.assign({id:'', token:''}, d && d.cft)}; }
+  const save_ = () => ({on:C().on, pin:C().pin, gpin:C().gpin, apin:C().apin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, online:C().online, turn:C().turn, cft:C().cft});
   // STUN najde veřejnou adresu (stačí většinou); TURN přeposílá obraz, když to přísná síť (škola, firma) jinak nepustí
   function iceServers() {
     const l = [{urls:['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302']}], t = C().turn;
@@ -19,7 +19,7 @@ const REM = (() => {
     return l;
   }
   const host = () => ST.info && ST.info.on ? `${ST.info.https ? 'https' : 'http'}://${ST.info.ips[0] || 'IP-ADRESA'}:${ST.info.port}` : '';
-  const remoteUrl = () => host() + '/remote?k=' + C().pin + (I18N.lang === 'en' ? '&lang=en' : '');
+  const remoteUrl = () => host() + '/remote?k=' + (ST.role === 'gfx' ? C().gpin : ST.role === 'aud' ? C().apin : C().pin) + (I18N.lang === 'en' ? '&lang=en' : '');
   const prompterUrl = () => host() + '/prompter?k=' + C().pkey + (I18N.lang === 'en' ? '&lang=en' : '');
   const onlineUrl = () => ST.info && ST.info.tunnel && ST.info.tunnel.url ? ST.info.tunnel.url + '/guest?k=' + C().gkey + (I18N.lang === 'en' ? '&lang=en' : '') : '';
   const crewUrl = () => (C().online && onlineUrl() ? ST.info.tunnel.url : host()) + '/crew?k=' + C().ckey + (I18N.lang === 'en' ? '&lang=en' : '');
@@ -30,7 +30,7 @@ const REM = (() => {
     const b = base(); if (!b) { ST.err = L('Funguje jen v desktopové aplikaci nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
     ST.starting = true; ST.err = ''; renderTab();
     try {
-      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})});
+      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gpin:C().gpin, apin:C().apin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})});
       if (!r.ok) throw new Error(await r.text());
       ST.info = await r.json(); C().on = true; save();
       connectEvents(); startPush(); iceCheck().then(() => { if (S.tabCur === 'remote') renderTab(); });
@@ -46,7 +46,7 @@ const REM = (() => {
   }
   async function saveTurn(t, cft) {
     C().turn = t; if (cft) C().cft = cft; save();
-    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})}); } catch (e) {}
+    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gpin:C().gpin, apin:C().apin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})}); } catch (e) {}
     const r = await iceCheck(); toast(r.err ? '⚠ ' + r.err : r.turn ? L('TURN server funguje') : L('TURN server uložen')); renderTab();
   }
   // seznam STUN/TURN serverů ze serveru aplikace (včetně dočasných údajů Cloudflare TURN)
@@ -61,7 +61,7 @@ const REM = (() => {
     renderTab();
   }
   function newKeys(which) {
-    if (which === 'pin') C().pin = rnd(10); else if (which === 'pkey') C().pkey = rnd(10); else if (which === 'ckey') C().ckey = rnd(10); else C().gkey = rnd(10);
+    if (which === 'pin') { if (ST.role === 'gfx') C().gpin = rnd(10); else if (ST.role === 'aud') C().apin = rnd(10); else C().pin = rnd(10); } else if (which === 'pkey') C().pkey = rnd(10); else if (which === 'ckey') C().ckey = rnd(10); else C().gkey = rnd(10);
     save(); if (C().on) enable(); else renderTab();
   }
   function connectEvents() {
@@ -174,6 +174,7 @@ const REM = (() => {
         // Chrome: zvuk z WebRTC teče do Web Audio jen když ho zároveň „hraje“ (ztlumený) audio prvek
         g.aEl = new Audio(); g.aEl.muted = true; g.aEl.srcObject = new MediaStream([t]); g.aEl.play().catch(() => {});
         attachAudio(s, actx.createMediaStreamSource(new MediaStream([t])));
+        s.guestAudio = t;   // pro ISO nahrávku hosta
       }
       renderSources(); renderMixer();
     };
@@ -249,7 +250,9 @@ const REM = (() => {
       ${ST.err ? `<p class="warn">${esc(ST.err)}</p>` : ''}
       <p class="dim">${L('Druhý člověk může ovládat přepínání, grafiku, zvuk a scénář z iPadu, mobilu nebo jiného počítače. Hosté se připojí přes odkaz s kamerou a mikrofonem – nic neinstalují.')}</p></div>
       ${on ? `<div class="remgrid">
-        <div class="remcard"><h4>🎛 ${L('Ovladač')}</h4><div class="qr">${qr(remoteUrl())}</div>
+        <div class="remcard"><h4>🎛 ${L('Ovladač')}</h4>
+          <label>${L('Co smí ovládat')}<select id="remRole"><option value="full" ${!ST.role || ST.role === 'full' ? 'selected' : ''}>${L('Všechno (režisér)')}</option><option value="gfx" ${ST.role === 'gfx' ? 'selected' : ''}>${L('Jen grafika, titulky, skóre a scénář')}</option><option value="aud" ${ST.role === 'aud' ? 'selected' : ''}>${L('Jen zvuk (zvukař)')}</option></select></label>
+          <div class="qr">${qr(remoteUrl())}</div>
           <code class="url" title="${L('Klikni pro zkopírování')}">${esc(remoteUrl())}</code>
           <p class="dim">${L('Připojené ovladače:')} <b>${ST.remotes}</b></p>
           <div class="btns"><button data-rm="newpin">🔑 ${L('Nový klíč')}</button></div></div>
@@ -290,7 +293,7 @@ const REM = (() => {
   }
   function init() {
     const box = $('#tab-remote');
-    box.addEventListener('change', e => { if (e.target.id === 'remOn') e.target.checked ? enable() : disable(); if (e.target.id === 'remOnline') setOnline(e.target.checked); });
+    box.addEventListener('change', e => { if (e.target.id === 'remOn') e.target.checked ? enable() : disable(); if (e.target.id === 'remOnline') setOnline(e.target.checked); if (e.target.id === 'remRole') { ST.role = e.target.value; renderTab(); } });
     box.addEventListener('click', e => {
       const t = e.target;
       if (t.classList.contains('url')) { navigator.clipboard && navigator.clipboard.writeText(t.textContent); t.classList.add('copied'); setTimeout(() => t.classList.remove('copied'), 800); return; }

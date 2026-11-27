@@ -105,6 +105,29 @@ The **2️⃣** button at the top opens a window with a different picture – an
 ### ⚙ Automation
 **Control** tab at the bottom → **Automation**: “when the intro ends → switch to Camera 1”, “at 19:59 → Countdown scene”, “when streaming starts → logo”…
 
+### 📡 Video over the network: NDI, SRT, RTMP, IP cameras
+**Sources → 📡 + SRT / RTMP / IP camera** or **🔗 + NDI input** (desktop app only).
+- **SRT (best for phones and the internet):** you'll see an address `srt://IP:9000`. On a phone install the free **Larix Broadcaster** → Connections → New → paste the address, Mode: Caller. From OBS: Settings → Stream → Custom.
+- **RTMP:** server `rtmp://IP:1935/live` plus the key the app shows (OBS, drones, RTMP cameras).
+- **IP camera / address:** `rtsp://…`, `srt://…`, `https://…/stream.m3u8`.
+- **NDI:** pick from the list of sources on the network. Needs the free **NDI Tools**.
+Audio from the input appears in the mixer as a normal channel.
+
+### 🏆 Live: score, chat and polls
+**🏆 Live** tab: score and game clock (template **Score (sports)**), viewer chat from Twitch (channel name) or YouTube (free API key) – click a message to show it on air (template **Chat message**), and polls where viewers vote by typing 1–4 (template **Poll**).
+
+### ✂ Cut list, chapters and ISO
+Every cut is logged while recording or streaming. In **Recordings** download an **EDL** (Premiere, DaVinci), **YouTube chapters** or CSV. Key **M** = marker. ISO now also records guests and network inputs separately.
+
+### 🖥 Outputs 2–4
+The **2️⃣ Outputs** button opens up to three extra windows, each showing something different. In the app choose **To screen…** and the window goes full screen on that display.
+
+### 📱 Remote roles
+In **📱 Remote** choose what a remote may control: **everything**, **only graphics, titles, score and rundown**, or **only audio**. Each role has its own QR code.
+
+### 🆕 Updates
+The app finds new versions by itself and offers **Update** (Windows installs it, Mac opens the new version to drag into Applications). Manually: ⚙ Settings → General.
+
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.
 - An unplugged camera or microphone **reconnects by itself**.
