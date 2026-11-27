@@ -5,10 +5,16 @@ const { Streamer } = require('./streamer.js');
 const net = require('net');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 app.setName('Režie Live');
 // macOS a Chromium nesmí aplikaci brzdit, když je zakrytá nebo minimalizovaná
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
+// plný výkon grafiky: výkonná grafická karta (u MacBooků se dvěma), kreslení a video bez zbytečných kopií
+app.commandLine.appendSwitch('force_high_performance_gpu');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
@@ -90,6 +96,35 @@ app.whenReady().then(async () => {
   mainWin.on('responsive', () => clearTimeout(hangT));
   mainWin.webContents.on('did-start-navigation', (e, url, inPlace, isMain) => { if (isMain && !inPlace) streamer.hold(); });   // ruční znovunačtení (Cmd+R) taky nesmí shodit vysílání
   ipcMain.handle('rz:state', () => streamer.state());
+  // ---- NDI výstup: pomocný program ndi-send (knihovnu NDI si najde v počítači) ----
+  let ndi = null;
+  const ndiSend = st => send('rz:ndi:status', st);
+  const ndiBin = () => [path.join(process.resourcesPath || '', 'bin', 'ndi-send'), path.join(__dirname, 'ndi', 'ndi-send')].find(f => { try { return fs.existsSync(f); } catch (e) { return false; } });
+  const pkt = (t, buf) => { const h = Buffer.alloc(5); h[0] = t.charCodeAt(0); h.writeUInt32LE(buf.length, 1); return [h, buf]; };
+  ipcMain.handle('rz:ndi:start', (e, c) => new Promise(res => {
+    if (ndi) { try { ndi.kill(); } catch (er) {} ndi = null; }
+    const bin = ndiBin(); if (!bin) return res({ok:false, error:'chybí ndi-send'});
+    const p = spawn(bin, [String(c.name || 'Režie Live – Program'), String(c.w | 0), String(c.h | 0), String(c.fpsN | 0 || 30), String(c.fpsD | 0 || 1), String(c.rate | 0 || 48000)], {stdio:['pipe', 'pipe', 'ignore']});
+    ndi = p; let done = false, buf = '';
+    p.stdin.on('error', () => {});
+    p.stdout.on('data', d => {
+      buf += d; let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const l = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (l.startsWith('OK')) { if (!done) { done = true; res({ok:true}); } ndiSend({state:'on', conns:0}); }
+        else if (l.startsWith('CONN')) ndiSend({state:'on', conns:+l.split(' ')[1] || 0});
+        else if (l.startsWith('ERR')) { const m = l.slice(4); if (!done) { done = true; res({ok:false, error:m}); } ndiSend({state:'error', msg:m}); }
+      }
+    });
+    p.on('error', er => { if (!done) { done = true; res({ok:false, error:er.message}); } });
+    p.on('close', () => { if (ndi === p) { ndi = null; ndiSend({state:'off'}); } if (!done) { done = true; res({ok:false, error:'nolib'}); } });
+    setTimeout(() => { if (!done) { done = true; res({ok:false, error:'neodpovídá'}); } }, 8000);
+  }));
+  // snímky: když pomocný program nestíhá (víc než ~3 snímky ve frontě), snímek se zahodí – nikdy se nehromadí
+  ipcMain.on('rz:ndi:v', (e, u8) => { if (!ndi || ndi.stdin.writableLength > u8.length * 3) return; const [h, b] = pkt('V', Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength)); ndi.stdin.write(h); ndi.stdin.write(b); });
+  ipcMain.on('rz:ndi:a', (e, u8) => { if (!ndi || ndi.stdin.writableLength > 8e6) return; const [h, b] = pkt('A', Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength)); ndi.stdin.write(h); ndi.stdin.write(b); });
+  ipcMain.on('rz:ndi:stop', () => { const p = ndi; ndi = null; if (p) { try { p.stdin.write(Buffer.from([81, 0, 0, 0, 0])); p.stdin.end(); } catch (er) {} setTimeout(() => { try { p.kill(); } catch (er) {} }, 1500); } ndiSend({state:'off'}); });
+  app.on('before-quit', () => { if (ndi) try { ndi.kill(); } catch (er) {} });
   ipcMain.handle('rz:resume', (e, cfg) => streamer.resume(cfg));
   ipcMain.handle('rz:info', () => ({ ffmpeg: streamer.available(), protocols: streamer.protocols(), videos: path.join(app.getPath('videos'), 'Rezie Live'), platform: process.platform, version: app.getVersion() }));
   ipcMain.handle('rz:start', (e, cfg) => {

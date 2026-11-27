@@ -11,15 +11,17 @@ const HLT = (() => {
   window.addEventListener('unhandledrejection', e => note(e.reason && (e.reason.message || e.reason)));
 
   const frame = () => { H.n++; };
+  // měřeno vůči nastavenému FPS (25 fps při nastavení 25 = v pořádku)
   function level() {
-    if (H.fps < 18 || H.cost > 40) return 'bad';
-    if (H.fps < 26 || H.cost > 25) return 'warn';
+    const t = CFG.video.fps || 30, budget = 1000 / t;
+    if (H.fps < t * 0.6 || H.cost > budget * 1.2) return 'bad';
+    if (H.fps < t * 0.85 || H.cost > budget * 0.75) return 'warn';
     return 'ok';
   }
   function details() {
     const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB' : '—';
     const miss = S.sources.filter(s => s.missing).map(s => s.name);
-    return {fps:Math.round(H.fps), cost:H.cost.toFixed(1), mem, audio:actx ? actx.state : '—', miss, errs:H.errs.length};
+    return {fps:Math.round(H.fps), cost:H.cost.toFixed(1), mem, audio:actx ? actx.state : '—', miss, errs:H.errs.length, level:level(), target:CFG.video.fps || 30};
   }
   function tick() {
     const now = performance.now(), dt = now - H.t;
@@ -33,7 +35,7 @@ const HLT = (() => {
         (d.miss.length ? `\n${L('Chybí zdroje')}: ${d.miss.join(', ')}` : '') + (d.errs ? `\n${L('Chyby')}: ${d.errs}` : '') + `\n${L('Klikni pro podrobnosti')}`;
     }
     // trvale nízký výkon → jedno upozornění (když je okno vidět)
-    if (!document.hidden && H.fps > 0 && H.fps < 20) H.low++; else H.low = 0;
+    if (!document.hidden && H.fps > 0 && level() === 'bad') H.low++; else H.low = 0;
     if (H.low >= 6 && now - H.warned > 120000) { H.warned = now; toast(L('Počítač nestíhá – zavři jiné programy nebo sniž rozlišení kamer. Vysílání má přednost před náhledem.')); }
     // zvuk se zasekl (macOS ho uspí po odpojení sluchátek apod.)
     if (actx && actx.state !== 'running' && actx.state !== 'closed') actx.resume().catch(() => {});
@@ -60,7 +62,7 @@ const HLT = (() => {
   function show() {
     const d = details();
     dialog(L('Stav aplikace'), `<table>
-      <tr><td>${L('Snímky za sekundu')}</td><td><b>${d.fps}</b> ${d.fps >= 26 ? '✅' : d.fps >= 18 ? '🟡' : '🔴'}</td></tr>
+      <tr><td>${L('Snímky za sekundu')}</td><td><b>${d.fps}</b> / ${CFG.video.fps} ${level() === 'ok' ? '✅' : level() === 'warn' ? '🟡' : '🔴'}</td></tr>
       <tr><td>${L('Kreslení jednoho snímku')}</td><td>${d.cost} ms</td></tr>
       <tr><td>${L('Paměť')}</td><td>${d.mem}</td></tr>
       <tr><td>${L('Zvuk')}</td><td>${d.audio}</td></tr>

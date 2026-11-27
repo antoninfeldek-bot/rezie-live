@@ -94,6 +94,7 @@ const STR = (() => {
       <label class="chk" style="align-self:end"><input type="checkbox" data-c="remember" ${c.remember ? 'checked' : ''}> Pamatovat token v tomto počítači</label></div>
       <p class="dim">${esc(wp.help)}</p>
       <p class="dim">YouTube ani Facebook WHIP zatím nepřijímají – pro ně použij Restream (přijme WHIP a pošle to dál), nebo režim „Přes server.js“. WebRTC se samo přizpůsobí, když internet zakolísá.</p></div>`}
+    <div id="ndiBox">${NDI.html()}</div>
     <div class="sec"><h4>Záznam</h4><pre id="stLog">${esc(ST.log || '—')}</pre></div>`;
   }
   const statusText = () => ({off:'⚪ Nevysílá se', connecting:'🟡 Připojuji…', live:'🔴 ŽIVĚ', warn:'🟠 Vysílá se, ale s problémy', retry:'🟡 Spojení vypadlo – připojuji znovu…', error:'⚠ Chyba'})[ST.status] || '';

@@ -50,7 +50,7 @@ const MON = (() => {
       if (s.srv && s.srv.speed && s.srv.speed < 0.95) add('warn', L('Kódování nestíhá v reálném čase') + ` (${s.srv.speed}×)`);
       if (s.status === 'error' || s.status === 'retry') add('bad', L('Vysílání má potíže – podívej se do záložky Vysílání'));
     }
-    if (h.fps && h.fps < 18 && !document.hidden) add('warn', L('Počítač nestíhá') + ` (${h.fps} fps)`);
+    if (h.fps && h.level === 'bad' && !document.hidden) add('warn', L('Počítač nestíhá') + ` (${h.fps} / ${h.target} fps)`);
     if (h.audio && h.audio !== 'running') add('bad', L('Zvuk neběží') + ` (${h.audio})`);
     if (h.miss.length) add('warn', L('Chybí zdroje:') + ' ' + h.miss.join(', '));
     REM.guests().forEach((g, id) => {
@@ -100,6 +100,7 @@ const MON = (() => {
             <span>${L('Zpožděné snímky')}</span><b>${n.late || 0}</b><span>${L('Fronta kodéru')}</span><b>${n.queue || 0}</b></div>` : ''}
         ${s.live && s.srv ? `<div class="mrow"><span>${L('Kódování')}</span><b>${s.srv.fps || '—'} fps · ${s.srv.kbps ? Math.round(s.srv.kbps) + ' kbps' : '—'} · ${L('rychlost')} ${s.srv.speed || '—'}× · ${L('zahozené snímky')} ${s.srv.drop || 0}</b></div>` : ''}
         ${s.live && s.stats ? `<div class="dim">${esc(s.stats)}</div>` : ''}
+        ${(() => { const d = NDI.status(); return d.on || d.state === 'error' ? `<div class="mrow"><span>📡 NDI</span><b>${d.on ? pill('ok', `„${esc(d.name)}“ · ${L('připojení')}: ${d.conns}`) : pill('bad', esc(d.msg === 'nolib' ? L('chybí NDI') : d.msg || L('chyba')))}</b></div>` : ''; })()}
       </section>
       <section class="mcard"><h4>🌐 ${L('Internet')}</h4>
         ${sp ? `<div class="mbig"><div><small>${L('Odezva')}</small><b>${sp.ping} ms</b></div><div><small>${L('Stahování')}</small><b>${sp.down} Mb/s</b></div><div><small>${L('Odesílání')}</small><b class="${sp.up >= need ? '' : 'warnt'}">${sp.up} Mb/s</b></div></div>
@@ -107,7 +108,7 @@ const MON = (() => {
         <p class="dim">${L('Tvoje nastavení potřebuje odesílání aspoň')} <b>${need} Mb/s</b> (${s.dests || 1} × ${(s.vb / 1000).toFixed(1)} Mb/s ${L('+ zvuk a rezerva')}).</p>
         <div class="btns"><button data-mon="speed" ${ST.speedBusy ? 'disabled' : ''}>${ST.speedBusy ? '⏳ ' + L('Měřím…') : '⚡ ' + L('Změřit rychlost internetu')}</button></div></section>
       <section class="mcard"><h4>🖥 ${L('Počítač')}</h4>
-        <div class="mrow"><span>${L('Snímky za sekundu')}</span><b>${pill(h.fps >= 26 ? 'ok' : h.fps >= 18 ? 'warn' : 'bad', h.fps + ' fps')}</b></div>
+        <div class="mrow"><span>${L('Snímky za sekundu')}</span><b>${pill(h.level, h.fps + ' / ' + h.target + ' fps')}</b></div>
         <div class="mrow"><span>${L('Kreslení jednoho snímku')}</span><b>${h.cost} ms</b></div>
         <div class="mrow"><span>${L('Paměť')}</span><b>${h.mem}</b></div>
         <div class="mrow"><span>${L('Zvuk')}</span><b>${pill(h.audio === 'running' ? 'ok' : 'bad', esc(h.audio))}</b></div>

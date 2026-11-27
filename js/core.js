@@ -40,7 +40,8 @@ const dbTxt = v => v <= 0.001 ? '−∞' : (20 * Math.log10(v)).toFixed(1);
 
 /* ================= WebGL renderer (vrstvy + chroma key) ================= */
 const glc = document.createElement('canvas'); glc.width = W; glc.height = H;
-const gl = glc.getContext('webgl', {alpha:false, antialias:false, preserveDrawingBuffer:true, premultipliedAlpha:false});
+// preserveDrawingBuffer: false – obraz se kopíruje hned po vykreslení, takže GPU nemusí každý snímek dělat kopii navíc
+const gl = glc.getContext('webgl', {alpha:false, antialias:false, preserveDrawingBuffer:false, premultipliedAlpha:false, powerPreference:'high-performance', desynchronized:true});
 const VS = `attribute vec2 a;uniform vec4 r;uniform vec4 cr;varying vec2 v;
 void main(){vec2 p=r.xy+a*r.zw;vec2 c=p/vec2(${W}.0,${H}.0)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0.0,1.0);
 v=vec2(mix(cr.x,1.0-cr.z,a.x),mix(cr.y,1.0-cr.w,a.y));}`;
@@ -153,7 +154,10 @@ function texFor(s) {
   try {
     if (el instanceof HTMLVideoElement) {
       if (el.readyState < 2 || !el.videoWidth) return s.ready;
-      if (s.upFrame !== frameNo) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el); s.upFrame = frameNo; s.ready = true; }
+      // kamera dává třeba 30 snímků/s – na grafiku nahrát jen NOVÝ snímek (a nejvýš jednou za vykreslení)
+      if (el.requestVideoFrameCallback && !el._vfc) { el._vfc = 1; el._vf = 1; const cb = () => { el._vf++; el.requestVideoFrameCallback(cb); }; el.requestVideoFrameCallback(cb); }
+      const fresh = el.requestVideoFrameCallback ? s.upVf !== el._vf || el._vfEl !== s.tex : s.upFrame !== frameNo;
+      if (fresh && s.upFrame !== frameNo) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el); s.upFrame = frameNo; s.upVf = el._vf; el._vfEl = s.tex; s.ready = true; }
     } else if (s.dirty) {
       if (el instanceof HTMLImageElement && !(el.complete && el.naturalWidth)) return false;
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el); s.dirty = false; s.ready = true;
@@ -167,8 +171,10 @@ function layerRect(l, s) {
   return {x:l.x, y:l.y, w:l.w, h:l.h};
 }
 
-function renderScene(sc) {
-  gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+// small = true → vykreslit zmenšeně (náhled): 4× méně bodů pro klíčování a barvy; obraz je pak v levém dolním rohu plátna
+function renderScene(sc, small) {
+  if (small) { gl.viewport(0, 0, PVW, PVH); gl.enable(gl.SCISSOR_TEST); gl.scissor(0, 0, PVW, PVH); } else gl.viewport(0, 0, W, H);
+  gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); if (small) gl.disable(gl.SCISSOR_TEST);
   if (!sc) return;
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.activeTexture(gl.TEXTURE0);
@@ -243,14 +249,19 @@ function attachVideoStream(s, st) {
   let v = s.el;
   if (!(v instanceof HTMLVideoElement)) { v = document.createElement('video'); poolAdd(v); }
   v.muted = true; v.playsInline = true; v.autoplay = true; v.srcObject = st;
-  v.onloadedmetadata = () => { s.aspect = v.videoWidth / v.videoHeight; v.play().catch(() => {}); };
+  v.onloadedmetadata = () => { s.aspect = v.videoWidth / v.videoHeight; v.play().catch(() => {}); try { const t = st.getVideoTracks()[0], g = t.getSettings(); s.actual = `${g.width}×${g.height} · ${Math.round((g.frameRate || 0) * 100) / 100} fps`; } catch (e) {} };
   v.play().catch(() => {});
   s.el = v; s.hasVideo = true; s.missing = false;
   const vt = st.getVideoTracks()[0];
   if (vt) { s.devLabel = vt.label; vt.onended = () => { s.missing = true; s.hasVideo = false; renderSources(); }; }
 }
 async function openCamera(s) {
-  const h = s.res || CFG.video.camRes, w = Math.round(h * 16 / 9);
+  if (s.fmt && s.fmt.w) {   // zvolený formát (karta pro HDMI, 50/59.94 fps, 4K…)
+    const st = await navigator.mediaDevices.getUserMedia({video:{deviceId:s.deviceId ? {exact:s.deviceId} : undefined,
+      width:{ideal:s.fmt.w}, height:{ideal:s.fmt.h}, frameRate:{ideal:s.fmt.fps}}, audio:false});
+    attachVideoStream(s, st); return;
+  }
+  const h = Math.min(s.res || CFG.video.camRes, Math.max(H, W) >= 3840 ? 2160 : Math.max(H, W) >= 2560 ? 1440 : 1080), w = Math.round(h * 16 / 9);   // kamera nikdy větší, než plátno potřebuje
   const st = await navigator.mediaDevices.getUserMedia({video:{deviceId:s.deviceId ? {exact:s.deviceId} : undefined,
     width:{ideal:w}, height:{ideal:h}, frameRate:{ideal:CFG.video.fps}}, audio:false});
   attachVideoStream(s, st);
@@ -372,12 +383,51 @@ function pickFile(accept) {
 }
 async function devices(kind) { return (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === kind); }
 
+// karty pro HDMI/SDI vstup (Elgato, Blackmagic, Magewell, AJA, AVerMedia…) se na Macu hlásí jako kamera
+const CAPTURE_RE = /elgato|cam ?link|blackmagic|ultrastudio|decklink|magewell|aja |aja$|avermedia|hauppauge|hdmi|sdi|capture|usb video|uvc|game ?capture|atem|live gamer/i;
+const FMT_RES = [[3840, 2160], [2560, 1440], [1920, 1080], [1280, 720], [1024, 576], [720, 576], [720, 480], [640, 480]];
+const FMT_FPS = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
 async function chooseCamera(s) {
-  const ds = await devices('videoinput');
+  const ds = await devices('videoinput'); const mics = await devices('audioinput');
   if (!ds.length) { alert('Nenašel jsem žádnou kameru.'); return null; }
-  return dialog('Kamera', `<label>Kamera<select name="dev">${ds.map((d, i) => `<option value="${d.deviceId}" ${s && s.deviceId === d.deviceId ? 'selected' : ''}>${esc(d.label || 'Kamera ' + (i + 1))}</option>`).join('')}</select></label>
-    <label>Rozlišení<select name="res">${[[2160, '4K (2160p)'], [1080, '1080p (Full HD)'], [720, '720p (HD)'], [480, '480p']].map(([v, n]) => `<option value="${v}" ${(s && s.res ? s.res : CFG.video.camRes) === v ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+  const curFmt = s && s.fmt ? `${s.fmt.w}x${s.fmt.h}@${s.fmt.fps}` : 'auto';
+  const pr = dialog('Kamera', `<label>Kamera / karta pro HDMI vstup<select name="dev">${ds.map((d, i) => `<option value="${d.deviceId}" ${s && s.deviceId === d.deviceId ? 'selected' : ''}>${CAPTURE_RE.test(d.label) ? '🎛 ' : '📷 '}${esc(d.label || 'Kamera ' + (i + 1))}</option>`).join('')}</select></label>
+    <label>Formát (rozlišení a snímky za sekundu)<select name="fmt"><option value="auto">Automaticky (podle nastavení)</option></select></label>
+    <p class="dim" id="fmtInfo"></p>
+    <label class="chk" id="capAudio" hidden><input type="checkbox" name="audio" ${s ? '' : 'checked'}> Přidat i zvuk z karty (zvuk z HDMI)</label>
+    <input type="hidden" name="audioDev">
     <p class="dim">Tip: stejná kamera nejde většinou otevřít dvakrát. Když ji chceš ve více scénách, přidej ji jako vrstvu do dalších scén.</p>`);
+  // po výběru zařízení zjistit, jaké formáty opravdu umí
+  const dlg = $('#dlg'), sel = dlg.querySelector('[name=dev]'), fs = dlg.querySelector('[name=fmt]'), info = dlg.querySelector('#fmtInfo');
+  const probe = async () => {
+    const id = sel.value, d = ds.find(x => x.deviceId === id) || {}, isCap = CAPTURE_RE.test(d.label || '');
+    let cap = null; info.textContent = L('Zjišťuji, co zařízení umí…');
+    const busy = S.sources.find(x => x.deviceId === id && x.stream && x !== s);
+    try {
+      const t = busy ? busy.stream.getVideoTracks()[0] : (await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:id}, width:{ideal:3840}, height:{ideal:2160}, frameRate:{ideal:60}}})).getVideoTracks()[0];
+      cap = t.getCapabilities ? t.getCapabilities() : null; if (!busy) t.stop();
+    } catch (e) {}
+    if (sel.value !== id) return;
+    const mw = cap && cap.width ? cap.width.max : 1920, mh = cap && cap.height ? cap.height.max : 1080, mf = cap && cap.frameRate ? cap.frameRate.max : 30;
+    const res = FMT_RES.filter(([w, hh]) => w <= mw && hh <= mh), fps = FMT_FPS.filter(f => f <= mf + 0.5);
+    if (!fps.some(f => Math.abs(f - mf) < 0.6)) fps.push(Math.round(mf * 100) / 100);   // i neobvyklé maximum (např. 20 fps)
+    const opts = ['<option value="auto">' + L('Automaticky (podle nastavení)') + '</option>'];
+    for (const [w, hh] of res) for (const f of fps) opts.push(`<option value="${w}x${hh}@${f}">${w}×${hh} · ${f} fps</option>`);
+    fs.innerHTML = opts.join('');
+    // karta: rovnou nejlepší formát, který sedí k plátnu a k FPS vysílání
+    const want = curFmt !== 'auto' ? curFmt : isCap ? (() => { const r = res.find(([w, hh]) => hh <= Math.max(H, 1080)) || res[0]; const f = fps.filter(x => Math.abs(x - CFG.video.fps) < 1).pop() || fps.filter(x => x <= CFG.video.fps + 0.5).pop() || fps[fps.length - 1]; return r ? `${r[0]}x${r[1]}@${f}` : 'auto'; })() : 'auto';
+    fs.value = [...fs.options].some(o => o.value === want) ? want : 'auto';
+    info.textContent = cap ? `${isCap ? '🎛 ' + L('Karta pro HDMI vstup') + ' · ' : ''}${L('umí až')} ${mw}×${mh} · ${Math.round(mf * 100) / 100} fps` : L('Formáty se nepodařilo zjistit – použij Automaticky.');
+    // zvuk z karty (stejné nebo podobné jméno zvukového zařízení)
+    const key = (d.label || '').replace(/\s*\(.*\)$/, '').toLowerCase().split(/\s+/).slice(0, 2).join(' ');
+    const am = isCap && key ? mics.find(m => m.label.toLowerCase().includes(key)) : null;
+    dlg.querySelector('#capAudio').hidden = !am; dlg.querySelector('[name=audioDev]').value = am ? am.deviceId : '';
+  };
+  sel.addEventListener('change', probe); probe();
+  return pr;
+}
+function setFmt(s, v) {
+  const m = /^(\d+)x(\d+)@([\d.]+)$/.exec(v || ''); s.fmt = m ? {w:+m[1], h:+m[2], fps:+m[3]} : null; if (m) s.res = +m[2];
 }
 async function chooseMic(s) {
   const ds = await devices('audioinput');
@@ -394,7 +444,8 @@ async function addSource(type) {
       const f = await chooseCamera(); if (!f) return;
       const ds = await devices('videoinput'); const d = ds.find(x => x.deviceId === f.dev);
       const s = newSource('camera', d && d.label ? d.label.replace(/\s*\(.*\)$/, '') : L('Kamera ') + (S.sources.filter(x => x.type === 'camera').length + 1));
-      s.deviceId = f.dev; s.res = +f.res; await openCamera(s); S.sources.push(s); addToPreview(s);
+      s.deviceId = f.dev; setFmt(s, f.fmt); await openCamera(s); S.sources.push(s); addToPreview(s);
+      if (f.audio && f.audioDev) { const m = newSource('mic', s.name + ' – ' + L('zvuk')); m.deviceId = f.audioDev; await openMic(m); S.sources.push(m); }
     } else if (type === 'mic') {
       const f = await chooseMic(); if (!f) return;
       const s = newSource('mic', L('Mikrofon ') + (S.sources.filter(x => x.type === 'mic').length + 1));
@@ -421,7 +472,7 @@ async function addSource(type) {
 }
 async function reloadSource(s) {
   try {
-    if (s.type === 'camera') { const f = await chooseCamera(s); if (!f) return; s.deviceId = f.dev; s.res = +f.res; await openCamera(s); }
+    if (s.type === 'camera') { const f = await chooseCamera(s); if (!f) return; s.deviceId = f.dev; setFmt(s, f.fmt); await openCamera(s); }
     else if (s.type === 'mic') { const f = await chooseMic(s); if (!f) return; s.deviceId = f.dev; s.micOpts = {ns:f.ns, ec:f.ec}; await openMic(s); }
     else if (s.type === 'screen') await openScreen(s);
     else if (s.type === 'video') { const f = await pickFile('video/*'); if (!f) return; loadVideo(s, f); }
@@ -579,6 +630,7 @@ function pickColor(p) {
 const FONTS = [['system-ui, sans-serif','Systémové'],['Arial, sans-serif','Arial'],['"Arial Black", sans-serif','Arial Black'],['Impact, sans-serif','Impact'],['Georgia, serif','Georgia'],['"Times New Roman", serif','Times'],['"Courier New", monospace','Courier']];
 function srcCard(s) {
   const p = s.props; let b = '';
+  if (s.type === 'camera' && s.actual) b += `<div class="dim" style="font-size:11px">${CAPTURE_RE.test(s.devLabel || s.name) ? '🎛 ' : ''}${esc(s.actual)}</div>`;
   if (s.missing) b += s.type === 'guest' ? `<div class="warn">⚠ Host není připojený – pošli mu odkaz (záložka 📱 Dálkově).</div>` : `<div class="warn">⚠ Zdroj není připojený.<button data-sa="reload">Připojit znovu</button></div>`;
   if (s.type === 'text') b += `
     <label>Hlavní text<textarea data-s="props.text" rows="2">${esc(p.text)}</textarea></label>
@@ -811,17 +863,25 @@ const pvx = pv.getContext('2d'), pgx = pg.getContext('2d');
 const pvBuf = document.createElement('canvas'); pvBuf.width = PVW; pvBuf.height = PVH; const pvbx = pvBuf.getContext('2d');
 let lastT = performance.now();
 function frame(now) {
-  if (now - lastFrameT < 4) return; lastFrameT = now;
+  // vykreslovat jen tolikrát, kolik snímků má vysílání (30 fps na 120Hz displeji = 4× méně práce)
+  const iv = 1000 / (CFG.video.fps || 30);
+  if (now - lastFrameT < iv - 3) return; lastFrameT = now - Math.min(iv, Math.max(0, now - lastFrameT - iv));
   frameNo++; const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
   const prv = prevScene(), prg = sceneById(S.programId);
   if (gl) {
     if (S.active && !TR.compose(now)) S.active = null;
     if (!S.active) { renderScene(prg); pgx.drawImage(glc, 0, 0); }
-    const slow = CFG.gen.preview === 'low' || (CFG.gen.preview !== 'full' && frameCost > 25) || document.hidden;   // slabší počítač / skryté okno: náhled stačí kreslit méně často
-    if (prv === prg && !S.active) pvbx.drawImage(pg, 0, 0, PVW, PVH);
-    else if (!slow || frameNo % 3 === 0) { renderScene(prv); pvbx.drawImage(glc, 0, 0, PVW, PVH); }
+    // náhled: zmenšeně a podle zátěže méně často (program má vždy přednost)
+    const every = document.hidden ? 6 : CFG.gen.preview === 'low' ? 3 : CFG.gen.preview === 'full' ? 1 : frameCost > 20 ? 3 : frameCost > 12 || CFG.video.fps > 30 ? 2 : 1;
+    let pvNew = false;
+    if (frameNo % every === 0) {
+      if (prv === prg && !S.active) pvbx.drawImage(pg, 0, 0, PVW, PVH);
+      else { renderScene(prv, true); pvbx.drawImage(glc, 0, H - PVH, PVW, PVH, 0, 0, PVW, PVH); }
+      pvNew = true;
+    }
     GFX.tick(dt, now); GFX.drawOverlay(pgx, now);
-    pvx.drawImage(pvBuf, 0, 0); drawOverlay();
+    NDI.frame();   // hotový program → NDI (když je zapnuté)
+    if (!document.hidden && (pvNew || R.pvOverlayDirty)) { pvx.drawImage(pvBuf, 0, 0); drawOverlay(); R.pvOverlayDirty = false; }
   }
   const onAir = onAirSet();
   if (actx) for (const s of S.sources) {
@@ -835,7 +895,7 @@ function frame(now) {
     const an = m.id === 'master' ? masterAn : (srcById(m.id) || {}).audio?.an; if (!an) continue;
     m.el.style.width = (100 - meterPct(an, m) * 100) + '%';
   }
-  if (masterAn) { R._mm = R._mm || {}; $('#vuMaster').style.height = (100 - meterPct(masterAn, R._mm) * 100) + '%'; }
+  if (masterAn) { R._mm = R._mm || {}; (R._vuM || (R._vuM = $('#vuMaster'))).style.height = (100 - meterPct(masterAn, R._mm) * 100) + '%'; }
   const wp = R.wins.program; if (wp && !wp.closed) wp._c._x.drawImage(pg, 0, 0);
   const wm = R.wins.multi; if (wm && !wm.closed && frameNo % (frameCost > 25 ? 4 : 2) === 0) drawMulti(wm._c, onAir);
   tickPrompter(dt);
@@ -850,13 +910,13 @@ function rafLoop() { lastRafT = performance.now(); timedFrame(lastRafT); request
    Worker pošle další tik až poté, co hlavní vlákno ten předchozí vyřídí (ping-pong). */
 function bgTick(wk) {
   const n = performance.now();
-  if ((document.hidden || n - lastRafT > 1000) && n - lastFrameT > 30) timedFrame(n);
+  if (document.hidden || n - lastRafT > 1000) timedFrame(n);
   if (wk) wk.postMessage(0);
 }
 function startLoop() {
   requestAnimationFrame(rafLoop);
   try {
-    const code = 'let wait=false;onmessage=()=>{wait=false};setInterval(()=>{if(!wait){wait=true;postMessage(0)}},40)';
+    const code = 'let wait=false;onmessage=()=>{wait=false};setInterval(()=>{if(!wait){wait=true;postMessage(0)}},16)';
     const wk = new Worker(URL.createObjectURL(new Blob([code], {type:'text/javascript'})));
     wk.onmessage = () => bgTick(wk);
   } catch (e) { setInterval(() => bgTick(null), 40); }
@@ -943,7 +1003,7 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, canvas:[W, H], pops:POP.save(), sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
+  return {v:1, canvas:[W, H], pops:POP.save(), sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, fmt:s.fmt, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
@@ -955,7 +1015,7 @@ async function restore(d) {
   S.sources.forEach(s => { if (s.stream) s.stream.getTracks().forEach(t => t.stop()); if (s.el instanceof HTMLVideoElement) s.el.remove(); });
   S.sources = [];
   for (const x of d.sources || []) {
-    const s = {id:x.id, type:x.type, name:x.name, guestId:x.guestId, deviceId:x.deviceId, res:x.res, props:x.props || {}, micOpts:x.micOpts, color:x.color ? fixColor(x.color) : undefined, hasVideo:false};
+    const s = {id:x.id, type:x.type, name:x.name, guestId:x.guestId, fmt:x.fmt, deviceId:x.deviceId, res:x.res, props:x.props || {}, micOpts:x.micOpts, color:x.color ? fixColor(x.color) : undefined, hasVideo:false};
     if (x.audio) s.audio = AUD.loadCh(x.audio);
     try {
       if (s.type === 'camera') await openCamera(s);
@@ -1158,7 +1218,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, HLT, REM, ICM, MON, POP]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, POP]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();

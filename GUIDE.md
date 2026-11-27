@@ -62,6 +62,20 @@ The **📊 Status** page at the top (its dot lights 🟢 / 🟡 / 🔴) shows in
 - **Computer:** frames per second, load, memory, audio, recording, missing sources.
 - A big banner at the top: ✅ Everything is running fine, or what exactly is wrong.
 
+### 📡 NDI output and virtual camera
+1. Install the free **NDI Tools** (https://ndi.video/tools/) – they include the NDI Runtime.
+2. In the **Streaming** tab tick **Send the program over NDI**.
+3. Any NDI app on the same network now sees the program (OBS, vMix, NDI Studio Monitor, another Mac…).
+4. **Virtual camera:** open **NDI Virtual Input** from NDI Tools and pick “Režie Live – Program”. Then choose the NDI camera in Zoom, Teams, FaceTime, Meet…
+
+The conversion for NDI runs on the GPU, so the CPU barely notices. (A built-in virtual camera without NDI needs a paid Apple developer account.)
+
+### 🎛 HDMI capture cards
+Elgato, Blackmagic, Magewell, AVerMedia and other cards are added as a camera (marked 🎛). The app reads which formats the card supports and offers them (e.g. 1080p 50 / 59.94 / 60, 4K 30). For a card it also offers the **HDMI audio**. The real format is shown on the source.
+
+### ⚡ Performance
+The app draws only as many times per second as the stream has frames (up to 4× less work on a 120 Hz display), draws the preview smaller, takes only new frames from cameras and uses the high-performance GPU. If it still can’t keep up: ⚙ Settings → Advanced → Preview “Economy”.
+
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.
 - An unplugged camera or microphone **reconnects by itself**.

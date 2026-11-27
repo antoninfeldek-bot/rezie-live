@@ -69,6 +69,20 @@ Stránka **📊 Stav** nahoře (tečka u ní svítí 🟢 / 🟡 / 🔴) ukazuje
 - **Počítač:** snímky za sekundu, zátěž, paměť, zvuk, nahrávání, chybějící zdroje.
 - Nahoře velké hlášení: ✅ Vše běží v pořádku, nebo co přesně je špatně.
 
+### 📡 NDI výstup a virtuální kamera
+1. Nainstaluj zdarma **NDI Tools** (https://ndi.video/tools/) – obsahují i NDI Runtime.
+2. V záložce **Vysílání** dole zaškrtni **Posílat program přes NDI**.
+3. Program teď uvidí každý program s NDI ve stejné síti (OBS, vMix, NDI Studio Monitor, jiný Mac…).
+4. **Virtuální kamera:** otevři z NDI Tools aplikaci **NDI Virtual Input** a vyber v ní „Režie Live – Program“. Pak si v Zoomu, Teams, FaceTimu, Meetu… vyber kameru NDI.
+
+Převod obrazu pro NDI dělá grafika, procesor se skoro nezatíží. (Vlastní virtuální kameru bez NDI by šlo udělat jen s placeným vývojářským účtem Apple.)
+
+### 🎛 Karty pro HDMI vstup
+Elgato, Blackmagic, Magewell, AVerMedia a další karty se přidávají jako kamera (u názvu mají 🎛). Aplikace zjistí, jaké formáty karta umí, a nabídne je (např. 1080p 50 / 59,94 / 60, 4K 30). U karty rovnou nabídne i **zvuk z HDMI**. Skutečný formát vidíš u zdroje.
+
+### ⚡ Výkon
+Aplikace kreslí jen tolikrát za sekundu, kolik má vysílání snímků (na 120Hz displeji až 4× méně práce), náhled kreslí zmenšeně, z kamer bere jen nové snímky a používá výkonnou grafiku. Když přesto nestíhá: ⚙ Nastavení → Pokročilé → Náhled „Úsporně“.
+
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
 - Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.

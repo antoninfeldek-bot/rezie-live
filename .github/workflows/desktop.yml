@@ -30,6 +30,11 @@ jobs:
           A=${{ matrix.arch == 'x64' && 'amd64' || 'arm64' }}
           mkdir -p bin && curl -fsSL -o cf.tgz "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-darwin-$A.tgz"
           tar -xzf cf.tgz -C bin && chmod +x bin/cloudflared && file bin/cloudflared && bin/cloudflared --version || true
+      - name: Build NDI helper (loads the user's NDI runtime at run time)
+        run: |
+          A=${{ matrix.arch == 'x64' && 'x86_64' || 'arm64' }}
+          mkdir -p bin && clang -O2 -arch $A -mmacosx-version-min=11.0 -o bin/ndi-send electron/ndi/ndi-send.c
+          codesign --force --sign - bin/ndi-send && file bin/ndi-send
       - name: Build app
         run: npx electron-builder --mac dir --${{ matrix.arch }} --publish never
       - name: Ad-hoc sign + DMG
