@@ -68,7 +68,7 @@ const RPL = (() => {
       if (e.busy || !e.enc || e.enc.state !== 'configured' || e.err || !el) continue;
       // program: když je ve vysílání sám replay, nenahrávat (jinak by se replay nahrál do sebe)
       if (id === PROG && ST.play && ST.scene && S.programId === ST.scene.id) continue;
-      if (el instanceof HTMLVideoElement) { if (el._vf != null && el._vf === e.lastVf) continue; e.lastVf = el._vf; }
+      if (el instanceof HTMLVideoElement && !document.hidden && performance.now() - (el._vfT || 0) < 400) { if (el._vf != null && el._vf === e.lastVf) continue; e.lastVf = el._vf; }
       if (now - e.lastT < 1000 / e.fps - 2) continue;                   // nejvýš N snímků za sekundu
       if (e.enc.encodeQueueSize > 4) continue;                          // kodér nestíhá → snímek vynechat
       const [w, h] = dims(el); if (!w) continue;

@@ -163,8 +163,11 @@ function texFor(s) {
     if (el instanceof HTMLVideoElement) {
       if (el.readyState < 2 || !el.videoWidth) return s.ready;
       // kamera dává třeba 30 snímků/s – na grafiku nahrát jen NOVÝ snímek (a nejvýš jednou za vykreslení)
-      if (el.requestVideoFrameCallback && !el._vfc) { el._vfc = 1; el._vf = 1; const cb = () => { el._vf++; el.requestVideoFrameCallback(cb); }; el.requestVideoFrameCallback(cb); }
-      const fresh = el.requestVideoFrameCallback ? s.upVf !== el._vf || el._vfEl !== s.tex : s.upFrame !== frameNo;
+      if (el.requestVideoFrameCallback && !el._vfc) { el._vfc = 1; el._vf = 1; const cb = () => { el._vf++; el._vfT = performance.now(); el.requestVideoFrameCallback(cb); }; el.requestVideoFrameCallback(cb); }
+      // Když je karta na pozadí (přepnuto na jinou kartu Chromu), prohlížeč přestane hlásit nové snímky (rVFC) –
+      // pak se nahrává každý snímek, jinak by obraz ve vysílání zamrzl.
+      const vfcOk = el.requestVideoFrameCallback && !document.hidden && performance.now() - (el._vfT || 0) < 400;
+      const fresh = vfcOk ? s.upVf !== el._vf || el._vfEl !== s.tex : (el.paused && s.ready && el._vfEl === s.tex && s.upVf === el._vf) ? false : s.upFrame !== frameNo;
       if (fresh && s.upFrame !== frameNo) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, el); s.upFrame = frameNo; s.upVf = el._vf; el._vfEl = s.tex; s.ready = true; }
     } else if (s.dirty) {
       if (el instanceof HTMLImageElement && !(el.complete && el.naturalWidth)) return false;
