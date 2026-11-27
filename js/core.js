@@ -9,7 +9,7 @@ const $$ = s => [...document.querySelectorAll(s), ...POP.all(s)];
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤', color:'🎨', mic:'🎤', guest:'👤'};
+const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤', color:'🎨', mic:'🎤', guest:'👤', replay:'⏪', playlist:'📃', slides:'🗂', web:'🌐'};
 const icon = s => s ? (IC[s.type] || '•') : '⚠';
 const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
 
@@ -288,6 +288,7 @@ function loadVideo(s, file) {
     attachAudio(s, actx.createMediaElementSource(v));
     v.onloadedmetadata = () => { s.aspect = v.videoWidth / v.videoHeight; };
     v.onended = () => {
+      AUT.emit('vend', s.id);
       const sc = sceneById(S.programId);
       if (sc && sc.autoNext && sceneById(sc.autoNext) && sceneSources(sc, new Set()).has(s.id)) takeScene(sc.autoNext, 'fade');
     };
@@ -352,6 +353,7 @@ function addToPreview(s) {
 function removeSource(s) {
   if (!confirm(`Smazat zdroj „${s.name}“? Zmizí ze všech scén.`)) return;
   S.scenes.forEach(sc => sc.layers = sc.layers.filter(l => l.sourceId !== s.id));
+  EXT.remove(s);
   if (s.stream) s.stream.getTracks().forEach(t => t.stop());
   if (s.audio && s.audio.gainN) { try { s.audio.gainN.disconnect(); s.audio.node && s.audio.node.disconnect(); } catch (e) {} }
   if (s.el instanceof HTMLVideoElement) { s.el.pause(); s.el.remove(); }
@@ -440,6 +442,7 @@ async function chooseMic(s) {
 async function addSource(type) {
   try {
     if (type === 'guest') { showTab('remote'); return; }
+    if (await EXT.add(type)) return;
     if (type === 'camera') {
       const f = await chooseCamera(); if (!f) return;
       const ds = await devices('videoinput'); const d = ds.find(x => x.deviceId === f.dev);
@@ -495,7 +498,7 @@ function take(mode) {
   if (S.active) S.active = null;
   const from = S.programId;
   const before = sceneSources(sceneById(from), new Set()), after = sceneSources(sceneById(to), new Set());
-  S.programId = to;
+  S.programId = to; AUT.emit('scene', to);
   if (mode !== 'cut' && from !== to) TR.start(from, to, mode === 'manual');
   for (const id of after) {
     if (before.has(id)) continue;
@@ -631,6 +634,7 @@ const FONTS = [['system-ui, sans-serif','Systémové'],['Arial, sans-serif','Ari
 function srcCard(s) {
   const p = s.props; let b = '';
   if (s.type === 'camera' && s.actual) b += `<div class="dim" style="font-size:11px">${CAPTURE_RE.test(s.devLabel || s.name) ? '🎛 ' : ''}${esc(s.actual)}</div>`;
+  b += EXT.card(s);
   if (s.missing) b += s.type === 'guest' ? `<div class="warn">⚠ Host není připojený – pošli mu odkaz (záložka 📱 Dálkově).</div>` : `<div class="warn">⚠ Zdroj není připojený.<button data-sa="reload">Připojit znovu</button></div>`;
   if (s.type === 'text') b += `
     <label>Hlavní text<textarea data-s="props.text" rows="2">${esc(p.text)}</textarea></label>
@@ -655,7 +659,7 @@ function srcCard(s) {
 function renderSources() {
   $('#tab-sources').innerHTML = `<div class="addbar">
     <button data-add="camera">📷 + Kamera</button><button data-add="screen">🖥 + Obrazovka / okno</button><button data-add="video">🎞 + Video (znělka)</button>
-    <button data-add="image">🖼 + Obrázek / logo</button><button data-add="text">🔤 + Text / titulek</button><button data-add="color">🎨 + Barva</button><button data-add="mic">🎤 + Mikrofon</button><button data-add="guest">👤 + Host přes odkaz</button></div>
+    <button data-add="image">🖼 + Obrázek / logo</button><button data-add="text">🔤 + Text / titulek</button><button data-add="color">🎨 + Barva</button><button data-add="mic">🎤 + Mikrofon</button><button data-add="guest">👤 + Host přes odkaz</button><button data-add="playlist">📃 + Playlist videí</button><button data-add="slides">🗂 + Prezentace</button><button data-add="web">🌐 + Web / chat</button></div>
     <div class="srclist">${S.sources.map(srcCard).join('') || '<p class="dim">Zatím žádné zdroje. Začni tím, že přidáš kameru.</p>'}</div>`;
 }
 
@@ -820,7 +824,7 @@ function renderRecs() {
 }
 function toggleRec() {
   if (R.rec) { R.rec.r.stop(); R.rec = null; }
-  else { try { R.rec = {r:makeRec(outStream(), 'program', 'video', CFG.rec.vb * 1000, stamp()), start:performance.now()}; } catch (e) { alert('Nahrávání nejde spustit: ' + e.message); } }
+  else { try { R.rec = {r:makeRec(outStream(), 'program', 'video', CFG.rec.vb * 1000, stamp()), start:performance.now()}; AUT.emit('rec'); } catch (e) { alert('Nahrávání nejde spustit: ' + e.message); } }
   updateHeader();
 }
 function toggleIso() {
@@ -881,6 +885,8 @@ function frame(now) {
     }
     GFX.tick(dt, now); GFX.drawOverlay(pgx, now);
     NDI.frame();   // hotový program → NDI (když je zapnuté)
+    RPL.tick(now); // replay: kamery do paměti + přehrávání
+    OUT2.frame();  // výstup 2 (jen když je okno otevřené)
     if (!document.hidden && (pvNew || R.pvOverlayDirty)) { pvx.drawImage(pvBuf, 0, 0); drawOverlay(); R.pvOverlayDirty = false; }
   }
   const onAir = onAirSet();
@@ -1003,7 +1009,7 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, canvas:[W, H], pops:POP.save(), sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, fmt:s.fmt, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
+  return {v:1, canvas:[W, H], buses:BUS.save(), out2:OUT2.save(), pops:POP.save(), rep:RPL.save(), ext:EXT.save(), data:DAT.save(), ptz:PTZ.save(), auto:AUT.save(), sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, fmt:s.fmt, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
@@ -1023,13 +1029,15 @@ async function restore(d) {
       else if (s.type === 'text') renderText(s);
       else if (s.type === 'color') renderColor(s);
       else if (s.type === 'image' && s.props.dataUrl) loadImageUrl(s, s.props.dataUrl);
+      else if (s.type === 'replay') { s.el = document.createElement('canvas'); s.el.width = W; s.el.height = H; s.hasVideo = true; s.dirty = true; }
+      else if (EXT.restore(s)) {}
       else s.missing = true;
     } catch (e) { console.warn(e); s.missing = true; }
     S.sources.push(s);
   }
   S.scenes = d.scenes || []; S.previewId = d.previewId; S.programId = d.programId; S.trans = Object.assign({dur:600, swap:true}, d.trans || {});
   if (d.prompter) Object.assign(R.prompter, d.prompter);
-  STR.load(d.streamCfg); REM.load(d.rem); if (window.rzNative) POP.load(d.pops);
+  STR.load(d.streamCfg); REM.load(d.rem); RPL.load(d.rep); EXT.load(d.ext); OUT2.load(d.out2); BUS.load(d.buses); DAT.load(d.data); PTZ.load(d.ptz); AUT.load(d.auto); if (window.rzNative) POP.load(d.pops);
   AUD.load(d.aud || (d.masterVol != null ? {fader:d.masterVol} : null)); GFX.load(d.gfx); TR.load(d.trs); RUN.load(d.rundown); CTL.load(d.ctl); GR.load(d.grades);
   const oc = Array.isArray(d.canvas) ? d.canvas : [1920, 1080];
   if (oc[0] !== W || oc[1] !== H) rescaleProject(oc[0], oc[1]);
@@ -1056,7 +1064,7 @@ async function loadProject() {
   else {
     S.scenes = ['Kamera', 'Host', 'Znělka', 'Titulky'].map(n => ({id:uid(), name:L(n), layers:[], autoNext:null}));
     S.previewId = S.scenes[0].id;
-    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null); REM.load(null);
+    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null); REM.load(null); RPL.load(null); EXT.load(null); DAT.load(null); PTZ.load(null); AUT.load(null);
   }
 }
 function exportProject() {
@@ -1103,7 +1111,7 @@ function showTab(name) {
   if (TAB_RENDER[name]) TAB_RENDER[name]();
   POP.renderNav();
 }
-const TAB_RENDER = {remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
+const TAB_RENDER = {replay:() => RPL.renderTab(), ptz:() => PTZ.renderTab(), remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => { GFX.renderCtl(); DAT.render(); }, trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => { CTL.renderTab(); AUT.render(); }, rec:() => DISK.renderBox(), audio:() => { renderMixer(); BUS.render(); }};
 function renderAll() { renderScenes(); renderLayers(); renderProps(); renderSources(); renderMixer(); renderRecs(); updateHeader(); Object.values(TAB_RENDER).forEach(f => f()); TR.renderSel(); if (S.page && S.page !== 'rezie') showPage(S.page); }
 function showPage(name) {
   if (POP.has(name)) { POP.open('page-' + name); return; }   // stránka je v samostatném okně → jen ho ukázat
@@ -1218,7 +1226,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, POP]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, OUT2, BUS, POP]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();

@@ -146,7 +146,7 @@ const GFX = (() => {
   /* ---------- kreslení ---------- */
   const p2 = v => String(v).padStart(2, '0');
   function tokens(G, s, st, now) {
-    return String(s).replace(/\{(\w+)\}/g, (m, k) => {
+    return DAT.resolve(String(s)).replace(/\{(\w+)\}/g, (m, k) => {
       const d = new Date();
       if (k === 'time') return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
       if (k === 'hm') return `${p2(d.getHours())}:${p2(d.getMinutes())}`;

@@ -96,6 +96,28 @@ app.whenReady().then(async () => {
   mainWin.on('responsive', () => clearTimeout(hangT));
   mainWin.webContents.on('did-start-navigation', (e, url, inPlace, isMain) => { if (isMain && !inPlace) streamer.hold(); });   // ruční znovunačtení (Cmd+R) taky nesmí shodit vysílání
   ipcMain.handle('rz:state', () => streamer.state());
+  // ---- Web / chat jako zdroj: neviditelné okno kreslí stránku, snímky jdou do režie ----
+  const webs = new Map();
+  ipcMain.on('rz:web:open', (e, c) => {
+    const old = webs.get(c.id); if (old && !old.isDestroyed()) old.destroy();
+    if (!/^https?:\/\//.test(c.url || '')) return;
+    const w = new BrowserWindow({show:false, width:c.w | 0 || 1280, height:c.h | 0 || 720, transparent:!!c.transparent, frame:false, useContentSize:true,
+      webPreferences:{offscreen:true, sandbox:true, contextIsolation:true, backgroundThrottling:false, autoplayPolicy:'no-user-gesture-required'}});
+    webs.set(c.id, w);
+    w.webContents.setFrameRate(Math.min(60, Math.max(1, c.fps | 0 || 30)));
+    w.webContents.setAudioMuted(true);
+    w.webContents.setWindowOpenHandler(() => ({action:'deny'}));
+    if (c.transparent) w.setBackgroundColor('#00000000');
+    w.webContents.on('did-finish-load', () => { if (c.css) w.webContents.insertCSS(c.css).catch(() => {}); });
+    w.webContents.on('paint', (ev, dirty, image) => {
+      if (!mainWin || mainWin.isDestroyed()) return;
+      const sz = image.getSize(); mainWin.webContents.send('rz:web:frame', {id:c.id, w:sz.width, h:sz.height, buf:image.toBitmap()});
+    });
+    w.loadURL(c.url).catch(() => {});
+  });
+  ipcMain.on('rz:web:close', (e, id) => { const w = webs.get(id); if (w && !w.isDestroyed()) w.destroy(); webs.delete(id); });
+  // ---- PTZ kamery (VISCA přes síť) ----
+  ipcMain.handle('rz:ptz', (e, c) => require('../server.js').ptzSend ? require('../server.js').ptzSend(c) : {ok:false});
   // ---- NDI výstup: pomocný program ndi-send (knihovnu NDI si najde v počítači) ----
   let ndi = null;
   const ndiSend = st => send('rz:ndi:status', st);

@@ -10,6 +10,8 @@ const { spawn, spawnSync } = require('child_process');
 const https = require('https');
 const os = require('os');
 const crypto = require('crypto');
+const dgram = require('dgram');
+const net = require('net');
 
 const PORT = +process.env.PORT || 8080;
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
@@ -257,6 +259,31 @@ async function speedTest() {
   } finally { speedBusy = false; }
 }
 
+/* PTZ kamery: VISCA přes síť (Sony/BirdDog VISCA-over-IP UDP 52381, PTZOptics/většina čínských TCP 5678 nebo UDP 1259) */
+const ptzS = {udp:null, seq:0, tcp:new Map()};
+function ptzSend(c) {
+  return new Promise(res => {
+    try {
+      const ip = String(c.ip || '').trim(), hex = String(c.hex || '').replace(/\s+/g, '');
+      if (!/^[\w.-]{1,253}$/.test(ip) || !/^8[0-7]([0-9a-fA-F]{2}){1,14}[fF]{2}$/.test(hex)) return res({ok:false, error:'špatný příkaz nebo adresa'});
+      const payload = Buffer.from(hex, 'hex'), proto = c.proto || 'visca-udp';
+      if (proto === 'visca-udp' || proto === 'visca-raw-udp') {
+        if (!ptzS.udp) { ptzS.udp = dgram.createSocket('udp4'); ptzS.udp.on('error', () => {}); ptzS.udp.unref(); }
+        let pk = payload;
+        if (proto === 'visca-udp') { const hd = Buffer.alloc(8); hd.writeUInt16BE(0x0100, 0); hd.writeUInt16BE(payload.length, 2); hd.writeUInt32BE(ptzS.seq = (ptzS.seq + 1) >>> 0, 4); pk = Buffer.concat([hd, payload]); }
+        ptzS.udp.send(pk, +c.port || (proto === 'visca-udp' ? 52381 : 1259), ip, er => res(er ? {ok:false, error:er.message} : {ok:true}));
+      } else {
+        const key = ip + ':' + (+c.port || 5678); let s = ptzS.tcp.get(key);
+        if (!s || s.destroyed) {
+          s = net.connect({host:ip, port:+c.port || 5678}); s.setNoDelay(true); s.on('error', () => { ptzS.tcp.delete(key); }); s.on('data', () => {}); s.setTimeout(60000, () => s.destroy()); ptzS.tcp.set(key, s);
+        }
+        s.write(payload, er => res(er ? {ok:false, error:er.message} : {ok:true}));
+        setTimeout(() => res({ok:false, error:'kamera neodpovídá'}), 3000);
+      }
+    } catch (e) { res({ok:false, error:e.message}); }
+  });
+}
+
 function lanStart(cfg) {
   if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; if (cfg.cft) lan.cft = cfg.cft; return Promise.resolve(lanInfo()); }
   const c = certFiles();
@@ -343,7 +370,7 @@ http.createServer(async (req, res) => {
     return;
   }
   // --- místní síť (jen z tohoto počítače) ---
-  if (/^\/(lan|app-events|net)/.test(url)) {
+  if (/^\/(lan|app-events|net|data|ptz)/.test(url)) {
     const o = req.headers.origin;   // cizí webová stránka v prohlížeči nesmí síť zapnout ani číst
     if (o && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)) return send(res, 403, 'zakázáno');
   }
@@ -358,6 +385,17 @@ http.createServer(async (req, res) => {
     req.on('end', () => { lanState = d || '{}'; const m = 'data: ' + lanState + '\n\n'; remotes.forEach(r => r.write(m)); send(res, 200, String(remotes.size)); });
     return;
   }
+  // data pro titulky (Google tabulky, CSV, JSON) – stáhne server, aby nevadila omezení prohlížeče
+  if (url.startsWith('/data/fetch')) {
+    try {
+      const u = new URL(req.url, 'http://x').searchParams.get('url') || '';
+      if (!/^https?:\/\//.test(u)) return send(res, 400, 'špatná adresa');
+      const r = await fetch(u, {redirect:'follow', signal:AbortSignal.timeout(10000), headers:{'User-Agent':'RezieLive'}});
+      const t = await r.text(); if (!r.ok) return send(res, 502, 'Zdroj odpověděl ' + r.status);
+      return send(res, 200, t.slice(0, 2e6), 'text/plain; charset=utf-8');
+    } catch (e) { return send(res, 502, 'Nedostupné: ' + (e.name === 'TimeoutError' ? 'neodpovídá' : e.message)); }
+  }
+  if (url === '/ptz' && req.method === 'POST') { try { return send(res, 200, JSON.stringify(await ptzSend(await readJson(req))), 'application/json'); } catch (e) { return send(res, 400, 'chyba'); } }
   if (url === '/net/speed' && req.method === 'POST') {
     try { return send(res, 200, JSON.stringify(await speedTest()), 'application/json'); }
     catch (e) { return send(res, 500, 'Test rychlosti selhal: ' + (e.name === 'TimeoutError' ? 'internet neodpovídá' : e.message)); }
@@ -420,3 +458,4 @@ http.createServer(async (req, res) => {
   console.log(hasFfmpeg() ? '✔ FFmpeg nalezen – vysílání bude fungovat. Kódování: ' + detectEncoders().join(', ') : '✖ FFmpeg NENALEZEN – režie poběží, ale vysílat nepůjde. Viz NAVOD.md.');
   console.log('Ukončení: Ctrl + C\n');
 });
+module.exports = {ptzSend};

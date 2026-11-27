@@ -83,6 +83,30 @@ Elgato, Blackmagic, Magewell, AVerMedia a další karty se přidávají jako kam
 ### ⚡ Výkon
 Aplikace kreslí jen tolikrát za sekundu, kolik má vysílání snímků (na 120Hz displeji až 4× méně práce), náhled kreslí zmenšeně, z kamer bere jen nové snímky a používá výkonnou grafiku. Když přesto nestíhá: ⚙ Nastavení → Pokročilé → Náhled „Úsporně“.
 
+### ⏪ Replay (opakované záběry, zpomalovačky)
+Záložka **⏪ Replay**: zaškrtni kamery, které se mají nahrávat do paměti (posledních 15 s – 2 min). Vyber kameru, délku (3–20 s) a rychlost (100 / 75 / 50 / 25 %) a klikni **REPLAY do vysílání**. V rohu svítí „⏪ REPLAY“ a po skončení se režie vrátí na předchozí scénu. **★ Značka** si uloží důležitý moment na později. Klávesy a Stream Deck: záložka Ovládání → „Replay do vysílání“, „Značka“.
+
+### 📑 Titulky z tabulky (Google Sheets, CSV)
+Záložka **Grafika** dole → **Data pro titulky** → vlož odkaz na Google tabulku (stačí sdílet „Kdokoli s odkazem“) nebo přidej soubor CSV. Do textu v editoru grafiky pak napiš `{Data1!B2}` (buňka), `{Data1!Jméno}` (sloupec Jméno v aktuálním řádku) nebo `{Data1!B@+1}` (další řádek). Řádky přepínáš ◀ ▶ (nebo klávesou). Data se samy obnovují.
+
+### 🌐 Web a 💬 chat ve vysílání (jen aplikace pro Mac)
+Zdroje → **🌐 + Web / chat**: libovolná stránka, nebo **chat z YouTube / Twitche** (vložíš odkaz na své živé vysílání nebo název kanálu). Chat má průhledné pozadí a sám se dá do rohu.
+
+### 📃 Playlist a 🗂 prezentace
+**📃 + Playlist videí** – víc videí za sebou (opakovat, náhodně). **🗂 + Prezentace** – obrázky snímků (z PowerPointu/Keynote: Exportovat → Obrázky); další snímek **PageDown** nebo klikrem.
+
+### 🔀 Zvukové sběrnice
+Záložka **Zvuk** dole → **Sběrnice**: vlastní mix na jiný výstup (sluchátka moderátora, reproduktory v sále…). U každého kanálu nastavíš, kolik do sběrnice jde.
+
+### 🎥 PTZ kamery
+Záložka **🎥 PTZ**: přidej kameru (IP adresa, typ VISCA). Šipky drž = pohyb, zoom, autofokus, předvolby 1–9 (i na klávesy a Stream Deck).
+
+### 2️⃣ Výstup 2
+Tlačítko **2️⃣** nahoře otevře okno s jiným obrazem – jinou scénou, náhledem nebo jedním zdrojem (třeba na plátno v sále). Dvojklik = celá obrazovka.
+
+### ⚙ Automatizace
+Záložka **Ovládání** dole → **Automatizace**: „když skončí znělka → přepni na Kameru 1“, „v 19:59 → scéna Odpočet“, „když začne vysílání → logo“…
+
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
 - Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.

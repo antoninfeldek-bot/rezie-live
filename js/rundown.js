@@ -9,7 +9,7 @@ const RUN = (() => {
   function go(i) {
     const r = R_(), old = items()[r.cur];
     if (old && old.gfx) { const G = GFX.byId(old.gfx); if (G) GFX.setIn(G, false); }
-    r.cur = i; r.start = performance.now();
+    r.cur = i; r.start = performance.now(); AUT.emit('block', i + 1);
     const it = items()[i];
     if (it) {
       if (it.scene && sceneById(it.scene)) takeScene(it.scene, 'auto');

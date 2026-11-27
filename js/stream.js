@@ -260,6 +260,7 @@ const STR = (() => {
       return;
     }
     keepLog(); renderTab();
+    AUT.emit('stream');
     if (CFG.rec.autoRec && !R.rec) { toggleRec(); st.autoRec = !!R.rec; }
   }
   async function stop(force) {

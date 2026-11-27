@@ -7,6 +7,14 @@ const CTL = (() => {
     const add = (id, label, run, cat, cont) => A.push({id, label, run, cat, cont:!!cont});
     add('take.cut', 'CUT – okamžité přepnutí', () => take('cut'), 'Přepínání');
     add('take.auto', 'AUTO – přechod', () => take('auto'), 'Přepínání');
+    add('data.next', '📑 Data – další řádek', () => DAT.step(null, 1), 'Data');
+    add('data.prev', '📑 Data – předchozí řádek', () => DAT.step(null, -1), 'Data');
+    add('slides.next', '🗂 Prezentace – další snímek', () => EXT.slidesNext(), 'Prezentace');
+    add('slides.prev', '🗂 Prezentace – předchozí snímek', () => EXT.slidesPrev(), 'Prezentace');
+    for (let n = 1; n <= 9; n++) add('ptz.' + n, `🎥 PTZ předvolba ${n} (vybraná kamera)`, () => PTZ.preset(n), 'PTZ');
+    add('replay.go', '⏪ Replay do vysílání', () => RPL.go(), 'Replay');
+    add('replay.mark', '★ Replay – značka', () => RPL.mark(), 'Replay');
+    add('out2', '🖥 Výstup 2 – otevřít / zavřít', () => OUT2.toggle(), 'Okna');
     add('tbar', 'T-bar (MIDI fader)', v => tbar(v), 'Přepínání', true);
     for (let i = 0; i < 9; i++) {
       const sc = S.scenes[i], n = sc ? sc.name : '(prázdné)';

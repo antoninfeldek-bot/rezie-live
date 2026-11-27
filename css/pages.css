@@ -271,3 +271,23 @@ body.poptab #pageWrap > .tabc{display:block;height:100vh;overflow:auto;padding:1
 body.poppanel #pageWrap > .icom{position:static;width:auto;max-height:none;height:100vh;box-sizing:border-box;border:0;border-radius:0;box-shadow:none}
 #bIcom.popped::after,.tabs button.popped::after{content:" ↗";opacity:.7}
 .tabs .tabpop{margin-left:auto}
+/* --- replay, data, PTZ, sběrnice, automatizace, zdroje --- */
+.rpgrid,.ptzgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.rpgrid .big{font-size:16px;padding:12px 16px}
+.rpmark{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--line,#2a2e37)}
+.datrow{border:1px solid var(--line,#2a2e37);border-radius:8px;padding:8px;margin:6px 0}
+.dathead{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.dathead input[data-dk=url]{flex:1;min-width:180px}
+.datcur{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.datcur .dim{font-size:11px}
+.ptzcam{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px;border-radius:6px;margin:4px 0}.ptzcam.sel{background:#1e3a8a44}
+.ptzcam select{max-width:220px}
+.ptzpad{display:grid;grid-template-columns:repeat(3,56px);gap:6px;margin:8px 0}.ptzpad button{height:52px;font-size:22px;touch-action:none}
+.ptzpre{display:grid;grid-template-columns:repeat(3,56px);gap:6px}.ptzpre button{height:44px;font-size:18px}
+.buscard{border:1px solid var(--line,#2a2e37);border-radius:8px;padding:8px;margin:6px 0}
+.bushead{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.bushead select{max-width:220px}.bushead button.on{background:#b91c1c}
+.buslv{width:60px;height:6px;background:#0b0c0f;border-radius:3px;overflow:hidden;display:inline-block}.buslv i{display:block;height:100%;width:0;background:#22c55e}
+.bussends{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:2px 12px;margin-top:6px}
+.bussends label{display:grid;grid-template-columns:1fr 90px 42px;gap:6px;align-items:center;font-size:12px}.bussends span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.autrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line,#2a2e37)}.autrow select{max-width:220px}
+.plist{max-height:160px;overflow:auto;margin:6px 0;padding-left:22px;font-size:12px}.plist li{cursor:pointer;padding:1px 0}.plist li.cur{color:#4ade80;font-weight:700}
+@media (max-width:1600px){ .tabs button{padding:5px 6px;font-size:12px} }
+@media (max-width:1366px){ .tabs button{padding:4px 5px;font-size:11.5px} }

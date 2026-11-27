@@ -76,6 +76,30 @@ Elgato, Blackmagic, Magewell, AVerMedia and other cards are added as a camera (m
 ### ⚡ Performance
 The app draws only as many times per second as the stream has frames (up to 4× less work on a 120 Hz display), draws the preview smaller, takes only new frames from cameras and uses the high-performance GPU. If it still can’t keep up: ⚙ Settings → Advanced → Preview “Economy”.
 
+### ⏪ Replay (instant replay, slow motion)
+**⏪ Replay** tab: tick the cameras to record into memory (last 15 s – 2 min). Pick a camera, length (3–20 s) and speed (100 / 75 / 50 / 25 %) and click **REPLAY to program**. A “⏪ REPLAY” bug shows and when it ends the app goes back to the previous scene. **★ Mark** saves a moment for later. Keys and Stream Deck: Control tab → “Replay to program”, “Mark”.
+
+### 📑 Titles from a sheet (Google Sheets, CSV)
+**Graphics** tab at the bottom → **Data for titles** → paste a Google Sheet link (shared “Anyone with the link”) or add a CSV file. In the graphics editor type `{Data1!B2}` (cell), `{Data1!Name}` (column Name in the current row) or `{Data1!B@+1}` (next row). Switch rows with ◀ ▶ (or a key). Data refreshes itself.
+
+### 🌐 Web and 💬 chat on air (Mac app only)
+Sources → **🌐 + Web / chat**: any page, or **YouTube / Twitch chat** (paste your live stream link or channel name). The chat has a transparent background and goes to a corner by itself.
+
+### 📃 Playlist and 🗂 slides
+**📃 + Video playlist** – several videos in a row (loop, shuffle). **🗂 + Slides** – slide images (from PowerPoint/Keynote: Export → Images); next slide with **PageDown** or a clicker.
+
+### 🔀 Audio buses
+**Audio** tab at the bottom → **Buses**: a separate mix to another output (host headphones, hall speakers…). Set how much of each channel goes to the bus.
+
+### 🎥 PTZ cameras
+**🎥 PTZ** tab: add a camera (IP address, VISCA type). Hold the arrows to move, zoom, autofocus, presets 1–9 (also on keys and Stream Deck).
+
+### 2️⃣ Output 2
+The **2️⃣** button at the top opens a window with a different picture – another scene, the preview or one source (e.g. for the projector in the hall). Double-click = full screen.
+
+### ⚙ Automation
+**Control** tab at the bottom → **Automation**: “when the intro ends → switch to Camera 1”, “at 19:59 → Countdown scene”, “when streaming starts → logo”…
+
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.
 - An unplugged camera or microphone **reconnects by itself**.
