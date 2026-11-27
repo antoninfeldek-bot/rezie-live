@@ -239,6 +239,24 @@ async function iceAll() {
   return l;
 }
 
+/* Test rychlosti internetu (servery Cloudflare): odezva, stahování, odesílání */
+let speedBusy = false;
+async function speedTest() {
+  if (speedBusy) throw new Error('test už běží'); speedBusy = true;
+  const B = 'https://speed.cloudflare.com', now = () => performance.now(), sig = () => AbortSignal.timeout(25000);
+  try {
+    const pings = [];
+    for (let i = 0; i < 5; i++) { const a = now(); await (await fetch(B + '/__down?bytes=0', {cache:'no-store', signal:sig()})).arrayBuffer(); pings.push(now() - a); }
+    pings.sort((x, y) => x - y);
+    let a = now(); const dn = await (await fetch(B + '/__down?bytes=15000000', {cache:'no-store', signal:sig()})).arrayBuffer();
+    const down = dn.byteLength * 8 / ((now() - a) / 1000) / 1e6;
+    const up1 = () => fetch(B + '/__up', {method:'POST', body:Buffer.alloc(4e6), headers:{'Content-Type':'application/octet-stream'}, signal:sig()}).then(r => r.arrayBuffer());
+    a = now(); await Promise.all([up1(), up1()]);
+    const up = 8e6 * 8 / ((now() - a) / 1000) / 1e6;
+    return {ping:Math.round(pings[2]), down:+down.toFixed(1), up:+up.toFixed(1), t:Date.now()};
+  } finally { speedBusy = false; }
+}
+
 function lanStart(cfg) {
   if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; if (cfg.cft) lan.cft = cfg.cft; return Promise.resolve(lanInfo()); }
   const c = certFiles();
@@ -325,7 +343,7 @@ http.createServer(async (req, res) => {
     return;
   }
   // --- místní síť (jen z tohoto počítače) ---
-  if (/^\/(lan|app-events)/.test(url)) {
+  if (/^\/(lan|app-events|net)/.test(url)) {
     const o = req.headers.origin;   // cizí webová stránka v prohlížeči nesmí síť zapnout ani číst
     if (o && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)) return send(res, 403, 'zakázáno');
   }
@@ -339,6 +357,10 @@ http.createServer(async (req, res) => {
     let d = ''; req.on('data', c => { d += c; if (d.length > 2e6) req.destroy(); });
     req.on('end', () => { lanState = d || '{}'; const m = 'data: ' + lanState + '\n\n'; remotes.forEach(r => r.write(m)); send(res, 200, String(remotes.size)); });
     return;
+  }
+  if (url === '/net/speed' && req.method === 'POST') {
+    try { return send(res, 200, JSON.stringify(await speedTest()), 'application/json'); }
+    catch (e) { return send(res, 500, 'Test rychlosti selhal: ' + (e.name === 'TimeoutError' ? 'internet neodpovídá' : e.message)); }
   }
   if (url === '/lan/ice' && req.method === 'GET') { const l = await iceAll(); return send(res, 200, JSON.stringify({iceServers:l, turn:l.some(s => [].concat(s.urls).some(x => /^turns?:/.test(x))), err:cfErr}), 'application/json'); }
   if (url === '/lan/tunnel' && req.method === 'POST') {

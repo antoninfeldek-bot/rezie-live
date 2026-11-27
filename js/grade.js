@@ -193,7 +193,7 @@ const GR = (() => {
   const tmpScene = s => ({layers:[(() => { const a = s.aspect || 16 / 9; let w = W, h = W / a; if (h > H) { h = H; w = H * a; }
     return {sourceId:s.id, x:(W - w) / 2, y:(H - h) / 2, w, h, s:1, opacity:1, visible:true, crop:{l:0, t:0, r:0, b:0}, key:{on:false, color:'#00ff00', sim:0, smooth:0.1, spill:0.1}}; })()]});
   function tick(now) {
-    if (!POP.on('color') || !built || !gl) return;
+    if (S.page !== 'color' || !built || !gl) return;
     const s = sel(); ST.frame++;
     if (ST.view === 'program' || !s) vx.drawImage(pg, 0, 0);
     else {

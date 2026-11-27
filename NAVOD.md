@@ -53,8 +53,21 @@ Při prvním otevření prohlížeč napíše, že spojení není soukromé (cer
 - **Pokyny:** z nabídky „💬 Pokyn…“ („Přibliž“, „Zaostři“, „Za 5 s jdeš do vysílání“…) nebo napiš vlastní. Kameramanovi se ukáže velkým písmem s pípnutím a vibrací a odpoví 👍 / ⏳ / ❌.
 - **Host před vysíláním:** v panelu u hosta drž **„Mluvit s hostem“**. Uslyší tě jen on ve sluchátkách (program se mu na tu chvíli ztlumí). Divák nic neslyší. Pokyny („Za 10 s jsi ve vysílání“, „Dívej se do kamery“…) se mu ukážou na obrazovce.
 
-### ⧉ Stránky v samostatných oknech
-Na stránce **Grafika**, **Zvuk** nebo **Barvy** je vedle přepínače stránek tlačítko **⧉**. Otevře tu stránku v samostatném okně – třeba na druhý monitor. Hlavní okno zůstane na Režii. Zavřením okna se stránka vrátí zpátky. Klávesové zkratky (CUT, AUTO…) fungují i z okna. Aplikace si pamatuje, která okna byla otevřená.
+### ⧉ Ovládací panely v samostatných oknech
+Na druhý monitor si můžeš dát **čtečku**, **scénář**, **interkom**, **mix pult** a **stav vysílání**:
+- Čtečka a Scénář: otevři záložku dole a klikni na **⧉** vpravo na liště záložek.
+- Interkom: v panelu 🎙 tlačítko **⧉**.
+- Mix pult a Stav: na stránce Zvuk nebo Stav tlačítko **⧉** vedle přepínače stránek.
+
+Panel v okně má u názvu **↗**. Zavřením okna se vrátí zpátky. Zkratky (CUT, AUTO, § interkom) fungují i z okna, při psaní textu ne. Aplikace si okna pamatuje.
+
+### 📊 Stav vysílání
+Stránka **📊 Stav** nahoře (tečka u ní svítí 🟢 / 🟡 / 🔴) ukazuje na jednom místě, jestli všechno běží:
+- **Vysílání:** každé místo zvlášť (živě / znovu se připojuje, tok dat, jak dlouho běží, počet výpadků), kodér, graf toku dat za poslední 2 minuty.
+- **Internet:** tlačítko **Změřit rychlost internetu** (odezva, stahování, odesílání) a kolik tvoje nastavení potřebuje.
+- **Hosté a kameramani:** odezva, ztráta paketů, tok dat, rozlišení a jestli jde spojení přímo, nebo přes TURN.
+- **Počítač:** snímky za sekundu, zátěž, paměť, zvuk, nahrávání, chybějící zdroje.
+- Nahoře velké hlášení: ✅ Vše běží v pořádku, nebo co přesně je špatně.
 
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.

@@ -114,8 +114,8 @@ const ICM = (() => {
   }
 
   /* ---------- panel ---------- */
-  function open() { ST.open = true; let p = $('#icom'); if (!p) { p = document.createElement('div'); p.id = 'icom'; p.className = 'icom'; document.body.appendChild(p); bind(p); } p.hidden = false; render(); listMics(); }
-  function close() { ST.open = false; const p = $('#icom'); if (p) p.hidden = true; }
+  function open() { if (POP.hasId('icom')) { POP.open('icom'); return; } ST.open = true; let p = $('#icom'); if (!p) { p = document.createElement('div'); p.id = 'icom'; p.className = 'icom'; document.body.appendChild(p); bind(p); } p.hidden = false; render(); listMics(); }
+  function close() { if (POP.hasId('icom')) { POP.close('icom'); return; } ST.open = false; const p = $('#icom'); if (p) p.hidden = true; }
   let mics = [];
   function listMics() { navigator.mediaDevices.enumerateDevices().then(ds => { mics = ds.filter(d => d.kind === 'audioinput'); render(); }).catch(() => {}); }
   const pttBtn = (t, label) => `<button class="ptt ${ST.talking.has(t) ? 'on' : ''}" data-ptt="${esc(t)}" title="${L('Drž a mluv')}">🎙 ${label}</button>`;
@@ -126,7 +126,7 @@ const ICM = (() => {
     const camOpts = cur => `<option value="">— ${L('kamera')} —</option>` + cams().map(s => `<option value="${s.id}" ${s.id === cur ? 'selected' : ''}>${esc(s.name)}</option>`).join('');
     p.innerHTML = `<div class="ichead"><b>🎙 ${L('Interkom')}</b>
         <select id="icMic" title="${L('Mikrofon režie (nejde do vysílání)')}"><option value="">${L('Mikrofon režie: výchozí')}</option>${mics.map(m => `<option value="${esc(m.deviceId)}" ${m.deviceId === ST.dev ? 'selected' : ''}>${esc(m.label || 'Mic')}</option>`).join('')}</select>
-        <button data-ic="close">✕</button></div>
+        ${POP.hasId('icom') ? '' : `<button data-ic="pop" title="${L('Otevřít v samostatném okně')}">⧉</button>`}<button data-ic="close">✕</button></div>
       ${!on ? `<p class="warn">${L('Nejdřív zapni dálkové ovládání v místní síti (záložka 📱 Dálkově) a pošli kameramanům odkaz.')}</p>` : ''}
       <div class="icsec"><div class="icrow all">${pttBtn('crew', L('Všem kameramanům'))} ${quick('crew', QUICK_CREW)}<span class="dim">${L('nebo drž')} <kbd>§</kbd></span></div>
       ${[...CREW].map(([id, c]) => `<div class="icrow"><span class="tl ${c.air ? 'air' : c.pv ? 'pv' : ''}" data-tl="c:${esc(id)}"></span><span class="nm">🎥 ${esc(c.name)}</span>
@@ -144,7 +144,7 @@ const ICM = (() => {
     const down = e => { const b = e.target.closest('[data-ptt]'); if (!b) return; e.preventDefault(); b.setPointerCapture && b.setPointerCapture(e.pointerId); talk(b.dataset.ptt, true); };
     const up = e => { const b = e.target.closest('[data-ptt]'); if (!b) return; talk(b.dataset.ptt, false); };
     p.addEventListener('pointerdown', down); p.addEventListener('pointerup', up); p.addEventListener('pointercancel', up);
-    p.addEventListener('click', e => { const a = e.target.dataset.ic; if (a === 'close') close(); if (a === 'send') { message($('#icTo').value, $('#icTxt').value); $('#icTxt').value = ''; } });
+    p.addEventListener('click', e => { const a = e.target.dataset.ic; if (a === 'close') close(); if (a === 'pop') POP.open('icom'); if (a === 'send') { message($('#icTo').value, $('#icTxt').value); $('#icTxt').value = ''; } });
     p.addEventListener('keydown', e => { if (e.target.id === 'icTxt' && e.key === 'Enter') { message($('#icTo').value, e.target.value); e.target.value = ''; } e.stopPropagation(); });
     p.addEventListener('change', e => {
       const t = e.target;
@@ -163,5 +163,5 @@ const ICM = (() => {
     addEventListener('blur', () => { [...ST.talking].forEach(t => talk(t, false)); });
     setInterval(tick, 250);
   }
-  return {init, open, onMsg, talk, message, crew:() => CREW};
+  return {init, open, close, render, onMsg, talk, message, crew:() => CREW};
 })();

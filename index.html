@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Režie Live</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🎬%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/app.css?v=202611261804">
-<link rel="stylesheet" href="css/pages.css?v=202611261804">
+<link rel="stylesheet" href="css/app.css?v=202611261830">
+<link rel="stylesheet" href="css/pages.css?v=202611261830">
 </head>
 <body>
 <div id="start"><div class="box">
@@ -19,12 +19,13 @@
 <header>
   <b class="logo">🎬 REŽIE</b>
   <nav id="pages">
-    <button data-page="rezie" class="act">🎬<span class="t"> Režie</span></button>
-    <button data-page="gfx">✨<span class="t"> Grafika</span></button>
-    <button data-page="audio">🎚<span class="t"> Zvuk</span></button>
-    <button data-page="color">🎨<span class="t"> Barvy</span></button>
+    <button data-page="rezie" class="act" title="Režie">🎬<span class="t"> Režie</span></button>
+    <button data-page="gfx" title="Grafika">✨<span class="t"> Grafika</span></button>
+    <button data-page="audio" title="Zvuk – mix pult">🎚<span class="t"> Zvuk</span></button>
+    <button data-page="color" title="Barvy">🎨<span class="t"> Barvy</span></button>
+    <button data-page="status" title="Stav vysílání – jestli všechno běží">📊<span class="t"> Stav</span><i id="monDot" class="mondot"></i></button>
   </nav>
-  <button id="bPop" title="Otevřít tuto stránku v samostatném okně (např. na druhý monitor)" hidden>⧉</button>
+  <button id="bPop" title="Otevřít v samostatném okně (např. na druhý monitor)" hidden>⧉</button>
   <button id="bWinPg" title="Okno Program – čistý výstup na druhý monitor / projektor">🖥<span class="t2"> Program</span></button>
   <button id="bWinMv" title="Okno Multiview – přehled všech zdrojů">▦<span class="t2"> Multiview</span></button>
   <button id="bWinPr" title="Okno čtečky (teleprompter)">📜<span class="t2"> Čtečka</span></button>
@@ -80,6 +81,7 @@
       <button data-tab="rec">Nahrávky</button>
       <button data-tab="control">Ovládání</button>
       <button data-tab="remote">📱 Dálkově</button>
+      <button id="bPopTab" class="tabpop" title="Otevřít tento panel v samostatném okně (např. na druhý monitor)" hidden>⧉</button>
     </div>
     <div class="tabc" id="tab-props"></div>
     <div class="tabc" id="tab-sources"></div>
@@ -117,6 +119,7 @@
 <div class="page" id="page-gfx"></div>
 <div class="page" id="page-audio"></div>
 <div class="page" id="page-color"></div>
+<div class="page" id="page-status"></div>
 </main>
 </div>
 
@@ -127,22 +130,23 @@
   <menu><button value="cancel">Zrušit</button><button value="ok" class="primary">OK</button></menu>
 </form></dialog>
 
-<script src="js/i18n.js?v=202611261804"></script>
-<script src="js/settings.js?v=202611261804"></script>
-<script src="js/popout.js?v=202611261804"></script>
-<script src="js/health.js?v=202611261804"></script>
-<script src="js/core.js?v=202611261804"></script>
-<script src="js/trans.js?v=202611261804"></script>
-<script src="js/gfx.js?v=202611261804"></script>
-<script src="js/audio.js?v=202611261804"></script>
-<script src="js/grade.js?v=202611261804"></script>
-<script src="js/control.js?v=202611261804"></script>
-<script src="js/rundown.js?v=202611261804"></script>
-<script src="js/disk.js?v=202611261804"></script>
-<script src="js/native.js?v=202611261804"></script>
-<script src="js/stream.js?v=202611261804"></script>
-<script src="js/qr.js?v=202611261804"></script>
-<script src="js/intercom.js?v=202611261804"></script>
-<script src="js/remote.js?v=202611261804"></script>
+<script src="js/i18n.js?v=202611261830"></script>
+<script src="js/settings.js?v=202611261830"></script>
+<script src="js/popout.js?v=202611261830"></script>
+<script src="js/health.js?v=202611261830"></script>
+<script src="js/core.js?v=202611261830"></script>
+<script src="js/trans.js?v=202611261830"></script>
+<script src="js/gfx.js?v=202611261830"></script>
+<script src="js/audio.js?v=202611261830"></script>
+<script src="js/grade.js?v=202611261830"></script>
+<script src="js/control.js?v=202611261830"></script>
+<script src="js/rundown.js?v=202611261830"></script>
+<script src="js/disk.js?v=202611261830"></script>
+<script src="js/native.js?v=202611261830"></script>
+<script src="js/stream.js?v=202611261830"></script>
+<script src="js/qr.js?v=202611261830"></script>
+<script src="js/intercom.js?v=202611261830"></script>
+<script src="js/monitor.js?v=202611261830"></script>
+<script src="js/remote.js?v=202611261830"></script>
 </body>
 </html>

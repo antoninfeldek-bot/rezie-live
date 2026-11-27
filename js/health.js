@@ -73,5 +73,5 @@ const HLT = (() => {
     navigator.mediaDevices && navigator.mediaDevices.addEventListener && navigator.mediaDevices.addEventListener('devicechange', () => setTimeout(reconnect, 800));
     setInterval(tick, 1000);
   }
-  return {init, frame, note, reconnect};
+  return {init, frame, note, reconnect, details, errs:() => H.errs};
 })();

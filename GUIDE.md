@@ -46,8 +46,21 @@ On first open the browser says the connection isn’t private (the app made its 
 - **Instructions:** pick from “💬 Instruction…” (“Zoom in”, “Focus”, “On air in 5 s”…) or type your own. The operator sees it in big letters with a beep and vibration and replies 👍 / ⏳ / ❌.
 - **Guest before going live:** in the panel hold **“Talk to guest”** next to the guest. Only they hear you in their headphones (their program audio is lowered). Viewers hear nothing. Instructions (“You are live in 10 s”, “Look into the camera”…) appear on their screen.
 
-### ⧉ Pages in separate windows
-On the **Graphics**, **Audio** or **Color** page there is a **⧉** button next to the page switcher. It opens that page in a separate window – e.g. on a second monitor. The main window stays on Directing. Close the window to bring the page back. Shortcuts (CUT, AUTO…) work from the window too. The app remembers which windows were open.
+### ⧉ Control panels in separate windows
+You can put the **prompter**, **rundown**, **intercom**, **mixer** and **stream status** on a second monitor:
+- Prompter and Rundown: open the tab at the bottom and click **⧉** at the right of the tab bar.
+- Intercom: the **⧉** button in the 🎙 panel.
+- Mixer and Status: on the Audio or Status page, the **⧉** button next to the page switcher.
+
+A panel in a window has **↗** next to its name. Close the window to bring it back. Shortcuts (CUT, AUTO, § intercom) work from the window, but not while typing. The app remembers the windows.
+
+### 📊 Stream status
+The **📊 Status** page at the top (its dot lights 🟢 / 🟡 / 🔴) shows in one place whether everything runs:
+- **Streaming:** each destination (live / reconnecting, data rate, uptime, number of drops), the encoder, a data-rate graph for the last 2 minutes.
+- **Internet:** a **Measure internet speed** button (ping, download, upload) and how much your settings need.
+- **Guests and crew:** ping, packet loss, data rate, resolution and whether the connection is direct or via TURN.
+- **Computer:** frames per second, load, memory, audio, recording, missing sources.
+- A big banner at the top: ✅ Everything is running fine, or what exactly is wrong.
 
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.

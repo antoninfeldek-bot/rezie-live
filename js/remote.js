@@ -113,7 +113,7 @@ const REM = (() => {
       gfx:S.gfx.list.map(g => ({id:g.id, name:g.name, on:GFX.isOn(g)})),
       ch:S.sources.filter(s => s.audio && s.audio.gainN).map(s => ({id:s.id, name:s.name, type:s.type, pos:Math.round(gain2pos(s.audio.vol) * 1000) / 1000, mute:!!s.audio.mute, lvl:lvl(s.audio.an), air:onAir.has(s.id)})),
       master:{pos:Math.round(gain2pos(masterFader.gain.value) * 1000) / 1000, lvl:lvl(masterAn)},
-      rd:rt ? {name:rt.it.name, left:Math.round(rt.left), over:rt.over, next:rt.nextIt ? rt.nextIt.name : '', show:Math.round(rt.show)} : null,
+      rd:rt ? {name:rt.it.title, left:Math.round(rt.left), over:rt.over, next:rt.nextIt ? rt.nextIt.title : '', show:Math.round(rt.show)} : null,
       pr:{on:!!R.prompter.playing, speed:R.prompter.speed},
       guests:[...G.values()].map(g => ({name:g.s.name, air:g.air}))
     };
@@ -302,5 +302,6 @@ const REM = (() => {
     });
     if (C().on) enable();
   }
-  return {init, load, save:save_, renderTab, act, state, guests:() => G, base, iceServers, iceList, gathered, on:() => C().on && ST.info && ST.info.on};
+  const info = () => ST.info && ST.info.on ? {on:true, tunnel:ST.info.tunnel, remotes:ST.remotes, prompters:ST.prompters, turn:!!lastIce.turn} : {on:false};
+  return {init, load, save:save_, renderTab, act, state, guests:() => G, base, iceServers, iceList, gathered, info, on:() => C().on && ST.info && ST.info.on};
 })();

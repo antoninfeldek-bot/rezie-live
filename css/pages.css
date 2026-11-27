@@ -133,8 +133,9 @@ header>button{flex:0 0 auto}
 .lbl span{overflow:hidden;text-overflow:ellipsis}
 .scene{word-break:break-word}
 .layer .nm{min-width:0}
-@media (max-width:1560px){ header .t2{display:none} }
-@media (max-width:1300px){ header .t{display:none} #pages button{padding:5px 9px} #bottom{grid-template-columns:190px 220px minmax(0,1fr)} #monitors{grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr)} }
+@media (max-width:1760px){ header .t2{display:none} }
+@media (max-width:1440px){ header .t{display:none} }
+@media (max-width:1300px){ #pages button{padding:5px 9px} #bottom{grid-template-columns:190px 220px minmax(0,1fr)} #monitors{grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr)} }
 @media (max-height:820px){ .tbig{padding:8px 4px;font-size:14px} .tbig small{display:none} }
 /* opravy po kontrole */
 .ph{gap:6px}
@@ -243,3 +244,30 @@ body.popwin #pageWrap{height:100vh}
 #pageWrap > .popph{display:none}
 #pages button.popped::after{content:" ↗";opacity:.7}
 .popmsg{max-width:520px;margin:15vh auto;text-align:center;padding:20px;border:1px dashed var(--line,#2a2e37);border-radius:10px}
+/* --- 📊 Stav vysílání --- */
+#page-status{overflow:auto}
+.mon{padding:12px;max-width:1500px;margin:0 auto}
+.mbanner{border-radius:10px;padding:14px 16px;margin-bottom:12px;border:1px solid}
+.mbanner b{font-size:20px;display:block;margin-bottom:4px}
+.mbanner.ok{background:#052e16;border-color:#15803d}.mbanner.warn{background:#422006;border-color:#ca8a04}.mbanner.bad{background:#450a0a;border-color:#dc2626}
+.mbanner ul{margin:4px 0 0 18px;padding:0}.mbanner li.mi-bad{color:#fca5a5}.mbanner li.mi-warn{color:#fde68a}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.mcard{background:var(--panel,#16181d);border:1px solid var(--line,#2a2e37);border-radius:10px;padding:12px}
+.mcard.wide{grid-column:1/-1}
+.mcard h4{margin:0 0 10px}
+.mrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0}
+.mrow > span{color:var(--dim,#8b919c)} .mrow > b{margin-right:14px}
+.mspark{flex:1;min-width:160px;color:#4ade80}.spark{width:100%;height:40px;display:block}
+.mtab{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.mtab th{text-align:left;color:var(--dim,#8b919c);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--line,#2a2e37)}
+.mtab td{padding:5px 6px;border-bottom:1px solid #1f2229}
+.mpill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;background:#262a33}
+.mpill.ok{background:#14532d;color:#bbf7d0}.mpill.warn{background:#713f12;color:#fde68a}.mpill.bad{background:#7f1d1d;color:#fecaca}.mpill.off{background:#262a33;color:#9ca3af}
+.mbig{display:flex;gap:18px;margin-bottom:6px}.mbig small{display:block;color:var(--dim,#8b919c)}.mbig b{font-size:22px}.warnt{color:#fbbf24}
+.mondot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:5px;background:#4b5563;vertical-align:middle}
+.mondot.ok{background:#22c55e}.mondot.warn{background:#eab308}.mondot.bad{background:#ef4444;animation:pulse 1s infinite}
+/* panely v samostatném okně */
+body.poptab #pageWrap > .tabc{display:block;height:100vh;overflow:auto;padding:12px;box-sizing:border-box}
+body.poppanel #pageWrap > .icom{position:static;width:auto;max-height:none;height:100vh;box-sizing:border-box;border:0;border-radius:0;box-shadow:none}
+#bIcom.popped::after,.tabs button.popped::after{content:" ↗";opacity:.7}
+.tabs .tabpop{margin-left:auto}

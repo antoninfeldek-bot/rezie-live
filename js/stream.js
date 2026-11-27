@@ -130,6 +130,7 @@ const STR = (() => {
   }
   const ST_NAME = {starting:'🟡 připojuji', live:'🟢 živě', reconnecting:'🟠 znovu se připojuje', stopped:'⚪ zastaveno'};
   function renderOuts(s) {
+    if (s) ST.nat = s;
     const box = $('#stOuts'); if (!box || !s) return; const n = NAT.stats();
     box.innerHTML = `<div class="stout enc"><b>🎛 Kodér</b><span>${n.codec ? `H.264 ${n.w}×${n.h} · ${n.fps.toFixed(1)} fps · ${Math.round(n.vb / 1000)} kbps${n.vb < n.vbTarget ? ` (sníženo z ${Math.round(n.vbTarget / 1000)})` : ''}${n.late ? ` · zpožděné snímky: ${n.late}` : ''}` : '—'}</span></div>` +
       s.outs.map(o => `<div class="stout ${o.state}${o.congested ? ' cong' : ''}"><b>${esc(o.name)}</b><span>${ST_NAME[o.state] || o.state}${o.kbps ? ' · ' + Math.round(o.kbps) + ' kbps' : ''}${o.uptime ? ' · ' + fmtT(o.uptime * 1000) : ''}${o.restarts ? ' · znovupřipojení: ' + o.restarts : ''}${o.congested ? ' · ⚠ pomalý internet' : ''}</span>${o.last && o.state !== 'live' ? `<small class="dim" title="${esc(o.last)}">${esc(o.last.slice(0, 90))}</small>` : ''}</div>`).join('');
@@ -156,7 +157,7 @@ const STR = (() => {
       const j = await (await fetch(st.relay + '/status')).json();
       if (R.stream !== st) return;
       if (j.running) {
-        const s = j.stats || {}; st.fails = 0;
+        const s = j.stats || {}; st.fails = 0; st.srvStats = s;
         const bad = s.speed && s.speed < 0.93;
         if (!s.frame) { setStatus('connecting', 'spouštím kódování…'); return; }
         setStatus(bad ? 'warn' : 'live', `${s.fps ? s.fps + ' fps' : ''}${s.kbps ? ' · ' + Math.round(s.kbps) + ' kbps' : ''}${s.speed ? ' · rychlost ' + s.speed.toFixed(2) + '×' : ''}${s.drop ? ' · zahozeno ' + s.drop : ''} · ${st.targets.length} ${st.targets.length > 1 ? 'místa' : 'místo'}`);
@@ -320,5 +321,8 @@ const STR = (() => {
     if (NAT.available()) resumeIfLive();
     if (C().mode === 'rtmp') fetch(relayUrl() + '/status').then(r => r.json()).then(j => { ST.srv = j; if (S.tabCur === 'stream') renderTab(); }).catch(() => {});
   }
-  return {load, save:save_, renderTab, init, start, stop, test};
+  // pro stránku Stav vysílání
+  const info = () => ({live:!!R.stream, mode:R.stream ? R.stream.mode : C().mode, start:R.stream && R.stream.start, status:ST.status, stats:ST.stats, nat:R.stream && R.stream.mode === 'app' ? ST.nat : null,
+    srv:R.stream && R.stream.srvStats, vb:C().vb, dests:(C().targets || []).filter(t => t.on !== false).length});
+  return {load, save:save_, renderTab, init, start, stop, test, info};
 })();

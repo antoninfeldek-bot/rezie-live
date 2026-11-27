@@ -1035,24 +1035,27 @@ function fillStatic() {
   $('#prText').value = R.prompter.text; $('#prMirror').checked = R.prompter.mirror; updatePrompterLook();
 }
 function showTab(name) {
+  if (!name) return;
+  if (POP.hasTab(name)) { POP.open('tab-' + name); return; }   // záložka je v samostatném okně
   S.tabCur = name;
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('act', b.dataset.tab === name));
   document.querySelectorAll('.tabc').forEach(c => c.classList.toggle('act', c.id === 'tab-' + name));
   if (TAB_RENDER[name]) TAB_RENDER[name]();
+  POP.renderNav();
 }
 const TAB_RENDER = {remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
 function renderAll() { renderScenes(); renderLayers(); renderProps(); renderSources(); renderMixer(); renderRecs(); updateHeader(); Object.values(TAB_RENDER).forEach(f => f()); TR.renderSel(); if (S.page && S.page !== 'rezie') showPage(S.page); }
 function showPage(name) {
-  if (POP.has(name)) { POP.open(name); return; }   // stránka je v samostatném okně → jen ho ukázat
+  if (POP.has(name)) { POP.open('page-' + name); return; }   // stránka je v samostatném okně → jen ho ukázat
   S.page = name;
   document.querySelectorAll('#pages button').forEach(b => b.classList.toggle('act', b.dataset.page === name));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('act', p.id === 'page-' + name));
-  if (name === 'gfx') GFX.renderPage(); if (name === 'audio') AUD.renderPage(); if (name === 'color') GR.renderPage();
+  if (name === 'gfx') GFX.renderPage(); if (name === 'audio') AUD.renderPage(); if (name === 'color') GR.renderPage(); if (name === 'status') MON.render();
   POP.renderNav();
 }
 
 function bindEvents() {
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+  document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => showTab(b.dataset.tab));
   $('#bCut').onclick = () => take('cut'); $('#bFade').onclick = () => take('auto');
   document.querySelectorAll('#pages button').forEach(b => b.onclick = () => showPage(b.dataset.page));
   $('#tSwap').onchange = e => { S.trans.swap = e.target.checked; save(); };
@@ -1155,7 +1158,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, HLT, REM, ICM, POP]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, HLT, REM, ICM, MON, POP]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();
