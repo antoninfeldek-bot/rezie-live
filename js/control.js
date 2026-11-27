@@ -15,7 +15,7 @@ const CTL = (() => {
     add('replay.go', '⏪ Replay do vysílání', () => RPL.go(), 'Replay');
     add('replay.mark', '★ Replay – značka', () => RPL.mark(), 'Replay');
     add('out2', '🖥 Výstup 2 – otevřít / zavřít', () => OUT2.toggle(), 'Okna'); add('out3', '🖥 Výstup 3 – otevřít / zavřít', () => OUT3.toggle(), 'Okna'); add('out4', '🖥 Výstup 4 – otevřít / zavřít', () => OUT4.toggle(), 'Okna');
-    LIVE.ctl(add);
+    LIVE.ctl(add); V360.ctl(add);
     add('tbar', 'T-bar (MIDI fader)', v => tbar(v), 'Přepínání', true);
     for (let i = 0; i < 9; i++) {
       const sc = S.scenes[i], n = sc ? sc.name : '(prázdné)';

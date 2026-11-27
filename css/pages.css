@@ -320,3 +320,8 @@ code.cp{cursor:pointer;user-select:all}
 .panel.tabsplit > .tabc.act{display:block;grid-column:1;grid-row:2}
 .panel.tabsplit > .tabc.act2{display:block;grid-column:2;grid-row:2;border-left:1px solid var(--line)}
 .panel.tabsplit > :not(.tabs):not(.tabc){grid-column:1 / -1}
+/* 🌐 360° záběry */
+.v3pad{margin:8px 0;padding:22px 10px;text-align:center;border:1px dashed var(--line);border-radius:8px;cursor:grab;user-select:none;touch-action:none;color:var(--dim);font-size:12px;background:rgba(255,255,255,.03)}
+.v3pad:active{cursor:grabbing;border-color:var(--accent,#3b82f6)}
+.v3sl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center} .v3sl input{grid-column:1 / -1}
+.v3pre button{min-width:30px}

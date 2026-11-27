@@ -91,6 +91,13 @@ Elgato, Blackmagic, Magewell, AVerMedia a další karty se přidávají jako kam
 - Celý 360° obraz ve vysílání: ⚙ Nastavení → Obraz → plátno **3840×1920 (360° 2:1)**. Na YouTube pak u živého přenosu zapni **360°**. Insta360 přepni do režimu webkamery (USB) v režimu 360°.
 - U videí ze zdrojů je vidět jejich skutečné rozlišení; přehrávají se v plném rozlišení souboru.
 
+### 🌐 360° záběry (virtuální kamery z 360° kamery)
+Z jedné 360° kamery (Insta360 X4…) uděláš víc kamer. Zdroje → **🌐 + 360° záběr** (nebo u 360° zdroje **Udělat 360° záběry**) → vyber zdroj, režim a kolik záběrů. Každý další záběr dostane vlastní scénu.
+- **Režimy:** 🎥 Záběr (virtuální kamera jako PTZ), 🪐 Malá planeta, 🌅 Panoráma, 🌐 Celý 360° obraz (otočený na střed).
+- **Ovládání:** v kartě zdroje **táhni myší** = natočit, **kolečko** = přiblížit, nebo posuvníky Otočení / Náklon / Záběr.
+- **Předvolby 1–6:** Shift+klik na číslo = uložit, klik = plynule tam přejet. Na klávesy a Stream Deck v záložce Ovládání (skupina 360°).
+- Počítá se na grafice; snímek ze 360° kamery se nahraje jen jednou pro všechny záběry.
+
 ### ⚡ Výkon
 Aplikace kreslí jen tolikrát za sekundu, kolik má vysílání snímků (na 120Hz displeji až 4× méně práce), náhled kreslí zmenšeně, z kamer bere jen nové snímky a používá výkonnou grafiku. Když přesto nestíhá: ⚙ Nastavení → Pokročilé → Náhled „Úsporně“.
 

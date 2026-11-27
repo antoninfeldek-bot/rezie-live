@@ -9,7 +9,7 @@ const $$ = s => [...document.querySelectorAll(s), ...POP.all(s)];
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤', color:'🎨', mic:'🎤', guest:'👤', replay:'⏪', playlist:'📃', slides:'🗂', web:'🌐', netin:'📡', ndiin:'🔗'};
+const IC = {camera:'📷', screen:'🖥', video:'🎞', image:'🖼', text:'🔤', color:'🎨', mic:'🎤', guest:'👤', replay:'⏪', playlist:'📃', slides:'🗂', web:'🌐', netin:'📡', ndiin:'🔗', v360:'🌐'};
 const icon = s => s ? (IC[s.type] || '•') : '⚠';
 const ease = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
 
@@ -356,7 +356,7 @@ function addToPreview(s) {
 function removeSource(s) {
   if (!confirm(`Smazat zdroj „${s.name}“? Zmizí ze všech scén.`)) return;
   S.scenes.forEach(sc => sc.layers = sc.layers.filter(l => l.sourceId !== s.id));
-  EXT.remove(s); NIN.remove(s);
+  EXT.remove(s); NIN.remove(s); V360.remove(s);
   if (s.stream) s.stream.getTracks().forEach(t => t.stop());
   if (s.audio && s.audio.gainN) { try { s.audio.gainN.disconnect(); s.audio.node && s.audio.node.disconnect(); } catch (e) {} }
   if (s.el instanceof HTMLVideoElement) { s.el.pause(); s.el.remove(); }
@@ -456,6 +456,7 @@ async function addSource(type) {
     if (type === 'guest') { showTab('remote'); return; }
     if (await EXT.add(type)) return;
     if (await NIN.add(type)) return;
+    if (await V360.add(type)) return;
     if (type === 'camera') {
       const f = await chooseCamera(); if (!f) return;
       const ds = await devices('videoinput'); const d = ds.find(x => x.deviceId === f.dev);
@@ -648,7 +649,7 @@ function srcCard(s) {
   const p = s.props; let b = '';
   if ((s.type === 'video' || s.type === 'playlist') && s.el instanceof HTMLVideoElement && s.el.videoWidth) b += `<div class="dim" style="font-size:11px">${s.el.videoWidth}×${s.el.videoHeight}${Math.abs(s.el.videoWidth / s.el.videoHeight - 2) < 0.01 ? ' · 360° (2:1)' : ''}</div>`;
   if (s.type === 'camera' && s.actual) b += `<div class="dim" style="font-size:11px">${CAPTURE_RE.test(s.devLabel || s.name) ? '🎛 ' : ''}${esc(s.actual)}</div>`;
-  b += EXT.card(s); b += NIN.card(s);
+  b += EXT.card(s); b += NIN.card(s); b += V360.card(s);
   if (s.missing) b += s.type === 'guest' ? `<div class="warn">⚠ Host není připojený – pošli mu odkaz (záložka 📱 Dálkově).</div>` : `<div class="warn">⚠ Zdroj není připojený.<button data-sa="reload">Připojit znovu</button></div>`;
   if (s.type === 'text') b += `
     <label>Hlavní text<textarea data-s="props.text" rows="2">${esc(p.text)}</textarea></label>
@@ -673,7 +674,7 @@ function srcCard(s) {
 function renderSources() {
   $('#tab-sources').innerHTML = `<div class="addbar">
     <button data-add="camera">📷 + Kamera</button><button data-add="screen">🖥 + Obrazovka / okno</button><button data-add="video">🎞 + Video (znělka)</button>
-    <button data-add="image">🖼 + Obrázek / logo</button><button data-add="text">🔤 + Text / titulek</button><button data-add="color">🎨 + Barva</button><button data-add="mic">🎤 + Mikrofon</button><button data-add="guest">👤 + Host přes odkaz</button><button data-add="playlist">📃 + Playlist videí</button><button data-add="slides">🗂 + Prezentace</button><button data-add="web">🌐 + Web / chat</button><button data-add="netin">📡 + SRT / RTMP / IP kamera</button><button data-add="ndiin">🔗 + NDI vstup</button></div>
+    <button data-add="image">🖼 + Obrázek / logo</button><button data-add="text">🔤 + Text / titulek</button><button data-add="color">🎨 + Barva</button><button data-add="mic">🎤 + Mikrofon</button><button data-add="guest">👤 + Host přes odkaz</button><button data-add="playlist">📃 + Playlist videí</button><button data-add="slides">🗂 + Prezentace</button><button data-add="web">🌐 + Web / chat</button><button data-add="netin">📡 + SRT / RTMP / IP kamera</button><button data-add="ndiin">🔗 + NDI vstup</button><button data-add="v360">🌐 + 360° záběr</button></div>
     <div class="srclist">${S.sources.map(srcCard).join('') || '<p class="dim">Zatím žádné zdroje. Začni tím, že přidáš kameru.</p>'}</div>`;
 }
 
@@ -899,6 +900,7 @@ function frame(now) {
   if (now - lastFrameT < iv - 3) return; lastFrameT = now - Math.min(iv, Math.max(0, now - lastFrameT - iv));
   frameNo++; const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
   const prv = prevScene(), prg = sceneById(S.programId);
+  V360.tick();   // 360° záběry (virtuální kamery) před vykreslením scén
   if (gl) {
     if (S.active && !TR.compose(now)) S.active = null;
     if (!S.active) { renderScene(prg); pgx.drawImage(glc, 0, 0); }
@@ -1059,6 +1061,7 @@ async function restore(d) {
       else if (s.type === 'replay') { s.el = document.createElement('canvas'); s.el.width = W; s.el.height = H; s.hasVideo = true; s.dirty = true; }
       else if (EXT.restore(s)) {}
       else if (NIN.restore(s)) {}
+      else if (V360.restore(s)) {}
       else s.missing = true;
     } catch (e) { console.warn(e); s.missing = true; }
     S.sources.push(s);
@@ -1257,7 +1260,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, OUTS, BUS, NIN, UPD, CUT, LIVE, POP, LAY]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, OUTS, BUS, NIN, UPD, CUT, LIVE, V360, POP, LAY]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();

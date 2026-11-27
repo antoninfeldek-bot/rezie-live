@@ -83,6 +83,12 @@ Elgato, Blackmagic, Magewell, AVerMedia and other cards are added as a camera (m
 - The picture comes without cropping or rescaling. If the camera can't do the chosen resolution, the app tells you what it really sends.
 - Full 360° on air: ⚙ Settings → Video → canvas **3840×1920 (360° 2:1)**, then turn on **360°** for the live stream on YouTube. Put the Insta360 in USB webcam mode, 360° view.
 
+### 🌐 360° shots (virtual cameras from a 360° camera)
+Turn one 360° camera (Insta360 X4…) into several cameras. Sources → **🌐 + 360° shot** (or **Make 360° shots** on a 360° source) → pick the source, mode and how many shots. Each extra shot gets its own scene.
+- **Modes:** 🎥 Shot (virtual PTZ camera), 🪐 Tiny planet, 🌅 Panorama, 🌐 Full 360° picture (recentred).
+- **Control:** in the source card **drag** = turn, **wheel** = zoom, or the Pan / Tilt / Field of view sliders.
+- **Presets 1–6:** Shift+click a number = save, click = move there smoothly. On keys and Stream Deck in the Control tab (group 360°).
+
 ### ⚡ Performance
 The app draws only as many times per second as the stream has frames (up to 4× less work on a 120 Hz display), draws the preview smaller, takes only new frames from cameras and uses the high-performance GPU. If it still can’t keep up: ⚙ Settings → Advanced → Preview “Economy”.
 
