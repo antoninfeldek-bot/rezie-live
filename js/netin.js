@@ -23,7 +23,7 @@ const NIN = (() => {
     if (s._an || !actx || !actx.audioWorklet) return;
     if (!wkReady) wkReady = actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WK], {type:'application/javascript'})));
     s._an = 'pending';
-    wkReady.then(() => { const n = new AudioWorkletNode(actx, 'rz-in', {numberOfInputs:0, outputChannelCount:[2]}); s._an = n; attachAudio(s, n); if (S.tabCur === 'audio') renderMixer(); })
+    wkReady.then(() => { const n = new AudioWorkletNode(actx, 'rz-in', {numberOfInputs:0, outputChannelCount:[2]}); s._an = n; attachAudio(s, n); if (LAY.isShown('audio')) renderMixer(); })
       .catch(e => { s._an = null; HLT.note('NDI/SRT zvuk: ' + e.message); });
   }
 
@@ -50,7 +50,7 @@ const NIN = (() => {
     const was = s._st && s._st.state; s._st = d; s.missing = d.state === 'error';
     if (d.state === 'on' && was !== 'on') toast('📡 ' + s.name + ' – ' + L('signál je tady'));
     if (d.state === 'error' && d.msg === 'nolib') s._st.msg = L('V počítači chybí NDI. Nainstaluj zdarma NDI Tools (ndi.video/tools) a zkus to znovu.');
-    if (S.tabCur === 'sources' || S.tabCur === 'props') renderSources();
+    if (LAY.isShown('sources') || LAY.isShown('props')) renderSources();
   }
 
   function open(s) {
@@ -58,7 +58,7 @@ const NIN = (() => {
     if (!(s.el instanceof HTMLCanvasElement)) { s.el = document.createElement('canvas'); s.el.width = s.props.w || 1280; s.el.height = s.props.h || 720; const x = s.el.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, s.el.width, s.el.height); }
     s.hasVideo = true; s.aspect = s.el.width / s.el.height; s.missing = false; s._st = {state:'wait', msg:''};
     window.rzNative.inOpen(Object.assign({}, s.props, {id:s.id, kind:s.type === 'ndiin' ? 'ndi' : 'ff', rate:actx ? actx.sampleRate : 48000, fps:s.props.fps || CFG.video.fps}))
-      .then(r => { s._ips = r.ips || []; if (S.tabCur === 'sources') renderSources(); }).catch(() => {});
+      .then(r => { s._ips = r.ips || []; if (LAY.isShown('sources')) renderSources(); }).catch(() => {});
     ensureAudio(s);
   }
 
@@ -137,7 +137,7 @@ const NIN = (() => {
       s.props[k] = +e.target.value; open(s); save();
     });
     // hlídání: obraz přestal chodit
-    setInterval(() => { for (const s of S.sources) if (isIn(s) && s._st && s._st.state === 'on' && s._last && performance.now() - s._last > 4000) { s._st = {state:'wait', msg:L('obraz nechodí')}; if (S.tabCur === 'sources') renderSources(); } }, 2000);
+    setInterval(() => { for (const s of S.sources) if (isIn(s) && s._st && s._st.state === 'on' && s._last && performance.now() - s._last > 4000) { s._st = {state:'wait', msg:L('obraz nechodí')}; if (LAY.isShown('sources')) renderSources(); } }, 2000);
   }
   return {init, add, restore, remove, card, can};
 })();

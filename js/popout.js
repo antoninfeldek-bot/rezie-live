@@ -9,6 +9,13 @@ const POP = (() => {
     'tab-prompter': {title:'📜 Čtečka', tab:'prompter', show:() => updatePrompterLook()},
     'tab-rundown':  {title:'📋 Scénář', tab:'rundown', show:() => RUN.renderTab()},
     'icom':         {title:'🎙 Interkom', panel:true, show:() => ICM.render()},
+    'tab-sources':  {title:'Zdroje', tab:'sources', show:() => renderSources()},
+    'tab-gfxctl':   {title:'✨ Grafika – ovládání', tab:'gfxctl', show:() => { GFX.renderCtl(); DAT.render(); }},
+    'tab-live':     {title:'🏆 Živě', tab:'live', show:() => LIVE.renderTab()},
+    'tab-replay':   {title:'⏪ Replay', tab:'replay', show:() => RPL.renderTab()},
+    'tab-ptz':      {title:'🎥 PTZ', tab:'ptz', show:() => PTZ.renderTab()},
+    'tab-control':  {title:'Ovládání', tab:'control', show:() => { CTL.renderTab(); AUT.render(); }},
+    'tab-stream':   {title:'Vysílání', tab:'stream', show:() => STR.renderTab()},
   };
   const W = new Map();   // id → {win, el, ph}
   let keyFrom = null;
@@ -19,7 +26,7 @@ const POP = (() => {
   const has = name => hasId('page-' + name);                       // stránka (audio / status)
   const hasTab = name => hasId('tab-' + name);
   const on = name => S.page === name || has(name);                 // je stránka vidět
-  const tabOn = name => S.tabCur === name || hasTab(name);
+  const tabOn = name => (typeof LAY !== 'undefined' ? LAY.isShown(name) : S.tabCur === name) || hasTab(name);
   const keyOn = name => keyFrom ? keyFrom === name : S.page === name;
   const editable = t => t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable);
 

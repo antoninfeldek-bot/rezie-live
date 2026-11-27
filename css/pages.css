@@ -306,3 +306,17 @@ body.poppanel #pageWrap > .icom{position:static;width:auto;max-height:none;heigh
 .outmenu p{margin:4px 2px 0;font-size:12px}
 .cutpre{white-space:pre-wrap;font-size:12px;max-height:200px;overflow:auto;background:rgba(0,0,0,.25);padding:6px;border-radius:6px}
 code.cp{cursor:pointer;user-select:all}
+/* ⊞ rozložení */
+.split{background:transparent;border-radius:3px;transition:background .15s;touch-action:none}
+.split.v{cursor:col-resize;min-height:30px}
+.split.h{cursor:row-resize;min-width:30px;margin:0 10px}
+.split:hover,.split.on{background:var(--accent,#3b82f6)}
+#page-rezie > .split.h{height:6px}
+.panel.gx-list,.panel.gx-props,.panel.ax-edit,.panel.cx-src,.panel.cx-scopes,.panel.cx-ctl{overflow:auto;overscroll-behavior:contain}
+.panel.tabsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:6px}
+.panel.tabsplit > .tabs:not(.tabs2){grid-column:1;grid-row:1}
+.panel.tabsplit > .tabs2{grid-column:2;grid-row:1}
+.panel.tabsplit > .tabc{display:none}
+.panel.tabsplit > .tabc.act{display:block;grid-column:1;grid-row:2}
+.panel.tabsplit > .tabc.act2{display:block;grid-column:2;grid-row:2;border-left:1px solid var(--line)}
+.panel.tabsplit > :not(.tabs):not(.tabc){grid-column:1 / -1}

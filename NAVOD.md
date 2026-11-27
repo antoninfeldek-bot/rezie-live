@@ -138,6 +138,9 @@ V záložce **📱 Dálkově** vybereš, co smí ovladač ovládat: **všechno**
 ### 🆕 Aktualizace
 Aplikace sama zjistí, že je nová verze, a nabídne **Aktualizovat** (Windows ji rovnou nainstaluje, na Macu otevře novou verzi k přetažení do Aplikací). Ručně: ⚙ Nastavení → Obecné.
 
+### ⊞ Rozložení
+Tlačítko **⊞** nahoře: **Dvě záložky vedle sebe** (třeba Zdroje + Grafika najednou) a **Výchozí velikosti panelů**. Velikost panelů změníš tažením za okraje mezi nimi (dvojklik = výchozí) – na stránce Režie i Grafika. Zdroje, Grafika, Živě, Replay, PTZ, Ovládání, Vysílání, Čtečka a Scénář jdou otevřít v samostatném okně tlačítkem **⧉**.
+
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
 - Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.

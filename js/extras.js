@@ -149,7 +149,7 @@ const EXT = (() => {
     if (a === 'wurl') { const f = await dialog(L('Změnit odkaz'), `<label>${L('Odkaz')}<input name="u" value="${esc(s.props.url)}"></label>`); if (f && f.u) { s.props.url = chatUrl('url', f.u); if (canWeb()) { window.rzNative.webClose(s.id); webOpen(s); } } }
     refresh(s); save();
   }
-  function refresh(s) { if (S.tabCur === 'props' || S.tabCur === 'sources') renderSources(); }
+  function refresh(s) { if (LAY.isShown('props') || LAY.isShown('sources')) renderSources(); }
   function init() {
     if (canWeb()) window.rzNative.onWebFrame(webFrame);
     document.addEventListener('click', e => {

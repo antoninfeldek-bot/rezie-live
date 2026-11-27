@@ -76,10 +76,10 @@ const BUS = (() => {
       if (t.dataset.ba === 'mute' && b) b.mute = !b.mute;
       sync(); save(); render();
     });
-    navigator.mediaDevices && navigator.mediaDevices.enumerateDevices().then(ds => { outs = ds.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default'); if (S.tabCur === 'audio') render(); }).catch(() => {});
+    navigator.mediaDevices && navigator.mediaDevices.enumerateDevices().then(ds => { outs = ds.filter(d => d.kind === 'audiooutput' && d.deviceId !== 'default'); if (LAY.isShown('audio')) render(); }).catch(() => {});
     setInterval(() => {
       sync();
-      if (S.tabCur === 'audio') for (const [id, r] of RT) { const el = document.querySelector(`[data-blv="${id}"]`); if (el) { const p = peak(r.an); el.style.width = Math.round(clamp((20 * Math.log10(p || 1e-5) + 60) / 60, 0, 1) * 100) + '%'; } }
+      if (LAY.isShown('audio')) for (const [id, r] of RT) { const el = document.querySelector(`[data-blv="${id}"]`); if (el) { const p = peak(r.an); el.style.width = Math.round(clamp((20 * Math.log10(p || 1e-5) + 60) / 60, 0, 1) * 100) + '%'; } }
     }, 300);
   }
   const load = d => { RT.forEach(r => { try { r.el.pause(); r.g.disconnect(); } catch (e) {} }); RT.clear(); S.buses = Array.isArray(d) ? d.map(b => Object.assign({vol:1, pre:true, sends:{}}, b, {err:''})) : []; };

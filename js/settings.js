@@ -122,7 +122,7 @@ const CFG = (() => {
     for (const k in draft) C[k] = draft[k];
     save();
     if (mon) setMonitorDevice();
-    if (typeof STR !== 'undefined' && S.tabCur === 'stream') STR.renderTab();
+    if (typeof STR !== 'undefined' && LAY.isShown('stream')) STR.renderTab();
     if (restart) {
       const live = !!R.stream, app = !!window.rzNative, recs = !!(R.rec || R.iso.length);
       if (live && !app && !confirm(L('Restart studia teď přeruší vysílání. Pokračovat?'))) return toast(L('Nastavení uloženo – projeví se při příštím spuštění'));

@@ -163,7 +163,7 @@ const LIVE = (() => {
     const {n, tot} = tally();
     el.innerHTML = C.poll.opts.map((o, i) => o ? `<div class="pollrow"><span>${i + 1}. ${esc(o)}</span><i style="width:${tot ? n[i] / tot * 100 : 0}%"></i><b>${n[i]} (${tot ? Math.round(n[i] / tot * 100) : 0} %)</b></div>` : '').join('') + `<p class="dim">${L('Hlasů celkem')}: ${tot}</p>`;
   }
-  function draw() { const h = $('#lvH'), a = $('#lvA'); if (h) h.textContent = C.score.h; if (a) a.textContent = C.score.a; if (S.tabCur === 'live') renderTab(); }
+  function draw() { const h = $('#lvH'), a = $('#lvA'); if (h) h.textContent = C.score.h; if (a) a.textContent = C.score.a; if (LAY.isShown('live')) renderTab(); }
 
   function set(path, v) {
     const k = path.split('.'); let o = C; for (let i = 0; i < k.length - 1; i++) o = o[k[i]];

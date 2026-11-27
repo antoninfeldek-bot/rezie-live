@@ -128,6 +128,9 @@ In **📱 Remote** choose what a remote may control: **everything**, **only grap
 ### 🆕 Updates
 The app finds new versions by itself and offers **Update** (Windows installs it, Mac opens the new version to drag into Applications). Manually: ⚙ Settings → General.
 
+### ⊞ Layout
+The **⊞** button at the top: **Two tabs side by side** (e.g. Sources + Graphics at once) and **Default panel sizes**. Resize panels by dragging the edges between them (double-click = default) on the Director and Graphics pages. Sources, Graphics, Live, Replay, PTZ, Control, Streaming, Prompter and Rundown can open in a separate window with **⧉**.
+
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.
 - An unplugged camera or microphone **reconnects by itself**.

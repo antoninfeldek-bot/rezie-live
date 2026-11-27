@@ -33,7 +33,7 @@ const REM = (() => {
       const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gpin:C().gpin, apin:C().apin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})});
       if (!r.ok) throw new Error(await r.text());
       ST.info = await r.json(); C().on = true; save();
-      connectEvents(); startPush(); iceCheck().then(() => { if (S.tabCur === 'remote') renderTab(); });
+      connectEvents(); startPush(); iceCheck().then(() => { if (LAY.isShown('remote')) renderTab(); });
       if (C().online && (!ST.info.tunnel || ST.info.tunnel.status === 'off')) setOnline(true);
     } catch (e) { ST.err = L('Nepodařilo se zapnout:') + ' ' + e.message; C().on = false; }
     ST.starting = false; renderTab();
@@ -72,9 +72,9 @@ const REM = (() => {
   }
   function onMsg(d) {
     if (d.t === 'act') { try { act(d.a, d.v); } catch (e) { HLT.note('Dálkové ovládání: ' + e.message); } }
-    else if (d.t === 'tunnel') { if (ST.info) ST.info.tunnel = {status:d.status, url:d.url, err:d.err}; if (d.status === 'on' && d.url) toast('🌍 ' + L('Odkaz pro hosty přes internet je připravený')); if (S.tabCur === 'remote') renderTab(); }
-    else if (d.t === 'remotes') { ST.remotes = d.n; if (S.tabCur === 'remote') renderTab(); }
-    else if (d.t === 'prompters') { ST.prompters = d.n; ST.prJson = ''; if (S.tabCur === 'remote') renderTab(); }
+    else if (d.t === 'tunnel') { if (ST.info) ST.info.tunnel = {status:d.status, url:d.url, err:d.err}; if (d.status === 'on' && d.url) toast('🌍 ' + L('Odkaz pro hosty přes internet je připravený')); if (LAY.isShown('remote')) renderTab(); }
+    else if (d.t === 'remotes') { ST.remotes = d.n; if (LAY.isShown('remote')) renderTab(); }
+    else if (d.t === 'prompters') { ST.prompters = d.n; ST.prJson = ''; if (LAY.isShown('remote')) renderTab(); }
     else if (d.t === 'offer') guestOffer(d).catch(e => { HLT.note('Host: ' + e.message); toast(L('Host se nepřipojil:') + ' ' + e.message); });
     else if (d.t === 'leave') closeGuest(d.id);
     else ICM.onMsg(d);
@@ -99,7 +99,7 @@ const REM = (() => {
     ST.lastJson = '';   // stav poslat hned
   }
   let audT = 0;
-  function audioChanged() { clearTimeout(audT); audT = setTimeout(() => { if (S.tabCur === 'audio') renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 250); }
+  function audioChanged() { clearTimeout(audT); audT = setTimeout(() => { if (LAY.isShown('audio')) renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 250); }
 
   /* ---------- stav pro ovladače ---------- */
   const lvl = an => { if (!an) return 0; const p = peak(an), d = p > 0 ? 20 * Math.log10(p) : -100; return Math.round(clamp((d + 60) / 60, 0, 1) * 100) / 100; };
@@ -180,7 +180,7 @@ const REM = (() => {
     };
     pc.onconnectionstatechange = () => {
       const cs = pc.connectionState;
-      if (cs === 'connected') { s.missing = false; toast(`👤 ${s.name} ${L('je připojený')}`); if (S.tabCur === 'remote') renderTab(); }
+      if (cs === 'connected') { s.missing = false; toast(`👤 ${s.name} ${L('je připojený')}`); if (LAY.isShown('remote')) renderTab(); }
       if (cs === 'failed' && !lastIce.turn) toast(`⚠ ${s.name}: ${L('spojení selhalo – síť blokuje přímé spojení. Zapni TURN (Dálkově → Pokročilé).')}`);
       if (cs === 'failed' || cs === 'closed') { if (G.get(d.id) === g) closeGuest(d.id); }
     };
@@ -197,7 +197,7 @@ const REM = (() => {
     if (!r.ok) throw new Error(await r.text());
     g.air = null; tally();
     if (fresh) { renderSources(); }
-    if (S.tabCur === 'remote') renderTab();
+    if (LAY.isShown('remote')) renderTab();
     save();
   }
   const gathered = pc => new Promise(res => {
@@ -221,7 +221,7 @@ const REM = (() => {
     const s = g.s; s.missing = true; s.hasVideo = false;
     if (s.stream) { s.stream.getTracks().forEach(t => t.stop()); s.stream = null; }
     if (!quiet) { toast(`👤 ${s.name} ${L('se odpojil')}`); renderSources(); }
-    if (S.tabCur === 'remote') renderTab();
+    if (LAY.isShown('remote')) renderTab();
   }
   async function kick(id) {
     try { await fetch(base() + '/lan/guest/' + id, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{"t":"bye"}'}); } catch (e) {}

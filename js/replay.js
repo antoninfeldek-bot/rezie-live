@@ -117,7 +117,7 @@ const RPL = (() => {
   function stopPlay(keep) {
     const P = ST.play; if (!P) return; ST.play = null;
     P.q.forEach(f => f.close()); try { P.dec.close(); } catch (e) {}
-    if (S.tabCur === 'replay') renderTab();
+    if (LAY.isShown('replay')) renderTab();
   }
   // posledních N sekund z vybrané kamery → rovnou do vysílání
   function go(camId, secs, speed) {
@@ -129,12 +129,12 @@ const RPL = (() => {
   function air() {
     ensureSource();
     if (S.programId !== ST.scene.id) { ST.prevProg = S.programId; S.previewId = ST.scene.id; take('cut'); }
-    renderScenes(); if (S.tabCur === 'replay') renderTab();
+    renderScenes(); if (LAY.isShown('replay')) renderTab();
   }
   function mark() {
     const c = C(), cam = c.cam || c.cams[0]; if (!cam) return;
     ST.marks.unshift({t:ms(), cam, at:new Date()}); ST.marks.length = Math.min(ST.marks.length, 20);
-    toast('★ ' + L('Značka uložena')); if (S.tabCur === 'replay') renderTab();
+    toast('★ ' + L('Značka uložena')); if (LAY.isShown('replay')) renderTab();
   }
 
   /* ---------- záložka ---------- */
@@ -173,7 +173,7 @@ const RPL = (() => {
       if (a.dataset.rpa === 'go') go(); if (a.dataset.rpa === 'mark') mark(); if (a.dataset.rpa === 'stop') stopPlay();
       if (a.dataset.rpm) { const m = ST.marks[+a.dataset.rpm]; if (m && play(m.cam, m.t - 4000, m.t + 2000, C().speed)) air(); }
     });
-    setInterval(() => { if (S.tabCur === 'replay' && !$('#tab-replay select:focus')) { const st = $('#tab-replay'); if (st && C().cams.length) st.querySelectorAll('[data-rpcam]').forEach(i => { const e = ENC.get(i.dataset.rpcam), sp = i.parentElement.querySelector('span'); if (sp && C().cams.includes(i.dataset.rpcam)) sp.textContent = e && e.err ? '⚠ ' + e.err : '● ' + (e && e.chunks.length ? Math.round((ms() - e.chunks[0].ts) / 1000) : 0) + ' s'; }); } }, 1000);
+    setInterval(() => { if (LAY.isShown('replay') && !$('#tab-replay select:focus')) { const st = $('#tab-replay'); if (st && C().cams.length) st.querySelectorAll('[data-rpcam]').forEach(i => { const e = ENC.get(i.dataset.rpcam), sp = i.parentElement.querySelector('span'); if (sp && C().cams.includes(i.dataset.rpcam)) sp.textContent = e && e.err ? '⚠ ' + e.err : '● ' + (e && e.chunks.length ? Math.round((ms() - e.chunks[0].ts) / 1000) : 0) + ' s'; }); } }, 1000);
   }
   const load = d => { S.replay = Object.assign({cams:[], secs:30, len:8, speed:0.5, cam:'', back:true, bug:true}, d || {}); };
   const save_ = () => C();

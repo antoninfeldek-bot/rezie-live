@@ -316,12 +316,12 @@ const STR = (() => {
         save(); }
     });
     if (NAT.available()) {
-      window.rzNative.info().then(i => { ST.info = i; if (S.tabCur === 'stream') renderTab(); }).catch(() => {});
+      window.rzNative.info().then(i => { ST.info = i; if (LAY.isShown('stream')) renderTab(); }).catch(() => {});
       window.rzNative.onStatus(s => { NAT.onStatus(s); renderOuts(s); });
       window.rzNative.onLog(l => { stLog(l.replace(/^\S+\s+\S*\s*/, '')); keepLog(); });
     }
     if (NAT.available()) resumeIfLive();
-    if (C().mode === 'rtmp') fetch(relayUrl() + '/status').then(r => r.json()).then(j => { ST.srv = j; if (S.tabCur === 'stream') renderTab(); }).catch(() => {});
+    if (C().mode === 'rtmp') fetch(relayUrl() + '/status').then(r => r.json()).then(j => { ST.srv = j; if (LAY.isShown('stream')) renderTab(); }).catch(() => {});
   }
   // pro stránku Stav vysílání
   const info = () => ({live:!!R.stream, mode:R.stream ? R.stream.mode : C().mode, start:R.stream && R.stream.start, status:ST.status, stats:ST.stats, nat:R.stream && R.stream.mode === 'app' ? ST.nat : null,

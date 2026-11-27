@@ -50,7 +50,7 @@ const DAT = (() => {
       }
       r.rows = parse(text); r.err = ''; r.t = Date.now();
     } catch (e) { r.err = e.message; }
-    r.busy = false; if (S.tabCur === 'gfxctl') render();
+    r.busy = false; if (LAY.isShown('gfxctl')) render();
   }
   // hodnota pro token {Název!…}
   function get(name, ref) {
@@ -69,7 +69,7 @@ const DAT = (() => {
   function step(id, k) {
     const list = id ? C().list.filter(d => d.id === id) : C().list;
     list.forEach(d => { const rows = (RT.get(d.id) || {}).rows || []; d.cur = Math.max(1, Math.min(Math.max(1, rows.length - 1), (d.cur || 1) + k)); });
-    save(); if (S.tabCur === 'gfxctl') render();
+    save(); if (LAY.isShown('gfxctl')) render();
   }
 
   /* ---------- UI (v záložce Grafika) ---------- */
