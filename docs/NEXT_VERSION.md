@@ -4,13 +4,15 @@ Repo je přesunuté do **feldek-apps/rezie-live** (dřív antoninfeldek-bot/rezi
 Pravidlo autora: **nevydávat novou verzi kvůli každé drobnosti** – opravy sbírat a vydat najednou.
 Build (GitHub Actions) se spouští pushem do `main` → vznikne release `v2.0.<run>`. Větev `next` build nespouští.
 
-## 1. Hotové a otestované, čeká na vydání (větev `next`)
+## 1. Vydáno ve v2.0.21 (27. 11. 2026)
+- Dokumentace srovnaná s aplikací (5 stránek, Výstupy 2–4, obnova po pádu i na Windows, obsah složky),
+  testovací arch 66 bodů (🔧 = ověření oprav 2.0.19–2.0.21), README: poslední opravy + sekce pro vývojáře.
 - Obraz zamrzal, když byla karta Chromu na pozadí (webová verze): `js/core.js` texFor – když nechodí rVFC
   (karta na pozadí), nahrává se každý snímek; `js/replay.js` totéž pro replay.
 
 ## 2. Po přesunu repa upravit
-- ✅ (na `next`) `electron/update.js` – adresa pro kontrolu aktualizací → feldek-apps/rezie-live.
-- ✅ (na `next`) `README.md`, `NAVOD.md`, `GUIDE.md`, `TESTING.md`, `TESTING.en.md`, `testing/*.csv` – odkazy na repo,
+- ✅ (v2.0.21) `electron/update.js` – adresa pro kontrolu aktualizací → feldek-apps/rezie-live.
+- ✅ (v2.0.21) `README.md`, `NAVOD.md`, `GUIDE.md`, `TESTING.md`, `TESTING.en.md`, `testing/*.csv` – odkazy na repo,
   Releases, Issues a online verzi. `package.json` odkaz na repo nemá (`author` zůstává osoba).
 - ✅ Online verze běží: `https://feldek-apps.github.io/rezie-live/` (Pages: deploy z `main`).
 - Popis repa „About“ (Description, Website, Topics) – nastaví autor ručně, z Claude prostředí to nejde.

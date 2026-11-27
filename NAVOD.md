@@ -1,9 +1,12 @@
 # 🎬 Režie Live – návod
 
 ## Co je ve složce
-- **index.html** + složky **css/** a **js/** – samotná režie (běží v prohlížeči Chrome / Edge)
-- **server.js** – malý pomocný program, který posílá vysílání na YouTube / Twitch / Facebook
-- **NAVOD.md** – tenhle návod
+- **index.html** + složky **css/**, **js/** a **fonts/** – samotná režie (běží v prohlížeči Chrome / Edge i v aplikaci)
+- **remote.html**, **guest.html**, **prompter.html**, **crew.html** – stránky pro mobilní ovladač, hosty, čtecí zařízení a kameramany
+- **server.js** – pomocný program pro vysílání (RTMP), dálkové ovládání, hosty a Stream Deck
+- **electron/** – aplikace pro Mac a Windows (nativní vysílání, síťové vstupy, NDI, aktualizace)
+- **NAVOD.md** (tenhle návod) a **GUIDE.md** (anglicky), **TESTING.md** + **testing/** – testovací arch
+- **tests/smoke.py** – automatický test, **docs/NEXT_VERSION.md** – plán další verze
 
 Všechno nech pohromadě v **jedné složce** (tak, jak je to na GitHubu).
 
@@ -155,8 +158,8 @@ Záložka **Zvuk** dole → **Sběrnice**: vlastní mix na jiný výstup (sluch�
 ### 🎥 PTZ kamery
 Záložka **🎥 PTZ**: přidej kameru (IP adresa, typ VISCA). Šipky drž = pohyb, zoom, autofokus, předvolby 1–9 (i na klávesy a Stream Deck).
 
-### 2️⃣ Výstup 2
-Tlačítko **2️⃣** nahoře otevře okno s jiným obrazem – jinou scénou, náhledem nebo jedním zdrojem (třeba na plátno v sále). Dvojklik = celá obrazovka.
+### 2️⃣ Výstupy 2–4
+Tlačítko **2️⃣ Výstupy** nahoře otevře nabídku **Výstup 2 / 3 / 4**. Každý výstup je okno s jiným obrazem – programem, náhledem, jinou scénou nebo jedním zdrojem (třeba na plátno v sále). Dvojklik = celá obrazovka. Výstupy jde přepínat i jako samostatný program – viz **🎛 Vedlejší programy** níž.
 
 ### ⚙ Automatizace
 Záložka **Ovládání** dole → **Automatizace**: „když skončí znělka → přepni na Kameru 1“, „v 19:59 → scéna Odpočet“, „když začne vysílání → logo“…
@@ -200,9 +203,10 @@ Tlačítko **⊞** nahoře: **Dvě záložky vedle sebe** (třeba Zdroje + Grafi
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.
 - Odpojená kamera nebo mikrofon se po zapojení **samy znovu připojí**.
 - Ukazatel **● fps** nahoře ukazuje, jestli počítač stíhá (klikni pro podrobnosti).
-- **V aplikaci pro Mac**: když okno spadne nebo zamrzne, vysílání **nepřestane** – poběží tabulka „Technické potíže“, režie se sama znovu otevře a program se vrátí do vysílání.
+- **V aplikaci (Mac i Windows) při 🚀 Nativním vysílání**: když okno spadne nebo zamrzne, vysílání **nepřestane** – poběží tabulka „Technické potíže“, režie se sama znovu otevře a program se vrátí do vysílání.
 
-## 1. Jednorázová instalace
+## 1. Jednorázová instalace (jen pro spuštění ze zdrojáků)
+Aplikace pro Mac a Windows ani online verze tohle nepotřebují – Node.js a FFmpeg jsou potřeba jen pro `node server.js`.
 1. **Node.js** – stáhni z nodejs.org (verze LTS) a nainstaluj.
 2. **FFmpeg** – potřeba jen pro vysílání:
    - Windows: v terminálu `winget install ffmpeg` (pak terminál zavři a otevři znovu)
@@ -222,7 +226,7 @@ Režie je taky online: **https://feldek-apps.github.io/rezie-live/** – kamery,
 - **Zdroje** (záložka dole): přidej kamery, mikrofony, videa (znělky), obrázky (logo), texty (titulky), obrazovku.
 - **Scény** (vlevo dole): každá scéna = jedna „sestava“ (např. „Kamera“, „Host“, „Znělka“).
 - **NÁHLED** (zelený) = tady si scénu připravíš a upravuješ. **PROGRAM** (červený) = to jde ven.
-- **CUT** (mezerník) = okamžité přepnutí. **PŘECHOD** (Enter) = plynulé prolnutí.
+- **CUT** (mezerník) = okamžité přepnutí. **AUTO** (Enter) = vybraný přechod (např. prolínačka). **T-bar** = přechod ručně.
 - V náhledu jde vrstvy tahat myší a za rohy zvětšovat.
 
 ### Klíč na zeleném pozadí
@@ -230,11 +234,12 @@ Režie je taky online: **https://feldek-apps.github.io/rezie-live/** – kamery,
 2. Klikni na **🎯** a potom do zeleného pozadí v náhledu.
 3. Posuň **Podobnost**, až zelená zmizí. Pod kameru dej vrstvu s pozadím (obrázek, video nebo barvu).
 
-### Čtyři pracovní stránky (nahoře v liště)
+### Pět pracovních stránek (nahoře v liště)
 - **🎬 Režie** – přepínání scén, náhled a program, všechny záložky dole.
 - **✨ Grafika** – editor titulků a animací (jako After Effects).
 - **🎚 Zvuk** – mix pult s efekty.
 - **🎨 Barvy** – grading, LUTy a scopy.
+- **📊 Stav** – jestli všechno běží (vysílání, internet, hosté, počítač).
 
 ### Grafika a animace (stránka ✨ Grafika)
 - Grafika = vrstvy (text, obdélník, obrázek, běžící lišta). Vlevo hotové šablony: jmenovka, logo, ŽIVĚ, lišta se zprávami, velký titulek, odpočet, hodiny.
@@ -315,5 +320,6 @@ Jsou dvě cesty – vybereš je nahoře v záložce:
 ## 6. Když něco nejde
 - **Kamera je černá** – jedna kamera jde většinou otevřít jen jednou. Zavři jiné programy, které ji používají (Zoom, OBS, Teams).
 - **Nové okno se neotevře** – povol vyskakovací okna (ikona vpravo v adresním řádku).
+- **Online verze vypadá po aktualizaci staře** – načti stránku znovu s Ctrl+Shift+R (Mac: Cmd+Shift+R).
 - **Vysílání nejde** – běží server.js (start-windows.bat / start-mac.command)? V záložce Vysílání klikni „Otestovat spojení“. Stav a chyby vidíš v „Záznamu“ dole v záložce. Hláška o klíči = špatně zkopírovaný klíč streamu.
 - **Projekt** se ukládá sám v prohlížeči. Zálohu uděláš tlačítkem 💾. Videa a obrazovku je po novém spuštění potřeba připojit znovu („Připojit znovu“).

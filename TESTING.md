@@ -4,9 +4,9 @@
 
 **Stáhni:** [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) · **Online verze:** https://feldek-apps.github.io/rezie-live/
 
-**Jak testovat:** u každé funkce udělej kroky ve sloupci „Jak spustit“ a porovnej je se sloupcem „Co má nastat“. Výsledek: ✅ OK / ⚠ Částečně / ❌ Chyba. U chyby napiš, co jsi dělal, co se stalo, na čem (Mac / Windows / web) a verzi aplikace (⚙ Nastavení → Obecné). Chyby hlas v [Issues](https://github.com/feldek-apps/rezie-live/issues). 🆕 = novinka ve verzi 2.0 – ty otestuj jako první.
+**Jak testovat:** u každé funkce udělej kroky ve sloupci „Jak spustit“ a porovnej je se sloupcem „Co má nastat“. Výsledek: ✅ OK / ⚠ Částečně / ❌ Chyba. U chyby napiš, co jsi dělal, co se stalo, na čem (Mac / Windows / web) a verzi aplikace (⚙ Nastavení → Obecné). Chyby hlas v [Issues](https://github.com/feldek-apps/rezie-live/issues). 🆕 = novinka ve verzi 2.0 – ty otestuj jako první. 🔧 = opravená chyba – ověř, že se už neobjevuje. Část testů běží i automaticky: `tests/smoke.py`.
 
-Celkem funkcí: **63**
+Celkem funkcí: **66**
 
 | # | Oblast | Funkce | Jak spustit | Co má nastat | Kde | Potřebuješ | Výsledek | Poznámka |
 |---|---|---|---|---|---|---|---|---|
@@ -73,3 +73,6 @@ Celkem funkcí: **63**
 | 61 | Další | Aktualizace | ⚙ Nastavení → Obecné → zkontrolovat aktualizace (u starší verze se nabídne sama). | Aplikace najde novou verzi a nabídne Aktualizovat. | Aplikace (Mac/Win) | — | ☐ |  |
 | 62 | Vzhled | 🆕 Nový vzhled 2.0 a jazyk | Projdi stránky Režie, Grafika, Zvuk, Barvy. Spusť nahrávání a ztlum mikrofon. Přepni jazyk 🌐 EN / CZ. | Červená svítí jen u vysílání a nahrávání, zelená u náhledu, ztlumení je jantarové; texty jsou čitelné a celé přeložené. Co je špatně čitelné, napiš. | Web + aplikace | — | ☐ |  |
 | 63 | Výstupy | 🆕 Vedlejší programy (Výstup 2–4 jako druhý program) | Nad CUT klikni na 2 → klikni na scénu (náhled výstupu) → CUT / AUTO / T-bar / klávesy 1–9. Pak 🪟 = okno a ↗🖥 = poslat na druhý monitor. ✨ = i grafika. Zpátky tlačítkem PGM. | Monitory ukazují náhled a program Výstupu 2 (modrý rámeček), hlavní vysílání a nahrávání se nezmění, okno se roztáhne na vybraný monitor. | Web + aplikace | Druhý monitor nebo projektor | ☐ |  |
+| 64 | Stabilita | 🔧 Online verze: karta na pozadí (oprava 2.0.21) | V Chrome otevři online verzi, dej kameru do programu, spusť nahrávání a zapni Replay → na 1 minutu přepni na jinou kartu → vrať se a přehraj nahrávku a replay. | Obraz v programu, nahrávce i replayi běžel plynule dál, nikde nezamrzl. | Web | Kamera | ☐ |  |
+| 65 | Stabilita | 🔧 Windows: náhled a přechody (oprava 2.0.20) | Na Windows dej do náhledu jinou scénu než v programu → AUTO s prolínačkou, pak se stíračkou → T-bar tam a zpět. | Zmenšený náhled neprosvítá do programu, přechody proběhnou celé a plynule. | Aplikace (Win) | — | ☐ |  |
+| 66 | Výstupy | 🔧 Monitory po vedlejším programu (oprava 2.0.19) | Nad CUT klikni na 2 → CUT → zpátky na PGM → CUT / AUTO v hlavním programu. | NÁHLED i PROGRAM ukazují hlavní obraz, nejsou černé a nezůstane na nich obraz Výstupu 2. | Web + aplikace | — | ☐ |  |

@@ -69,14 +69,26 @@
 
 ### Spolehlivost a pohodlí
 - Automatické ukládání a zálohy, znovupřipojení odpojené kamery / mikrofonu, **📊 stránka Stavu** (stream, internet, hosté, počítač), test rychlosti internetu.
-- V aplikaci pro Mac: **když okno spadne, vysílání nepřestane** (záložní obraz, okno se samo obnoví).
+- V aplikaci pro Mac i Windows: **když okno spadne, vysílání nepřestane** (záložní obraz, okno se samo obnoví).
 - **Modulární rozložení** panelů, panely v samostatných oknech, automatické aktualizace, čistý tmavý vzhled (červená jen pro vysílání a nahrávání).
 
 ## 🇬🇧 Features (short)
-Program / preview switching with CUT, AUTO, T-bar and stinger · layers, crop and chroma key · **SuperSource layouts** with animated changes · **side programs** on outputs 2–4 · cameras, HDMI cards, 360° cameras with virtual shots, video, playlists, slides, web & chat · **NDI / SRT / RTMP / RTSP inputs** with audio clock-drift correction · **phone as a camera** (up to 4K60) · **guests via link** with mix-minus and tally · keyframed **graphics editor**, live fields, Google Sheets / CSV data, system fonts · **audio mixer** with modular effects, LUFS, buses, audio to Zoom / Teams · GPU **color grading** with LUTs and scopes · **Replay 2.0** (program + multiple angles, IN/OUT, smooth slow motion, stinger) · **macros**, automation, rundown, teleprompter, keys / MIDI / Stream Deck, phone remote with roles, crew intercom, scores / chat / polls, PTZ · **multistreaming** (RTMP / SRT / WHIP) with GPU encoding and auto-reconnect · program + **ISO recording**, EDL and chapters · **NDI output**, extra outputs, Multiview · 9:16 and 4K canvases · autosave, status page, crash-proof streaming on Mac. Full list: [GUIDE.md](GUIDE.md).
+Program / preview switching with CUT, AUTO, T-bar and stinger · layers, crop and chroma key · **SuperSource layouts** with animated changes · **side programs** on outputs 2–4 · cameras, HDMI cards, 360° cameras with virtual shots, video, playlists, slides, web & chat · **NDI / SRT / RTMP / RTSP inputs** with audio clock-drift correction · **phone as a camera** (up to 4K60) · **guests via link** with mix-minus and tally · keyframed **graphics editor**, live fields, Google Sheets / CSV data, system fonts · **audio mixer** with modular effects, LUFS, buses, audio to Zoom / Teams · GPU **color grading** with LUTs and scopes · **Replay 2.0** (program + multiple angles, IN/OUT, smooth slow motion, stinger) · **macros**, automation, rundown, teleprompter, keys / MIDI / Stream Deck, phone remote with roles, crew intercom, scores / chat / polls, PTZ · **multistreaming** (RTMP / SRT / WHIP) with GPU encoding and auto-reconnect · program + **ISO recording**, EDL and chapters · **NDI output**, extra outputs, Multiview · 9:16 and 4K canvases · autosave, status page, crash-proof streaming in the app. Full list: [GUIDE.md](GUIDE.md).
+
+## 🔧 Poslední opravy / Latest fixes
+- **v2.0.21:** online verze – obraz nezamrzne, když je karta Chromu na pozadí (i v replayi); odkazy po přesunu do `feldek-apps`. / Online version – the picture no longer freezes when the Chrome tab is in the background (replay too); links updated after the move to `feldek-apps`.
+- **v2.0.20:** Windows – zmenšený náhled už neprosvítá do programu, přechody fungují. / Windows – the preview no longer leaks into the program, transitions work.
+- **v2.0.19:** černé monitory NÁHLED / PROGRAM po vedlejším programu. / Black PREVIEW / PROGRAM monitors after a side program.
+
+Všechny verze / All versions: [Releases](https://github.com/feldek-apps/rezie-live/releases).
 
 ## Spuštění bez instalace / Run without installing
 - Online: https://feldek-apps.github.io/rezie-live/ (Chrome / Edge). Pro RTMP vysílání z online verze spusť `node server.js`. / For RTMP streaming from the online version run `node server.js`.
 - Ze zdrojáků / From source: `node server.js` → http://localhost:8080 (Windows: `start-windows.bat`, Mac: `start-mac.command`). Vysílání potřebuje FFmpeg. / Streaming needs FFmpeg.
+
+## Pro vývojáře / For developers
+- **Vydání / Release:** push do `main` → GitHub Actions sestaví Mac + Windows a vydá `v2.0.<číslo>`. Opravy se sbírají ve větvi `next` a vydávají najednou. / Push to `main` builds Mac + Windows and publishes `v2.0.<n>`; fixes are collected on `next` and released together.
+- **Automatický test / Automated test:** [tests/smoke.py](tests/smoke.py) (Playwright + Chrome, kontroluje i to, co je opravdu vidět na monitorech).
+- **Plán další verze / Next version plan:** [docs/NEXT_VERSION.md](docs/NEXT_VERSION.md).
 
 Technologie / Tech: HTML, CSS, JavaScript (WebGL2, Web Audio, WebCodecs, WebRTC), Node.js, Electron, FFmpeg. NDI® is a registered trademark of Vizrt NDI AB.

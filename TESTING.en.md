@@ -4,9 +4,9 @@
 
 **Download:** [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) · **Online version:** https://feldek-apps.github.io/rezie-live/
 
-**How to test:** for each feature follow “How to run” and compare with “Expected result”. Result: ✅ OK / ⚠ Partly / ❌ Bug. For a bug write what you did, what happened, on what (Mac / Windows / web) and the app version (⚙ Settings → General). Report bugs in [Issues](https://github.com/feldek-apps/rezie-live/issues). 🆕 = new in 2.0 – test these first.
+**How to test:** for each feature follow “How to run” and compare with “Expected result”. Result: ✅ OK / ⚠ Partly / ❌ Bug. For a bug write what you did, what happened, on what (Mac / Windows / web) and the app version (⚙ Settings → General). Report bugs in [Issues](https://github.com/feldek-apps/rezie-live/issues). 🆕 = new in 2.0 – test these first. 🔧 = fixed bug – check it no longer happens. Part of the tests also runs automatically: `tests/smoke.py`.
 
-Features in total: **63**
+Features in total: **66**
 
 | # | Area | Feature | How to run | Expected result | Where | You need | Result | Note |
 |---|---|---|---|---|---|---|---|---|
@@ -73,3 +73,6 @@ Features in total: **63**
 | 61 | More | Updates | ⚙ Settings → General → check for updates (an older version offers it by itself). | The app finds the new version and offers Update. | App (Mac/Win) | — | ☐ |  |
 | 62 | Look | 🆕 New 2.0 look and language | Go through the Director, Graphics, Audio and Color pages. Start recording and mute a mic. Switch language 🌐 EN / CZ. | Red only for streaming and recording, green for preview, mute is amber; text is readable and fully translated. Note anything hard to read. | Web + app | — | ☐ |  |
 | 63 | Outputs | 🆕 Side programs (Output 2–4 as a second program) | Above CUT click 2 → click a scene (output preview) → CUT / AUTO / T-bar / keys 1–9. Then 🪟 = window and ↗🖥 = send to a second monitor. ✨ = graphics too. Back with PGM. | The monitors show Output 2's preview and program (blue frame), the main stream and recording don't change, the window goes full screen on the chosen monitor. | Web + app | Second monitor or projector | ☐ |  |
+| 64 | Stability | 🔧 Online version: tab in the background (fix 2.0.21) | Open the online version in Chrome, put a camera on program, start recording and turn on Replay → switch to another tab for 1 minute → come back and play the recording and the replay. | The picture kept running smoothly on program, in the recording and in the replay – it never froze. | Web | Camera | ☐ |  |
+| 65 | Stability | 🔧 Windows: preview and transitions (fix 2.0.20) | On Windows put a different scene on preview than on program → AUTO with a fade, then a wipe → T-bar there and back. | The scaled preview does not show through into the program, transitions run fully and smoothly. | App (Win) | — | ☐ |  |
+| 66 | Outputs | 🔧 Monitors after a side program (fix 2.0.19) | Above CUT click 2 → CUT → back to PGM → CUT / AUTO on the main program. | PREVIEW and PROGRAM show the main picture, are not black and do not keep Output 2's picture. | Web + app | — | ☐ |  |

@@ -1,6 +1,16 @@
 # 🎬 Live Director – guide (English)
 
-The app is bilingual – switch **🌐 EN / 🌐 CZ** in the top bar (or on the start screen).
+The app is bilingual – switch **🌐 EN / 🌐 CZ** in the top bar (or on the start screen). Czech guide: NAVOD.md.
+
+## What's in the folder
+- **index.html** + **css/**, **js/** and **fonts/** – the studio itself (runs in Chrome / Edge and in the app)
+- **remote.html**, **guest.html**, **prompter.html**, **crew.html** – pages for the phone remote, guests, the teleprompter and camera operators
+- **server.js** – helper for RTMP streaming, remote control, guests and Stream Deck
+- **electron/** – the Mac and Windows app (native streaming, network inputs, NDI, updates)
+- **GUIDE.md** (this guide) and **NAVOD.md** (Czech), **TESTING.en.md** + **testing/** – test sheet
+- **tests/smoke.py** – automated test, **docs/NEXT_VERSION.md** – plan for the next version
+
+Keep everything together in **one folder** (as it is on GitHub).
 
 ## 🍎 Mac app (recommended)
 1. Open [Releases](https://github.com/feldek-apps/rezie-live/releases/latest) and download **Rezie-Live-mac-arm64.dmg** (Mac with M1/M2/M3/M4 chip) or **Rezie-Live-mac-x64.dmg** (older Intel Mac).
@@ -146,8 +156,8 @@ Sources → **🌐 + Web / chat**: any page, or **YouTube / Twitch chat** (paste
 ### 🎥 PTZ cameras
 **🎥 PTZ** tab: add a camera (IP address, VISCA type). Hold the arrows to move, zoom, autofocus, presets 1–9 (also on keys and Stream Deck).
 
-### 2️⃣ Output 2
-The **2️⃣** button at the top opens a window with a different picture – another scene, the preview or one source (e.g. for the projector in the hall). Double-click = full screen.
+### 2️⃣ Outputs 2–4
+The **2️⃣ Outputs** button at the top opens a menu with **Output 2 / 3 / 4**. Each output is a window with a different picture – the program, the preview, another scene or one source (e.g. for the projector in the hall). Double-click = full screen. Outputs can also be switched as their own program – see **🎛 Side programs** below.
 
 ### ⚙ Automation
 **Control** tab at the bottom → **Automation**: “when the intro ends → switch to Camera 1”, “at 19:59 → Countdown scene”, “when streaming starts → logo”…
@@ -188,9 +198,10 @@ The **⊞** button at the top: **Two tabs side by side** (e.g. Sources + Graphic
 - The project saves itself every few seconds, with a backup every minute.
 - An unplugged camera or microphone **reconnects by itself**.
 - The **● fps** badge at the top shows if the computer keeps up (click for details).
-- **In the Mac app**: if the window crashes or freezes, the stream **does not stop** – a “Technical difficulties” slate runs, the app reopens itself and the program goes back on air.
+- **In the app (Mac and Windows) with 🚀 Native streaming**: if the window crashes or freezes, the stream **does not stop** – a “Technical difficulties” slate runs, the app reopens itself and the program goes back on air.
 
-## 1. Install once
+## 1. Install once (only to run from source)
+The Mac / Windows app and the online version don't need this – Node.js and FFmpeg are only needed for `node server.js`.
 1. **Node.js** – download the LTS version from nodejs.org.
 2. **FFmpeg** – only needed for RTMP streaming:
    - Windows: `winget install ffmpeg` in a terminal (then reopen the terminal)
@@ -202,15 +213,16 @@ The **⊞** button at the top: **Two tabs side by side** (e.g. Sources + Graphic
 - **Mac:** double-click **start-mac.command** (first time: right-click → Open)
 - or in a terminal in the folder: `node server.js` and open **http://localhost:8080** in Chrome
 
-Online version (no install, streaming via WHIP only): https://feldek-apps.github.io/rezie-live/
+Online version (no install): https://feldek-apps.github.io/rezie-live/ – streams directly via WHIP, or via RTMP when `node server.js` runs on the computer.
 
 Click **Start studio** and allow camera and microphone access.
 
-## 3. Four work pages
+## 3. Five work pages
 - **🎬 Director** – scenes, preview / program, transitions, T-bar and all tabs at the bottom.
 - **✨ Graphics** – animated titles editor (like After Effects).
 - **🎚 Audio** – mixer with effects.
 - **🎨 Color** – grading, LUTs and scopes.
+- **📊 Status** – whether everything is running (stream, internet, guests, computer).
 
 ### Basics
 - **Sources** tab: add cameras, microphones, videos (intros), images (logos), texts (titles), screen capture.
