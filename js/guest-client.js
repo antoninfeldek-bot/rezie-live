@@ -8,12 +8,13 @@
     'Spojení vypadlo – připojuji znovu…':'Connection lost – reconnecting…', 'Režie tě odpojila. Díky!':'The director disconnected you. Thanks!', 'Odkaz je neplatný nebo starý. Požádej o nový.':'This link is invalid or old. Ask for a new one.',
     'Prohlížeč nepovolil kameru. Povol ji v nastavení prohlížeče a načti stránku znovu.':'The browser blocked the camera. Allow it in browser settings and reload.',
     'Kamera v prohlížeči jde jen přes zabezpečené spojení (https).':'Camera in the browser only works over a secure connection (https).', 'Režie teď neběží':'The director app is not running', 'Host':'Guest',
-    'Bez kamery':'No camera', 'Režie ti mluví do sluchátek':'The director is talking in your headphones', 'Moment':'Wait', 'Problém':'Problem'};
+    'Bez kamery':'No camera', 'Nedaří se spojit obraz se režií – tvoje síť (nebo síť režie) blokuje přímé spojení. Zkus jinou síť (Wi-Fi ↔ mobilní data), nebo ať režie zapne TURN server.':'Can’t connect video to the director – your network (or the director’s) blocks direct connections. Try another network (Wi-Fi ↔ mobile data), or ask the director to turn on a TURN server.', 'nedaří se spojit (síť blokuje) – zapni TURN':'can’t connect (network blocks it) – turn on TURN', 'Režie ti mluví do sluchátek':'The director is talking in your headphones', 'Moment':'Wait', 'Problém':'Problem'};
   const t = s => EN && T[s] || s;
   if (EN) { document.documentElement.lang = 'en'; document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.textContent.trim()); }); document.title = 'Live Director – join as guest'; }
   const $ = s => document.querySelector(s);
   const id = (() => { try { let v = localStorage.getItem('rz-guest-id'); if (!v) { v = 'g' + Math.random().toString(36).slice(2, 12); localStorage.setItem('rz-guest-id', v); } return v; } catch (e) { return 'g' + Math.random().toString(36).slice(2, 12); } })();
-  let stream = null, pc = null, es = null, leaving = false, retryT = 0, discT = 0;
+  let stream = null, pc = null, leaving = false, retryT = 0, discT = 0, gen = 0, connT = 0;
+  let sess = '';   // jedno připojení (nové při každém „Připojit se“)
   const err = s => { const e = $('#err'); e.textContent = s; e.hidden = !s; };
   const state = (s, cls) => { const g = $('#gstate'); g.textContent = s; g.className = 'gstate ' + (cls || ''); };
   try { $('#name').value = localStorage.getItem('rz-guest-name') || ''; } catch (e) {}
@@ -44,18 +45,26 @@
   async function join() {
     const name = ($('#name').value || t('Host')).trim().slice(0, 40); try { localStorage.setItem('rz-guest-name', name); } catch (e) {}
     $('#setup').hidden = true; $('#live').hidden = false; state(t('Připojuji…')); err(''); leaving = false;
-    if (es) es.close();
-    es = new EventSource(`/g/events?k=${encodeURIComponent(K)}&id=${id}&name=${encodeURIComponent(name)}`);
-    es.onerror = () => { if (leaving) return; fetch(`/g/events?k=${encodeURIComponent(K)}&id=x`, {method:'HEAD'}).then(r => { if (r.status === 403) { leaving = true; es.close(); err(t('Odkaz je neplatný nebo starý. Požádej o nový.')); } }).catch(() => {}); };
-    es.onmessage = async e => {
-      let d; try { d = JSON.parse(e.data); } catch (er) { return; }
-      if (d.t === 'answer' && pc) { try { await pc.setRemoteDescription({type:'answer', sdp:d.sdp}); } catch (er) { err(er.message); } }
-      else if (d.t === 'tally') { $('#tally').className = 'tally' + (d.air ? ' air' : d.pv ? ' pv' : ''); state(d.air ? t('● JSI VE VYSÍLÁNÍ') : d.pv ? t('V náhledu – za chvíli jdeš do vysílání') : t('Připojeno – čekáš v režii'), d.air ? 'air' : d.pv ? 'pv' : ''); }
-      else if (d.t === 'bye') { leave(t('Režie tě odpojila. Díky!')); }
-      else if (d.t === 'talk') $('#gtalk').hidden = !d.on;
-      else if (d.t === 'msg') { $('#gmsgT').textContent = d.text; $('#gmsg').hidden = false; if (navigator.vibrate) navigator.vibrate([80, 60, 80]); }
-    };
-    es.onopen = () => offer(name);
+    const my = ++gen; let first = true, fails = 0; sess = Math.random().toString(36).slice(2, 10);
+    // zprávy od režie: dotaz čeká na serveru, dokud něco nepřijde (projde i tunelem přes internet)
+    while (!leaving && my === gen) {
+      let msgs;
+      try {
+        const r = await fetch(`/g/poll?k=${encodeURIComponent(K)}&id=${id}&s=${sess}&name=${encodeURIComponent(name)}`, {cache:'no-store'});
+        if (r.status === 403) { leave(t('Odkaz je neplatný nebo starý. Požádej o nový.')); return; }
+        if (!r.ok) throw new Error(r.status);
+        msgs = await r.json(); fails = 0;
+      } catch (e) { if (++fails > 2) state(t('Spojení vypadlo – připojuji znovu…'), 'warn'); await new Promise(r => setTimeout(r, 2000)); continue; }
+      if (first) { first = false; offer(name).catch(e => err(e.message)); }
+      for (const d of msgs) await onMsg(d);
+    }
+  }
+  async function onMsg(d) {
+    if (d.t === 'answer' && pc) { try { await pc.setRemoteDescription({type:'answer', sdp:d.sdp}); } catch (er) { err(er.message); } }
+    else if (d.t === 'tally') { $('#tally').className = 'tally' + (d.air ? ' air' : d.pv ? ' pv' : ''); state(d.air ? t('● JSI VE VYSÍLÁNÍ') : d.pv ? t('V náhledu – za chvíli jdeš do vysílání') : t('Připojeno – čekáš v režii'), d.air ? 'air' : d.pv ? 'pv' : ''); }
+    else if (d.t === 'bye') { leave(t('Režie tě odpojila. Díky!')); }
+    else if (d.t === 'talk') $('#gtalk').hidden = !d.on;
+    else if (d.t === 'msg') { $('#gmsgT').textContent = d.text; $('#gmsg').hidden = false; if (navigator.vibrate) navigator.vibrate([80, 60, 80]); }
   }
   async function offer(name) {
     if (pc) try { pc.close(); } catch (e) {}
@@ -67,9 +76,11 @@
     if (at) pc.addTrack(at, stream); else pc.addTransceiver('audio', {direction:'recvonly'});
     const ret = new MediaStream();
     pc.ontrack = e => { ret.addTrack(e.track); $('#ret').srcObject = ret; $('#ret').play().catch(() => {}); };
+    clearTimeout(connT);
+    connT = setTimeout(() => { if (pc && pc.connectionState !== 'connected') { err(t('Nedaří se spojit obraz se režií – tvoje síť (nebo síť režie) blokuje přímé spojení. Zkus jinou síť (Wi-Fi ↔ mobilní data), nebo ať režie zapne TURN server.')); fetch('/g/msg?k=' + encodeURIComponent(K), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, text:'⚠ ' + t('nedaří se spojit (síť blokuje) – zapni TURN')})}).catch(() => {}); } }, 15000);
     pc.onconnectionstatechange = () => {
       const cs = pc.connectionState; clearTimeout(discT);
-      if (cs === 'connected') state(t('Připojeno – čekáš v režii'));
+      if (cs === 'connected') { clearTimeout(connT); err(''); state(t('Připojeno – čekáš v režii')); }
       if (cs === 'disconnected') discT = setTimeout(() => retry(name), 5000);
       if (cs === 'failed') retry(name);
     };
@@ -78,10 +89,11 @@
     const r = await fetch('/g/offer?k=' + encodeURIComponent(K), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, name, sdp:pc.localDescription.sdp})});
     if (!r.ok) { const x = await r.text(); err(r.status === 503 ? t('Režie teď neběží') : x); retryT = setTimeout(() => offer(name), 4000); }
   }
-  function retry(name) { if (leaving) return; state(t('Spojení vypadlo – připojuji znovu…'), 'warn'); clearTimeout(retryT); retryT = setTimeout(() => join(), 2500); }
+  function retry(name) { if (leaving) return; state(t('Spojení vypadlo – připojuji znovu…'), 'warn'); clearTimeout(retryT); retryT = setTimeout(() => offer(name).catch(() => {}), 2500); }
   function leave(text) {
-    leaving = true; clearTimeout(retryT); clearTimeout(discT);
-    try { pc && pc.close(); } catch (e) {} pc = null; if (es) es.close();
+    leaving = true; gen++; clearTimeout(retryT); clearTimeout(discT); clearTimeout(connT);
+    try { pc && pc.close(); } catch (e) {} pc = null;
+    fetch('/g/leave?k=' + encodeURIComponent(K), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}), keepalive:true}).catch(() => {});
     $('#tally').className = 'tally'; $('#live').hidden = true; $('#setup').hidden = false; err(text || '');
   }
   $('#join').onclick = () => { if (!stream) return; join(); };

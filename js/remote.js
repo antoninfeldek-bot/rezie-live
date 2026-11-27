@@ -10,8 +10,8 @@ const REM = (() => {
   const rnd = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join(''); };
   const C = () => S.rem;
 
-  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), ckey:(d && d.ckey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn)}; }
-  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, online:C().online, turn:C().turn});
+  function load(d) { S.rem = {on:!!(d && d.on), pin:(d && d.pin) || rnd(10), gkey:(d && d.gkey) || rnd(10), pkey:(d && d.pkey) || rnd(10), ckey:(d && d.ckey) || rnd(10), online:!!(d && d.online), turn:Object.assign({url:'', user:'', pass:''}, d && d.turn), cft:Object.assign({id:'', token:''}, d && d.cft)}; }
+  const save_ = () => ({on:C().on, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, online:C().online, turn:C().turn, cft:C().cft});
   // STUN najde veřejnou adresu (stačí většinou); TURN přeposílá obraz, když to přísná síť (škola, firma) jinak nepustí
   function iceServers() {
     const l = [{urls:['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302']}], t = C().turn;
@@ -30,10 +30,10 @@ const REM = (() => {
     const b = base(); if (!b) { ST.err = L('Funguje jen v aplikaci pro Mac nebo přes node server.js (http://localhost:8080).'); renderTab(); return; }
     ST.starting = true; ST.err = ''; renderTab();
     try {
-      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers()})});
+      const r = await fetch(b + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})});
       if (!r.ok) throw new Error(await r.text());
       ST.info = await r.json(); C().on = true; save();
-      connectEvents(); startPush();
+      connectEvents(); startPush(); iceCheck().then(() => { if (S.tabCur === 'remote') renderTab(); });
       if (C().online && (!ST.info.tunnel || ST.info.tunnel.status === 'off')) setOnline(true);
     } catch (e) { ST.err = L('Nepodařilo se zapnout:') + ' ' + e.message; C().on = false; }
     ST.starting = false; renderTab();
@@ -44,11 +44,15 @@ const REM = (() => {
     catch (e) { ST.info.tunnel = {status:'off', err:e.message}; C().online = false; }
     renderTab();
   }
-  async function saveTurn(t) {
-    C().turn = t; save();
-    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers()})}); } catch (e) {}
-    toast(L('TURN server uložen'));
+  async function saveTurn(t, cft) {
+    C().turn = t; if (cft) C().cft = cft; save();
+    if (C().on) try { await fetch(base() + '/lan', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({on:true, pin:C().pin, gkey:C().gkey, pkey:C().pkey, ckey:C().ckey, ice:iceServers(), cft:C().cft})}); } catch (e) {}
+    const r = await iceCheck(); toast(r.err ? '⚠ ' + r.err : r.turn ? L('TURN server funguje') : L('TURN server uložen')); renderTab();
   }
+  // seznam STUN/TURN serverů ze serveru aplikace (včetně dočasných údajů Cloudflare TURN)
+  let lastIce = {iceServers:null, turn:false, err:''};
+  async function iceCheck() { try { lastIce = await (await fetch(base() + '/lan/ice')).json(); } catch (e) { lastIce = {iceServers:null, turn:false, err:''}; } return lastIce; }
+  async function iceList() { const r = await iceCheck(); return r.iceServers && r.iceServers.length ? r.iceServers : iceServers(); }
   async function disable() {
     C().on = false; save();
     G.forEach((g, id) => closeGuest(id, true));
@@ -95,7 +99,7 @@ const REM = (() => {
     ST.lastJson = '';   // stav poslat hned
   }
   let audT = 0;
-  function audioChanged() { clearTimeout(audT); audT = setTimeout(() => { if (S.tabCur === 'audio') renderMixer(); if (S.page === 'audio') AUD.renderPage(); save(); }, 250); }
+  function audioChanged() { clearTimeout(audT); audT = setTimeout(() => { if (S.tabCur === 'audio') renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 250); }
 
   /* ---------- stav pro ovladače ---------- */
   const lvl = an => { if (!an) return 0; const p = peak(an), d = p > 0 ? 20 * Math.log10(p) : -100; return Math.round(clamp((d + 60) / 60, 0, 1) * 100) / 100; };
@@ -161,7 +165,7 @@ const REM = (() => {
     mmUpdate(g);
     const retV = pg.captureStream(15).getVideoTracks()[0], retA = g.mmDest.stream.getAudioTracks()[0];
     g.retV = retV;
-    const pc = new RTCPeerConnection({iceServers:iceServers()}); g.pc = pc;
+    const pc = new RTCPeerConnection({iceServers:await iceList()}); g.pc = pc;
     const vids = [], auds = [];
     pc.ontrack = e => {
       const t = e.track;
@@ -176,6 +180,7 @@ const REM = (() => {
     pc.onconnectionstatechange = () => {
       const cs = pc.connectionState;
       if (cs === 'connected') { s.missing = false; toast(`👤 ${s.name} ${L('je připojený')}`); if (S.tabCur === 'remote') renderTab(); }
+      if (cs === 'failed' && !lastIce.turn) toast(`⚠ ${s.name}: ${L('spojení selhalo – síť blokuje přímé spojení. Zapni TURN (Dálkově → Pokročilé).')}`);
       if (cs === 'failed' || cs === 'closed') { if (G.get(d.id) === g) closeGuest(d.id); }
     };
     await pc.setRemoteDescription({type:'offer', sdp:d.sdp});
@@ -265,8 +270,11 @@ const REM = (() => {
             return (C().online ? `<p class="${tn.err ? 'warn' : 'dim'}">${tn.status === 'starting' ? '🟡 ' + L('Vytvářím veřejnou adresu…') : ''} ${tn.err ? esc(L(tn.err)) : ''}</p>` : '') +
               `<div class="qr">${qr(guestUrl())}</div><code class="url" title="${L('Klikni pro zkopírování')}">${esc(guestUrl())}</code>`; })()}
           <div class="btns"><button data-rm="newg">🔑 ${L('Nový odkaz')}</button></div>
-          <details class="turn"><summary class="dim">${L('Pokročilé: vlastní TURN server')}</summary>
-            <p class="dim">${L('Většinou není potřeba. Hodí se, když se host z přísné sítě (škola, firma, některé mobilní sítě) nepřipojí. TURN zdarma nabízí např. Cloudflare Realtime nebo Metered.')}</p>
+          <details class="turn" ${C().cft.id || C().turn.url ? 'open' : ''}><summary class="dim">${L('Pokročilé: TURN server')} ${lastIce.turn ? '🟢' : ''}</summary>
+            <p class="dim">${L('Když se host přes internet nepřipojí (přísná síť, mobilní data), pomůže TURN server – přepošle obraz, i když síť přímé spojení blokuje. Nejjednodušší je zdarma od Cloudflare: dash.cloudflare.com → Realtime → TURN Server → Create → zkopíruj Turn Token ID a API Token sem.')}</p>
+            <input id="cftId" placeholder="Cloudflare Turn Token ID" value="${esc(C().cft.id)}"><input id="cftTok" type="password" placeholder="Cloudflare API Token" value="${esc(C().cft.token)}">
+            ${ST.info.turnErr ? `<p class="warn">${esc(ST.info.turnErr)}</p>` : lastIce.err ? `<p class="warn">${esc(lastIce.err)}</p>` : lastIce.turn ? `<p class="dim">🟢 ${L('TURN je připravený.')}</p>` : ''}
+            <p class="dim">${L('Nebo jiný TURN server (např. Metered):')}</p>
             <input id="turnUrl" placeholder="turn:server:3478, turns:server:443" value="${esc(C().turn.url)}">
             <input id="turnUser" placeholder="${L('uživatel')}" value="${esc(C().turn.user)}"><input id="turnPass" type="password" placeholder="${L('heslo')}" value="${esc(C().turn.pass)}">
             <div class="btns"><button data-rm="turn">${L('Uložit TURN')}</button></div></details></div>
@@ -288,11 +296,11 @@ const REM = (() => {
       if (t.classList.contains('url')) { navigator.clipboard && navigator.clipboard.writeText(t.textContent); t.classList.add('copied'); setTimeout(() => t.classList.remove('copied'), 800); return; }
       const a = t.dataset.rm; if (!a) return;
       if (a === 'newpin') newKeys('pin'); else if (a === 'newg') newKeys('gkey'); else if (a === 'newpk') newKeys('pkey'); else if (a === 'newck') newKeys('ckey'); else if (a === 'icom') ICM.open();
-      else if (a === 'turn') saveTurn({url:$('#turnUrl').value.trim(), user:$('#turnUser').value.trim(), pass:$('#turnPass').value});
+      else if (a === 'turn') saveTurn({url:$('#turnUrl').value.trim(), user:$('#turnUser').value.trim(), pass:$('#turnPass').value}, {id:$('#cftId').value.trim(), token:$('#cftTok').value.trim()});
       else if (a === 'kick') kick(t.closest('.guest').dataset.gid);
       else if (a === 'addpv') { const s = srcById(t.closest('.guest').dataset.sid); if (s) { addToPreview(s); renderSources(); save(); toast(L('Host přidán do náhledu')); } }
     });
     if (C().on) enable();
   }
-  return {init, load, save:save_, renderTab, act, state, guests:() => G, base, iceServers, gathered, on:() => C().on && ST.info && ST.info.on};
+  return {init, load, save:save_, renderTab, act, state, guests:() => G, base, iceServers, iceList, gathered, on:() => C().on && ST.info && ST.info.on};
 })();

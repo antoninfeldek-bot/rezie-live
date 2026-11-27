@@ -12,7 +12,7 @@
   if (EN) { document.documentElement.lang = 'en'; document.title = 'Live Director – crew'; document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.textContent.trim()); }); }
   const $ = s => document.querySelector(s);
   const id = (() => { try { let v = localStorage.getItem('rz-crew-id'); if (!v) { v = 'c' + Math.random().toString(36).slice(2, 12); localStorage.setItem('rz-crew-id', v); } return v; } catch (e) { return 'c' + Math.random().toString(36).slice(2, 12); } })();
-  let mic = null, pc = null, es = null, leaving = false, openMic = false, retryT = 0, name = '', myCam = '', ac = null;
+  let gen = 0, sess = '', mic = null, pc = null, leaving = false, openMic = false, retryT = 0, name = '', myCam = '', ac = null;
   try { $('#name').value = localStorage.getItem('rz-crew-name') || ''; myCam = localStorage.getItem('rz-crew-cam') || ''; } catch (e) {}
   const err = s => { const e = $('#err'); e.textContent = s; e.hidden = !s; };
   const post = (p, o) => fetch(p + '?k=' + encodeURIComponent(K), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.assign({id}, o))}).catch(() => {});
@@ -35,12 +35,20 @@
     setMic(openMic);
     $('#setup').hidden = true; $('#live').hidden = false; leaving = false; $('#tstate').textContent = t('Připojuji…');
     $('#dir').play().catch(() => {});
-    if (es) es.close();
-    es = new EventSource(`/c/events?k=${encodeURIComponent(K)}&id=${id}&name=${encodeURIComponent(name)}`);
-    es.onopen = () => offer();
-    es.onerror = () => { if (leaving) return; fetch(`/c/events?k=${encodeURIComponent(K)}`, {method:'HEAD'}).then(r => { if (r.status === 403) { leaving = true; es.close(); $('#live').hidden = true; $('#setup').hidden = false; err(t('Odkaz je neplatný nebo starý. Požádej o nový.')); } }).catch(() => {}); };
-    es.onmessage = async e => {
-      let d; try { d = JSON.parse(e.data); } catch (er) { return; }
+    const my = ++gen; let first = true, fails = 0; sess = Math.random().toString(36).slice(2, 10);
+    while (!leaving && my === gen) {
+      let msgs;
+      try {
+        const r = await fetch(`/c/poll?k=${encodeURIComponent(K)}&id=${id}&s=${sess}&name=${encodeURIComponent(name)}`, {cache:'no-store'});
+        if (r.status === 403) { leave(); err(t('Odkaz je neplatný nebo starý. Požádej o nový.')); return; }
+        if (!r.ok) throw new Error(r.status);
+        msgs = await r.json(); fails = 0;
+      } catch (er) { if (++fails > 2) $('#tstate').textContent = t('Spojení vypadlo – připojuji znovu…'); await new Promise(r => setTimeout(r, 2000)); continue; }
+      if (first) { first = false; offer().catch(() => {}); }
+      for (const d of msgs) await onMsg(d);
+    }
+  }
+  async function onMsg(d) {
       if (d.t === 'answer' && pc) { try { await pc.setRemoteDescription({type:'answer', sdp:d.sdp}); } catch (er) {} }
       else if (d.t === 'cams') {
         const sel = $('#cam'); sel.innerHTML = `<option value="">${t('— vyber svou kameru —')}</option>` + d.list.map(c => `<option value="${c.id}">${c.name.replace(/</g, '')}</option>`).join('');
@@ -51,7 +59,6 @@
       else if (d.t === 'tally') tally(d.air, d.pv);
       else if (d.t === 'talk') $('#talkIn').hidden = !d.on;
       else if (d.t === 'msg') { $('#msgT').textContent = d.text; $('#msg').hidden = false; beep(); }
-    };
   }
   async function offer() {
     if (pc) try { pc.close(); } catch (e) {}
@@ -65,8 +72,8 @@
     const r = await fetch('/c/offer?k=' + encodeURIComponent(K), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, name, sdp:pc.localDescription.sdp})});
     if (!r.ok) { $('#tstate').textContent = r.status === 503 ? t('Režie teď neběží') : await r.text(); retryT = setTimeout(offer, 4000); }
   }
-  function retry() { if (leaving) return; $('#tstate').textContent = t('Spojení vypadlo – připojuji znovu…'); clearTimeout(retryT); retryT = setTimeout(join, 2500); }
-  function leave() { leaving = true; clearTimeout(retryT); try { pc && pc.close(); } catch (e) {} if (es) es.close(); $('#live').hidden = true; $('#setup').hidden = false; }
+  function retry() { if (leaving) return; $('#tstate').textContent = t('Spojení vypadlo – připojuji znovu…'); clearTimeout(retryT); retryT = setTimeout(() => offer().catch(() => {}), 2500); }
+  function leave() { leaving = true; gen++; clearTimeout(retryT); try { pc && pc.close(); } catch (e) {} post('/c/leave', {}); $('#live').hidden = true; $('#setup').hidden = false; }
 
   $('#join').onclick = join;
   $('#cam').onchange = e => { myCam = e.target.value; try { localStorage.setItem('rz-crew-cam', myCam); } catch (er) {} post('/c/msg', {kind:'cam', cam:myCam}); tally(false, false); };

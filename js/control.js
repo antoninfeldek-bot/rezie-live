@@ -23,7 +23,7 @@ const CTL = (() => {
     add('rec', 'Nahrávat program start/stop', () => toggleRec(), 'Nahrávání a vysílání'); add('iso', 'Nahrávat vše (ISO) start/stop', () => toggleIso(), 'Nahrávání a vysílání');
     add('stream', 'Vysílání start/stop', () => toggleStream(), 'Nahrávání a vysílání');
     S.sources.filter(s => s.audio && s.audio.gainN).forEach(s => {
-      add('mute.' + s.id, `Ztlumit / zapnout – ${s.name}`, () => { s.audio.mute = !s.audio.mute; renderMixer(); if (S.page === 'audio') AUD.renderPage(); save(); }, 'Zvuk');
+      add('mute.' + s.id, `Ztlumit / zapnout – ${s.name}`, () => { s.audio.mute = !s.audio.mute; renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 'Zvuk');
       add('fader.' + s.id, `Fader (MIDI) – ${s.name}`, v => { s.audio.vol = v <= 0 ? 0 : Math.pow(10, (-60 + v * 70) / 20); }, 'Zvuk', true);
     });
     add('fader.master', 'Fader MASTER (MIDI)', v => { masterFader.gain.value = v <= 0 ? 0 : Math.pow(10, (-60 + v * 70) / 20); }, 'Zvuk', true);

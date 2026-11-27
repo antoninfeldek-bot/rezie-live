@@ -35,7 +35,7 @@ Tick **Allow on the local network** – three QR codes appear:
 - **Teleprompter (iPad)** – scan with the iPad in the teleprompter rig. It shows the text full screen and scrolls exactly with the app. Tap for a bar: mirror (like app / on / off), font size, full screen. The screen stays on.
 - **Guest link** – the guest opens it on a phone or computer, allows the camera and joins. They appear as a 👤 source. They see the program, hear everyone except themselves (mix-minus) and see a red “YOU ARE LIVE” when on air.
 
-**🌍 Guest from anywhere (over the internet):** at the guest link tick **Guests outside your Wi-Fi**. In a few seconds a new QR code and a `https://…trycloudflare.com` link appear – send it to the guest. Works from anywhere, no certificate warning, free and no account (the Cloudflare tunnel is bundled in the app). Only the guest page goes over the internet – the remote and prompter stay on your Wi-Fi. The address changes each time. If a guest on a strict network (school, company) can’t connect, fill in “Advanced: your own TURN server” with details from Cloudflare Realtime or Metered.
+**🌍 Guest from anywhere (over the internet):** at the guest link tick **Guests outside your Wi-Fi**. In a few seconds a new QR code and a `https://…trycloudflare.com` link appear – send it to the guest. Works from anywhere, no certificate warning, free and no account (the Cloudflare tunnel is bundled in the app). Only the guest page goes over the internet – the remote and prompter stay on your Wi-Fi. The address changes each time. If a guest on a strict network (school, company, mobile data) can’t connect, turn on TURN: at **dash.cloudflare.com → Realtime → TURN Server → Create** make a free key and fill the **Turn Token ID** and **API Token** in “Advanced: TURN server”.
 
 On first open the browser says the connection isn’t private (the app made its own certificate) – click **Details → Proceed anyway**. The Mac may ask to allow incoming connections – choose **Allow**.
 
@@ -45,6 +45,9 @@ On first open the browser says the connection isn’t private (the app made its 
 - **Replies:** the operator holds “Hold to talk to the director” (or turns the mic always on). You hear them in the director’s headphones.
 - **Instructions:** pick from “💬 Instruction…” (“Zoom in”, “Focus”, “On air in 5 s”…) or type your own. The operator sees it in big letters with a beep and vibration and replies 👍 / ⏳ / ❌.
 - **Guest before going live:** in the panel hold **“Talk to guest”** next to the guest. Only they hear you in their headphones (their program audio is lowered). Viewers hear nothing. Instructions (“You are live in 10 s”, “Look into the camera”…) appear on their screen.
+
+### ⧉ Pages in separate windows
+On the **Graphics**, **Audio** or **Color** page there is a **⧉** button next to the page switcher. It opens that page in a separate window – e.g. on a second monitor. The main window stays on Directing. Close the window to bring the page back. Shortcuts (CUT, AUTO…) work from the window too. The app remembers which windows were open.
 
 ### 🛡 Reliability
 - The project saves itself every few seconds, with a backup every minute.

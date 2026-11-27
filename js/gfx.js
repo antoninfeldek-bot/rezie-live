@@ -551,7 +551,7 @@ const GFX = (() => {
   }
 
   function editorTick(dt, now) {
-    if (S.page !== 'gfx' || !pageBuilt) return;
+    if (!POP.on('gfx') || !pageBuilt) return;
     const G = curG();
     if (G && ED.playing) { ED.t += dt; const end = ED.stopAt ?? G.dur; if (ED.t >= end) { if (ED.stopAt == null && ED.loop) ED.t = 0; else { ED.t = end; ED.playing = false; ED.stopAt = null; } } }
     if (G) ED.t = clamp(ED.t, 0, G.dur);
@@ -560,7 +560,7 @@ const GFX = (() => {
     const tt = $('#gxTime'); if (tt && G) tt.textContent = `${ED.t.toFixed(2)} / ${G.dur.toFixed(2)} s`;
   }
   function key(e) {
-    if (S.page !== 'gfx') return false;
+    if (!POP.keyOn('gfx')) return false;
     const G = curG(); if (!G) return false;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { undo(e.shiftKey); return true; }
     if (e.code === 'Space') { ED.playing = !ED.playing; ED.stopAt = null; return true; }

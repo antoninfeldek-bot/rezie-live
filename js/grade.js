@@ -61,7 +61,7 @@ const GR = (() => {
         <div class="cx-sl" id="cxSl"></div></section></div>`;
     view = $('#cxCv'); vx = view.getContext('2d');
     scC = [0, 1].map(i => $('#cxSc' + i)); small = document.createElement('canvas'); small.width = 256; small.height = 144; smx = small.getContext('2d', {willReadFrequently:true});
-    wheelCv = [...document.querySelectorAll('#page-color .wheel')]; crv = $('#cxCrv');
+    wheelCv = $$('#page-color .wheel'); crv = $('#cxCrv');
     const pg = $('#page-color');
     pg.addEventListener('click', onClick); pg.addEventListener('input', onInput); pg.addEventListener('change', onChange);
     $('#cxView').onchange = e => ST.view = e.target.value; $('#cxSplit').onchange = e => ST.split = e.target.value;
@@ -108,8 +108,8 @@ const GR = (() => {
   }
   function syncWheels() {
     const s = sel(); WHEELS.forEach((w, i) => { drawWheel(i); if (!s) return; const c = colorOf(s);
-      const m = document.querySelector(`[data-wm="${i}"]`); if (m && m !== document.activeElement) m.value = c[w[1]];
-      const t = document.querySelector(`[data-wv="${i}"]`); if (t) t.textContent = `R ${(c[w[0]][0] + c[w[1]]).toFixed(2)}  G ${(c[w[0]][1] + c[w[1]]).toFixed(2)}  B ${(c[w[0]][2] + c[w[1]]).toFixed(2)}`; });
+      const m = $(`[data-wm="${i}"]`); if (m && m !== document.activeElement) m.value = c[w[1]];
+      const t = $(`[data-wv="${i}"]`); if (t) t.textContent = `R ${(c[w[0]][0] + c[w[1]]).toFixed(2)}  G ${(c[w[0]][1] + c[w[1]]).toFixed(2)}  B ${(c[w[0]][2] + c[w[1]]).toFixed(2)}`; });
   }
   function wheelEvents() {
     wheelCv.forEach((cv, i) => {
@@ -162,7 +162,7 @@ const GR = (() => {
   async function onClick(e) {
     const t = e.target, s = sel();
     const row = t.closest('[data-cs]'); if (row && !t.dataset.ca) { ST.sel = row.dataset.cs; renderPage(); return; }
-    if (t.dataset.cc) { crvCh = t.dataset.cc; document.querySelectorAll('[data-cc]').forEach(b => b.classList.toggle('on2', b.dataset.cc === crvCh)); drawCurves(); return; }
+    if (t.dataset.cc) { crvCh = t.dataset.cc; $$('[data-cc]').forEach(b => b.classList.toggle('on2', b.dataset.cc === crvCh)); drawCurves(); return; }
     const a = t.dataset.ca; if (!a) return;
     if (a === 'gsave') { if (!s) return; const f = await dialog('Uložit grade', '<label>Název (např. „Studio teplé“)<input name="n"></label>'); if (f && f.n.trim()) { S.grades[f.n.trim()] = JSON.parse(JSON.stringify(colorOf(s))); renderPage(); save(); } return; }
     if (a === 'gapply' || a === 'gdel') { const k = t.closest('[data-gl]').dataset.gl;
@@ -193,7 +193,7 @@ const GR = (() => {
   const tmpScene = s => ({layers:[(() => { const a = s.aspect || 16 / 9; let w = W, h = W / a; if (h > H) { h = H; w = H * a; }
     return {sourceId:s.id, x:(W - w) / 2, y:(H - h) / 2, w, h, s:1, opacity:1, visible:true, crop:{l:0, t:0, r:0, b:0}, key:{on:false, color:'#00ff00', sim:0, smooth:0.1, spill:0.1}}; })()]});
   function tick(now) {
-    if (S.page !== 'color' || !built || !gl) return;
+    if (!POP.on('color') || !built || !gl) return;
     const s = sel(); ST.frame++;
     if (ST.view === 'program' || !s) vx.drawImage(pg, 0, 0);
     else {
@@ -204,7 +204,7 @@ const GR = (() => {
           vx.font = '600 30px system-ui'; vx.fillStyle = 'rgba(0,0,0,.6)'; vx.fillRect(20, 20, 150, 46); vx.fillRect(W - 170, 20, 150, 46); vx.fillStyle = '#fff'; vx.fillText(L('PŘED'), 50, 54); vx.fillText(L('PO'), W - 120, 54); } }
     }
     if (ST.frame % 3 === 0) { smx.drawImage(view, 0, 0, 256, 144); const d = smx.getImageData(0, 0, 256, 144).data; ST.scopes.forEach((k, i) => drawScope(scC[i], k, d)); }
-    if (ST.frame % 30 === 1) document.querySelectorAll('#cxSrc [data-th]').forEach(c => { const x = srcById(c.dataset.th); if (x) { const cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, 96, 54); drawContain(cx, x.el, 0, 0, 96, 54); } });
+    if (ST.frame % 30 === 1) $$('#cxSrc [data-th]').forEach(c => { const x = srcById(c.dataset.th); if (x) { const cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, 96, 54); drawContain(cx, x.el, 0, 0, 96, 54); } });
   }
   const acc = new Uint32Array(512 * 300 * 3);
   function drawScope(cv, kind, d) {

@@ -236,3 +236,10 @@ button.ptt{touch-action:none;user-select:none}button.ptt.on{background:#b91c1c;b
 .icsend{display:flex;gap:6px;border-top:1px solid var(--line,#2a2e37);padding-top:8px}.icsend input{flex:1;min-width:0}.icsend select{max-width:170px}
 .iclog{max-height:110px;overflow:auto;font-size:11px;margin:6px 0 0;white-space:pre-wrap;color:var(--dim,#8b919c)}
 kbd{border:1px solid #555;border-radius:3px;padding:0 4px;font-size:11px}
+/* --- stránka v samostatném okně --- */
+body.popwin{display:block;height:100vh;overflow:hidden;margin:0}
+body.popwin #pageWrap{height:100vh}
+.popph{display:none}
+#pageWrap > .popph{display:none}
+#pages button.popped::after{content:" ↗";opacity:.7}
+.popmsg{max-width:520px;margin:15vh auto;text-align:center;padding:20px;border:1px dashed var(--line,#2a2e37);border-radius:10px}

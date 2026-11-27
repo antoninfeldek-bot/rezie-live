@@ -126,7 +126,7 @@ registerProcessor('rz-limiter',Lim);`;
     lufsAn = actx.createAnalyser(); lufsAn.fftSize = 16384; masterFader.connect(ks); ks.connect(kh); kh.connect(lufsAn);
     if (!S.audM) S.audM = {vol:1, fx:[mkFx('limiter', {ceil:-1})], presets:{}, monVol:1};
     if (actx.audioWorklet) actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WL], {type:'application/javascript'})))
-      .then(() => { wlReady = true; rebuildAll(); if (S.page === 'audio') renderPage(); }).catch(e => console.warn('AudioWorklet', e));
+      .then(() => { wlReady = true; rebuildAll(); if (POP.on('audio')) renderPage(); }).catch(e => console.warn('AudioWorklet', e));
   }
   function attach(s, node) {
     const a = s.audio || (s.audio = loadCh(null));
@@ -147,7 +147,7 @@ registerProcessor('rz-limiter',Lim);`;
     monProg.gain.value = any ? 0 : 1; monPfl.gain.value = any ? 1 : 0;
     monOut.gain.setTargetAtTime((R.monitor || any) ? (M().monVol ?? 1) : 0, actx.currentTime, 0.02);
   }
-  function setMonitor(on) { R.monitor = on; updateSolo(); if (S.page === 'audio') renderPage(); }
+  function setMonitor(on) { R.monitor = on; updateSolo(); if (POP.on('audio')) renderPage(); }
 
   /* ---------- hlasitost (LUFS, přibližně podle EBU R128) ---------- */
   function lufsTick(now) {
@@ -258,7 +258,7 @@ registerProcessor('rz-limiter',Lim);`;
     cv.onwheel = e => { const [x, y] = pt(e); const j = fx.p.bands.findIndex(b => Math.hypot(fx2x(b.f, cv.width) - x, g2y(b.g, cv.height) - y) < 30); if (j < 0) return; e.preventDefault();
       const b = fx.p.bands[j]; b.q = clamp(+(b.q * (e.deltaY < 0 ? 1.1 : 0.9)).toFixed(2), 0.2, 8); fx._n.up(); drawEq(fx); syncEqInputs(fx); save(); };
   }
-  function syncEqInputs(fx) { document.querySelectorAll('#axEdit .eqc').forEach(c => { const b = fx.p.bands[+c.dataset.b]; c.querySelector('[data-fb="f"]').value = Math.round(b.f); c.querySelector('[data-fb="g"]').value = b.g; c.querySelector('[data-fb="q"]').value = b.q; }); }
+  function syncEqInputs(fx) { $$('#axEdit .eqc').forEach(c => { const b = fx.p.bands[+c.dataset.b]; c.querySelector('[data-fb="f"]').value = Math.round(b.f); c.querySelector('[data-fb="g"]').value = b.g; c.querySelector('[data-fb="q"]').value = b.q; }); }
 
   function onClick(e) {
     const t = e.target, st = t.closest('.strip');
@@ -306,7 +306,7 @@ registerProcessor('rz-limiter',Lim);`;
   }
   function tick() {
     if (!actx) return; lufsTick(performance.now());
-    if (S.page !== 'audio' || !R.axM) return;
+    if (!POP.on('audio') || !R.axM) return;
     for (const m of R.axM) {
       if (m.inEl && m.inAn) m.inEl.style.height = (100 - meterPct(m.inAn, m.si) * 100) + '%';
       if (m.outEl && m.outAn) m.outEl.style.height = (100 - meterPct(m.outAn, m.so) * 100) + '%';

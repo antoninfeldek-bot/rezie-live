@@ -4,7 +4,8 @@
    ============================================================ */
 const [W, H] = CFG.base();   // rozlišení plátna (⚙ Nastavení → Obraz)
 const PVH = 540, PVW = Math.round(540 * W / H / 2) * 2;   // náhled se stejným poměrem stran
-const $ = s => document.querySelector(s);
+const $ = s => document.querySelector(s) || POP.q(s);   // hledá i ve stránkách otevřených v samostatném okně
+const $$ = s => [...document.querySelectorAll(s), ...POP.all(s)];
 const uid = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -801,7 +802,7 @@ function tickClock() {
   if (R.rec) t += `  <b>REC ${fmtT(now - R.rec.start)}</b>`;
   if (R.iso.length) t += `  <b>ISO ${fmtT(now - R.isoStart)}</b>`;
   $('#clock').innerHTML = t;
-  S.sources.forEach(s => { if (s.type === 'video' && s.el instanceof HTMLVideoElement) { const el = document.querySelector(`[data-time="${s.id}"]`); if (el && isFinite(s.el.duration)) el.textContent = `${fmtT(s.el.currentTime * 1000)} / ${fmtT(s.el.duration * 1000)}`; } });
+  S.sources.forEach(s => { if (s.type === 'video' && s.el instanceof HTMLVideoElement) { const el = $(`[data-time="${s.id}"]`); if (el && isFinite(s.el.duration)) el.textContent = `${fmtT(s.el.currentTime * 1000)} / ${fmtT(s.el.duration * 1000)}`; } });
 }
 
 /* ================= Hlavní smyčka ================= */
@@ -942,7 +943,7 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, canvas:[W, H], sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
+  return {v:1, canvas:[W, H], pops:POP.save(), sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
@@ -968,7 +969,7 @@ async function restore(d) {
   }
   S.scenes = d.scenes || []; S.previewId = d.previewId; S.programId = d.programId; S.trans = Object.assign({dur:600, swap:true}, d.trans || {});
   if (d.prompter) Object.assign(R.prompter, d.prompter);
-  STR.load(d.streamCfg); REM.load(d.rem);
+  STR.load(d.streamCfg); REM.load(d.rem); if (window.rzNative) POP.load(d.pops);
   AUD.load(d.aud || (d.masterVol != null ? {fader:d.masterVol} : null)); GFX.load(d.gfx); TR.load(d.trs); RUN.load(d.rundown); CTL.load(d.ctl); GR.load(d.grades);
   const oc = Array.isArray(d.canvas) ? d.canvas : [1920, 1080];
   if (oc[0] !== W || oc[1] !== H) rescaleProject(oc[0], oc[1]);
@@ -1042,10 +1043,12 @@ function showTab(name) {
 const TAB_RENDER = {remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => GFX.renderCtl(), trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => CTL.renderTab(), rec:() => DISK.renderBox(), audio:() => renderMixer()};
 function renderAll() { renderScenes(); renderLayers(); renderProps(); renderSources(); renderMixer(); renderRecs(); updateHeader(); Object.values(TAB_RENDER).forEach(f => f()); TR.renderSel(); if (S.page && S.page !== 'rezie') showPage(S.page); }
 function showPage(name) {
+  if (POP.has(name)) { POP.open(name); return; }   // stránka je v samostatném okně → jen ho ukázat
   S.page = name;
   document.querySelectorAll('#pages button').forEach(b => b.classList.toggle('act', b.dataset.page === name));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('act', p.id === 'page-' + name));
   if (name === 'gfx') GFX.renderPage(); if (name === 'audio') AUD.renderPage(); if (name === 'color') GR.renderPage();
+  POP.renderNav();
 }
 
 function bindEvents() {
@@ -1152,7 +1155,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, HLT, REM, ICM]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, HLT, REM, ICM, POP]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();

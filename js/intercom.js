@@ -63,7 +63,7 @@ const ICM = (() => {
     CREW.set(d.id, c);
     c.talkG = actx.createGain(); c.talkG.gain.value = 0; c.dest = actx.createMediaStreamDestination(); c.talkG.connect(c.dest);
     if (ST.bus) ST.bus.connect(c.talkG);
-    const pc = new RTCPeerConnection({iceServers:REM.iceServers()}); c.pc = pc;
+    const pc = new RTCPeerConnection({iceServers:await REM.iceList()}); c.pc = pc;
     pc.ontrack = e => {
       if (e.track.kind !== 'audio') return;
       c.aEl = new Audio(); c.aEl.muted = true; c.aEl.srcObject = new MediaStream([e.track]); c.aEl.play().catch(() => {});

@@ -42,7 +42,7 @@ Zaškrtni **Povolit v místní síti** – objeví se tři QR kódy:
 - **Čtecí zařízení (iPad)** – naskenuj iPadem, který je ve čtecím zařízení. Ukáže text na celou obrazovku a posouvá ho přesně podle režie. Klepnutím se ukáže lišta: zrcadlení (podle režie / zapnuto / vypnuto), velikost písma, celá obrazovka. Obrazovka nezhasne.
 - **Odkaz pro hosty** – host otevře odkaz v mobilu nebo počítači, povolí kameru a připojí se. V režii se objeví jako zdroj 👤. Vidí program, slyší všechny kromě sebe (mix-minus) a když je ve vysílání, svítí mu červeně „JSI VE VYSÍLÁNÍ“.
 
-**🌍 Host odkudkoli (přes internet):** u odkazu pro hosty zaškrtni **Hosté i mimo Wi-Fi**. Za pár sekund se objeví nový QR kód a odkaz `https://…trycloudflare.com` – ten pošli hostovi (WhatsApp, e-mail…). Funguje odkudkoli, bez varování o certifikátu, zdarma a bez účtu (tunel Cloudflare je v aplikaci přibalený). Přes internet jde jen stránka hosta – ovladač a čtečka zůstávají jen ve tvé Wi-Fi. Adresa se mění při každém zapnutí. Kdyby se host z přísné sítě (škola, firma) nepřipojil, vyplň v „Pokročilé: vlastní TURN server“ údaje z Cloudflare Realtime nebo Metered.
+**🌍 Host odkudkoli (přes internet):** u odkazu pro hosty zaškrtni **Hosté i mimo Wi-Fi**. Za pár sekund se objeví nový QR kód a odkaz `https://…trycloudflare.com` – ten pošli hostovi (WhatsApp, e-mail…). Funguje odkudkoli, bez varování o certifikátu, zdarma a bez účtu (tunel Cloudflare je v aplikaci přibalený). Přes internet jde jen stránka hosta – ovladač a čtečka zůstávají jen ve tvé Wi-Fi. Adresa se mění při každém zapnutí. Kdyby se host z přísné sítě (škola, firma, mobilní data) nepřipojil, zapni TURN: na **dash.cloudflare.com → Realtime → TURN Server → Create** si zdarma vytvoř klíč a v „Pokročilé: TURN server“ vyplň **Turn Token ID** a **API Token**.
 
 Při prvním otevření prohlížeč napíše, že spojení není soukromé (certifikát si aplikace vyrobila sama) – klikni **Podrobnosti → Přesto pokračovat**. Mac se může zeptat, jestli povolit příchozí spojení – dej **Povolit**.
 
@@ -52,6 +52,9 @@ Při prvním otevření prohlížeč napíše, že spojení není soukromé (cer
 - **Odpovědi:** kameraman drží „Drž a mluv s režií“ (nebo zapne mikrofon trvale). Uslyšíš ho ve sluchátkách režie.
 - **Pokyny:** z nabídky „💬 Pokyn…“ („Přibliž“, „Zaostři“, „Za 5 s jdeš do vysílání“…) nebo napiš vlastní. Kameramanovi se ukáže velkým písmem s pípnutím a vibrací a odpoví 👍 / ⏳ / ❌.
 - **Host před vysíláním:** v panelu u hosta drž **„Mluvit s hostem“**. Uslyší tě jen on ve sluchátkách (program se mu na tu chvíli ztlumí). Divák nic neslyší. Pokyny („Za 10 s jsi ve vysílání“, „Dívej se do kamery“…) se mu ukážou na obrazovce.
+
+### ⧉ Stránky v samostatných oknech
+Na stránce **Grafika**, **Zvuk** nebo **Barvy** je vedle přepínače stránek tlačítko **⧉**. Otevře tu stránku v samostatném okně – třeba na druhý monitor. Hlavní okno zůstane na Režii. Zavřením okna se stránka vrátí zpátky. Klávesové zkratky (CUT, AUTO…) fungují i z okna. Aplikace si pamatuje, která okna byla otevřená.
 
 ### 🛡 Spolehlivost
 - Projekt se ukládá sám každých pár sekund, každou minutu se dělá záloha.

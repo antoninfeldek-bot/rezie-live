@@ -130,7 +130,7 @@ function lanIps() {
   for (const [name, list] of Object.entries(os.networkInterfaces())) for (const a of list || []) if (a.family === 'IPv4' && !a.internal) out.push({ip:a.address, name});
   return out.sort((a, b) => (/^(en|wl|eth)/.test(b.name) ? 1 : 0) - (/^(en|wl|eth)/.test(a.name) ? 1 : 0));
 }
-const lanInfo = () => lan ? {tunnel:{status:tun.status, url:tun.url, err:tun.err}, on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, prompters:prompters.size, crews:[...crews].map(([id, c]) => ({id, name:c.name})), guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
+const lanInfo = () => lan ? {turnErr:cfErr, tunnel:{status:tun.status, url:tun.url, err:tun.err}, on:true, port:lan.port, https:lan.https, ips:lanIps().map(x => x.ip), remotes:remotes.size, prompters:prompters.size, crews:[...crews].map(([id, c]) => ({id, name:c.name})), guests:[...guests].map(([id, g]) => ({id, name:g.name}))} : {on:false};
 function lanHandler(req, res, online) {
   res.setHeader('Cache-Control', 'no-cache');
   const u = new URL(req.url, 'http://x'), p = u.pathname, k = u.searchParams.get('k') || '';
@@ -140,22 +140,14 @@ function lanHandler(req, res, online) {
   const ok = (key) => { const g = key && k.length === key.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(key)); if (!g && k) { const b = badKeys.get(ip) || {n:0, t:Date.now()}; if (Date.now() - b.t > 600000) { b.n = 0; b.t = Date.now(); } b.n++; badKeys.set(ip, b); } return g; };
   // přes internet (tunel) jde jen připojení hosta – ovladač a čtečka zůstávají jen v místní síti
   if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/crew' || p.startsWith('/c/') || p === '/js/crew-client.js' || p === '/css/remote.css')) return send(res, 404, 'nenalezeno');
-  if (p === '/c/config') { if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz'); return send(res, 200, JSON.stringify({iceServers:lan.ice || []}), 'application/json'); }
-  if (p === '/g/config') { if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz'); return send(res, 200, JSON.stringify({iceServers:lan.ice || []}), 'application/json'); }
+  if (p === '/c/config' || p === '/g/config') { if (!ok(p === '/c/config' ? lan.ckey : lan.gkey)) return send(res, 403, 'Špatný odkaz'); return iceAll().then(l => send(res, 200, JSON.stringify({iceServers:l}), 'application/json')); }
   if (req.method === 'GET' && (p === '/' || p === '/remote')) return serveFile(res, '/remote.html');
   if (req.method === 'GET' && p === '/guest') return serveFile(res, '/guest.html');
   if (req.method === 'GET' && p === '/prompter') return serveFile(res, '/prompter.html');
   if (req.method === 'GET' && p === '/crew') return serveFile(res, '/crew.html');
   // interkom – kameramani
-  if (p === '/c/events') {
-    if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz');
-    if (req.method === 'HEAD') return send(res, 200, '');
-    const id = (u.searchParams.get('id') || '').replace(/[^\w-]/g, '').slice(0, 40); if (!id) return send(res, 400, 'chybí id');
-    const old = crews.get(id); if (old) try { old.res.end(); } catch (e) {}
-    const c = {res, name:(u.searchParams.get('name') || 'Kameraman').slice(0, 40)}; crews.set(id, c);
-    sse(req, res, null, () => { if (crews.get(id) === c) { crews.delete(id); toApp({t:'crewLeave', id}); } });
-    return;
-  }
+  if (p === '/c/poll') { if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz'); return mbPoll(crews, req, res, u, 'Kameraman'); }
+  if (p === '/c/leave' && req.method === 'POST') { if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz'); return readJson(req).then(d => { if (crews.delete(d.id)) toApp({t:'crewLeave', id:d.id}); send(res, 200, 'ok'); }).catch(() => send(res, 400, 'chyba')); }
   if ((p === '/c/offer' || p === '/c/msg') && req.method === 'POST') {
     if (!ok(lan.ckey)) return send(res, 403, 'Špatný odkaz');
     return readJson(req).then(d => {
@@ -191,15 +183,8 @@ function lanHandler(req, res, online) {
     return readJson(req).then(d => { if (typeof d.a === 'string' && d.a.length < 80) toApp({t:'act', a:d.a, v:d.v}); send(res, 200, appClients.size ? 'ok' : 'režie neběží'); }).catch(() => send(res, 400, 'chyba'));
   }
   // hosté
-  if (p === '/g/events') {
-    if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz');
-    if (req.method === 'HEAD') return send(res, 200, '');
-    const id = (u.searchParams.get('id') || '').replace(/[^\w-]/g, '').slice(0, 40); if (!id) return send(res, 400, 'chybí id');
-    const old = guests.get(id); if (old) try { old.res.end(); } catch (e) {}
-    const g = {res, name:(u.searchParams.get('name') || 'Host').slice(0, 40)}; guests.set(id, g);
-    sse(req, res, null, () => { if (guests.get(id) === g) { guests.delete(id); toApp({t:'leave', id}); } });
-    return;
-  }
+  if (p === '/g/poll') { if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz'); return mbPoll(guests, req, res, u, 'Host'); }
+  if (p === '/g/leave' && req.method === 'POST') { if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz'); return readJson(req).then(d => { if (guests.delete(d.id)) toApp({t:'leave', id:d.id}); send(res, 200, 'ok'); }).catch(() => send(res, 400, 'chyba')); }
   if (p === '/g/offer' && req.method === 'POST') {
     if (!ok(lan.gkey)) return send(res, 403, 'Špatný odkaz');
     return readJson(req).then(d => {
@@ -214,14 +199,54 @@ function serveFile(res, rel) {
   const file = path.join(__dirname, rel);
   fs.readFile(file, (e, buf) => e ? send(res, 404, 'nenalezeno') : send(res, 200, buf, MIME[path.extname(file)] || 'application/octet-stream'));
 }
+/* Schránka zpráv pro hosty a kameramany: long-polling (dotaz čeká až 25 s na zprávu).
+   Projde i tunelem Cloudflare – ten SSE (živý proud zpráv) nepodporuje. */
+function flushMb(m) { const r = m.wait; if (!r) return; m.wait = null; clearTimeout(m.wt); m.last = Date.now(); send(r, 200, JSON.stringify(m.q.splice(0)), 'application/json'); }
+function mbPush(m, obj) { m.q.push(obj); if (m.q.length > 300) m.q.shift(); flushMb(m); }
+function mbPoll(map, req, res, u, defName) {
+  if (req.method === 'HEAD') return send(res, 200, '');
+  const id = (u.searchParams.get('id') || '').replace(/[^\w-]/g, '').slice(0, 40); if (!id) return send(res, 400, 'chybí id');
+  const s = (u.searchParams.get('s') || '').slice(0, 20), name = (u.searchParams.get('name') || defName).slice(0, 40);
+  let m = map.get(id), fresh = false;
+  if (!m || m.s !== s) { if (m) flushMb(m); m = {name, s, q:[], wait:null, wt:null, last:Date.now()}; map.set(id, m); fresh = true; }   // nové připojení / znovu načtená stránka
+  m.name = name; m.last = Date.now();
+  if (m.wait) flushMb(m);
+  if (fresh || m.q.length) return send(res, 200, JSON.stringify(m.q.splice(0)), 'application/json');
+  m.wait = res; m.wt = setTimeout(() => { if (m.wait === res) flushMb(m); }, 25000);
+  req.on('close', () => { if (m.wait === res) { clearTimeout(m.wt); m.wait = null; } });
+}
+setInterval(() => {   // kdo se 40 s neozval, odešel
+  for (const [map, type] of [[guests, 'leave'], [crews, 'crewLeave']]) for (const [id, m] of map) if (!m.wait && Date.now() - m.last > 40000) { map.delete(id); toApp({t:type, id}); }
+}, 5000).unref();
+
+/* TURN od Cloudflare (zdarma s velkým limitem): režie zadá Key ID + API token, server si vyžádá dočasné přihlašovací údaje */
+let cfIce = null, cfErr = '';
+async function iceAll() {
+  let l = Array.isArray(lan && lan.ice) ? lan.ice.slice() : [];
+  const t = lan && lan.cft;
+  if (t && t.id && t.token) {
+    if (!cfIce || Date.now() > cfIce.exp || cfIce.key !== t.id + t.token) {
+      try {
+        const r = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${encodeURIComponent(t.id)}/credentials/generate-ice-servers`, {method:'POST', headers:{Authorization:'Bearer ' + t.token, 'Content-Type':'application/json'}, body:JSON.stringify({ttl:86400}), signal:AbortSignal.timeout(8000)});
+        if (!r.ok) throw new Error('Cloudflare TURN: ' + r.status + (r.status === 401 || r.status === 403 ? ' (špatné Key ID nebo token)' : ''));
+        const j = await r.json();
+        const servers = (j.iceServers || []).map(s => ({...s, urls:[].concat(s.urls).filter(x => !/:53(\?|$)/.test(x))})).filter(s => s.urls.length);
+        cfIce = {ice:servers, exp:Date.now() + 20 * 3600e3, key:t.id + t.token}; cfErr = '';
+      } catch (e) { cfErr = e.message; cfIce = null; }
+    }
+    if (cfIce) l = l.concat(cfIce.ice);
+  }
+  return l;
+}
+
 function lanStart(cfg) {
-  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; return Promise.resolve(lanInfo()); }
+  if (lan) { lan.pin = cfg.pin || lan.pin; lan.gkey = cfg.gkey || lan.gkey; lan.pkey = cfg.pkey || lan.pkey; lan.ckey = cfg.ckey || lan.ckey; if (Array.isArray(cfg.ice)) lan.ice = cfg.ice; if (cfg.cft) lan.cft = cfg.cft; return Promise.resolve(lanInfo()); }
   const c = certFiles();
   const srv = c ? https.createServer(c, lanHandler) : http.createServer(lanHandler);
   return new Promise((ok, fail) => {
     const tryPort = port => {
       srv.once('error', e => { if (e.code === 'EADDRINUSE' && port < PORT + 120) tryPort(port + 1); else fail(e); });
-      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey, ckey:cfg.ckey, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
+      srv.listen(port, '0.0.0.0', () => { lan = {srv, port, https:!!c, pin:cfg.pin, gkey:cfg.gkey, pkey:cfg.pkey, ckey:cfg.ckey, cft:cfg.cft || null, ice:Array.isArray(cfg.ice) ? cfg.ice : []}; console.log(`📱 Dálkové ovládání a hosté: ${c ? 'https' : 'http'}://${(lanIps()[0] || {}).ip || 'IP'}:${port}`); ok(lanInfo()); });
     };
     tryPort(+process.env.LAN_PORT || PORT + 363);
   });
@@ -278,9 +303,9 @@ function lanStop() {
   tunnelStop();
   if (!lan) return; const s = lan.srv; lan = null;
   remotes.forEach(r => { try { r.end(); } catch (e) {} }); remotes.clear();
-  guests.forEach(g => { try { g.res.end(); } catch (e) {} }); guests.clear();
+  guests.forEach(g => flushMb(g)); guests.clear();
   prompters.forEach(r => { try { r.end(); } catch (e) {} }); prompters.clear();
-  crews.forEach(c => { try { c.res.end(); } catch (e) {} }); crews.clear();
+  crews.forEach(c => flushMb(c)); crews.clear();
   try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch (e) {}
 }
 
@@ -315,6 +340,7 @@ http.createServer(async (req, res) => {
     req.on('end', () => { lanState = d || '{}'; const m = 'data: ' + lanState + '\n\n'; remotes.forEach(r => r.write(m)); send(res, 200, String(remotes.size)); });
     return;
   }
+  if (url === '/lan/ice' && req.method === 'GET') { const l = await iceAll(); return send(res, 200, JSON.stringify({iceServers:l, turn:l.some(s => [].concat(s.urls).some(x => /^turns?:/.test(x))), err:cfErr}), 'application/json'); }
   if (url === '/lan/tunnel' && req.method === 'POST') {
     try { const d = await readJson(req); if (d.on) await tunnelStart(); else tunnelStop(); return send(res, 200, JSON.stringify(lanInfo()), 'application/json'); }
     catch (e) { return send(res, 400, e.message); }
@@ -326,12 +352,12 @@ http.createServer(async (req, res) => {
   }
   const cm = /^\/lan\/crew\/([\w-]+)$/.exec(url);
   if (cm && req.method === 'POST') {
-    try { const d = await readJson(req), c = crews.get(cm[1]); if (!c) return send(res, 404, 'není připojen'); c.res.write('data: ' + JSON.stringify(d) + '\n\n'); return send(res, 200, 'ok'); }
+    try { const d = await readJson(req), c = crews.get(cm[1]); if (!c) return send(res, 404, 'není připojen'); mbPush(c, d); return send(res, 200, 'ok'); }
     catch (e) { return send(res, 400, 'chyba'); }
   }
   const gm = /^\/lan\/guest\/([\w-]+)$/.exec(url);
   if (gm && req.method === 'POST') {
-    try { const d = await readJson(req), g = guests.get(gm[1]); if (!g) return send(res, 404, 'host není připojen'); g.res.write('data: ' + JSON.stringify(d) + '\n\n'); return send(res, 200, 'ok'); }
+    try { const d = await readJson(req), g = guests.get(gm[1]); if (!g) return send(res, 404, 'host není připojen'); mbPush(g, d); return send(res, 200, 'ok'); }
     catch (e) { return send(res, 400, 'chyba'); }
   }
   const act = /^\/action\/([\w.-]+)$/.exec(url);
