@@ -109,7 +109,7 @@ function makeOut(N) {
     // náhled vedlejšího programu do monitoru NÁHLED v režii (zmenšeně, každý 2. snímek)
     if (shown && w === 'bus' && frameNo % 2 === 0) {
       const pvSc = sceneById(C().pv); sv.width = PVW; sv.height = PVH;
-      if (pvSc) { renderScene(pvSc, true); svx.drawImage(glc, 0, H - PVH, PVW, PVH, 0, 0, PVW, PVH); } else { svx.fillStyle = '#000'; svx.fillRect(0, 0, PVW, PVH); }
+      if (pvSc) { renderScene(pvSc, true); svx.drawImage(glc, 0, H - PVH, PVW, PVH, 0, 0, PVW, PVH); gl.viewport(0, 0, W, H); gl.clear(gl.COLOR_BUFFER_BIT); } else { svx.fillStyle = '#000'; svx.fillRect(0, 0, PVW, PVH); }
     }
     if (open && ++n % 60 === 0) fillSel();   // nové scény/zdroje v nabídce
   }

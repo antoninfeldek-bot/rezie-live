@@ -40,8 +40,10 @@ const dbTxt = v => v <= 0.001 ? '−∞' : (20 * Math.log10(v)).toFixed(1);
 
 /* ================= WebGL renderer (vrstvy + chroma key) ================= */
 const glc = document.createElement('canvas'); glc.width = W; glc.height = H;
-// preserveDrawingBuffer: false – obraz se kopíruje hned po vykreslení, takže GPU nemusí každý snímek dělat kopii navíc
-const gl = glc.getContext('webgl', {alpha:false, antialias:false, preserveDrawingBuffer:false, premultipliedAlpha:false, powerPreference:'high-performance', desynchronized:true});
+// Jedno plátno kreslí za snímek víc věcí (program, zmenšený náhled, výstupy, přechody) a hned se z něj kopíruje.
+// preserveDrawingBuffer: true a BEZ desynchronized: kopie vždy vezme právě vykreslený obraz. S desynchronized
+// (jeden buffer) na Windows (ANGLE / Direct3D) prosakoval zmenšený náhled do levého dolního rohu programu.
+const gl = glc.getContext('webgl', {alpha:false, antialias:false, preserveDrawingBuffer:true, premultipliedAlpha:false, powerPreference:'high-performance'});
 const VS = `attribute vec2 a;uniform vec4 r;uniform vec4 cr;uniform float pd;varying vec2 v;varying vec2 lp;
 void main(){vec2 q=a*(r.zw+2.0*pd)-pd;vec2 p=r.xy+q;vec2 c=p/vec2(${W}.0,${H}.0)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0.0,1.0);
 vec2 u=q/r.zw;v=vec2(mix(cr.x,1.0-cr.z,u.x),mix(cr.y,1.0-cr.w,u.y));lp=q;}`;
@@ -180,7 +182,7 @@ function layerRect(l, s) {
 
 // small = true → vykreslit zmenšeně (náhled): 4× méně bodů pro klíčování a barvy; obraz je pak v levém dolním rohu plátna
 function renderScene(sc, small) {
-  if (small) { gl.viewport(0, 0, PVW, PVH); gl.enable(gl.SCISSOR_TEST); gl.scissor(0, 0, PVW, PVH); } else gl.viewport(0, 0, W, H);
+  if (small) { gl.viewport(0, 0, PVW, PVH); gl.enable(gl.SCISSOR_TEST); gl.scissor(0, 0, PVW, PVH); } else { gl.disable(gl.SCISSOR_TEST); gl.viewport(0, 0, W, H); }
   gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); if (small) gl.disable(gl.SCISSOR_TEST);
   if (!sc) return;
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -945,7 +947,7 @@ function frame(now) {
     let pvNew = false;
     if (frameNo % every === 0) {
       if (prv === prg && !S.active) pvbx.drawImage(pg, 0, 0, PVW, PVH);
-      else { renderScene(prv, true); pvbx.drawImage(glc, 0, H - PVH, PVW, PVH, 0, 0, PVW, PVH); }
+      else { renderScene(prv, true); pvbx.drawImage(glc, 0, H - PVH, PVW, PVH, 0, 0, PVW, PVH); gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); }
       pvNew = true;
     }
     GFX.tick(dt, now); GFX.drawOverlay(pgx, now);
