@@ -167,9 +167,15 @@ const SIDE = (() => {
   }
   // překryvy na monitorech NÁHLED / PROGRAM, když je vybraný vedlejší program (hlavní plátna se dál kreslí pro vysílání)
   function overlays() {
-    if (!pvO) { pvO = document.createElement('canvas'); pvO.className = 'busov'; pv.parentElement.appendChild(pvO); }
-    if (!pgO) { pgO = document.createElement('canvas'); pgO.className = 'busov'; pg.parentElement.appendChild(pgO); }
-    const on = !!cur(); pvO.hidden = pgO.hidden = !on;
+    // překryvy existují jen, když je vybraný vedlejší program; u hlavního programu nic nezakrývá monitory
+    const on = !!cur();
+    if (on) {
+      if (!pvO) { pvO = document.createElement('canvas'); pvO.className = 'busov'; pv.parentElement.appendChild(pvO); }
+      if (!pgO) { pgO = document.createElement('canvas'); pgO.className = 'busov'; pg.parentElement.appendChild(pgO); }
+    } else {
+      if (pvO) { pvO.remove(); pvO = null; }
+      if (pgO) { pgO.remove(); pgO = null; }
+    }
   }
   function draw() {
     bar(); overlays();
@@ -186,7 +192,7 @@ const SIDE = (() => {
   }
   // každý snímek: překryvy na monitorech
   function tick() {
-    const o = cur(); if (!o || !pgO) return;
+    const o = cur(); if (!o || !pgO || !pvO) return;
     if (pgO.width !== W) { pgO.width = W; pgO.height = H; }
     pgO.getContext('2d').drawImage(o.bc, 0, 0);
     if (o.isBus() && o.sv.width) { if (pvO.width !== PVW) { pvO.width = PVW; pvO.height = PVH; } pvO.getContext('2d').drawImage(o.sv, 0, 0); }
