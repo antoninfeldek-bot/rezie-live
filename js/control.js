@@ -13,9 +13,9 @@ const CTL = (() => {
     add('slides.prev', '🗂 Prezentace – předchozí snímek', () => EXT.slidesPrev(), 'Prezentace');
     for (let n = 1; n <= 9; n++) add('ptz.' + n, `🎥 PTZ předvolba ${n} (vybraná kamera)`, () => PTZ.preset(n), 'PTZ');
     add('replay.go', '⏪ Replay do vysílání', () => RPL.go(), 'Replay');
-    add('replay.mark', '★ Replay – značka', () => RPL.mark(), 'Replay');
+    add('replay.mark', '★ Replay – značka', () => RPL.mark(), 'Replay'); RPL.ctl(add);
     add('out2', '🖥 Výstup 2 – otevřít / zavřít', () => OUT2.toggle(), 'Okna'); add('out3', '🖥 Výstup 3 – otevřít / zavřít', () => OUT3.toggle(), 'Okna'); add('out4', '🖥 Výstup 4 – otevřít / zavřít', () => OUT4.toggle(), 'Okna');
-    LIVE.ctl(add); V360.ctl(add);
+    LIVE.ctl(add); V360.ctl(add); if (typeof MAC !== 'undefined') MAC.ctl(add); if (typeof SS !== 'undefined') SS.ctl(add);
     add('tbar', 'T-bar (MIDI fader)', v => tbar(v), 'Přepínání', true);
     for (let i = 0; i < 9; i++) {
       const sc = S.scenes[i], n = sc ? sc.name : '(prázdné)';
@@ -24,6 +24,7 @@ const CTL = (() => {
     }
     (S.trs ? S.trs.list : []).slice(0, 8).forEach((t, i) => add('trans.' + i, `Vybrat přechod ${i + 1} – ${t.name}`, () => S.trs.list[i] && TR.select(S.trs.list[i].id), 'Přechody'));
     (S.gfx ? S.gfx.list : []).slice(0, 12).forEach((G, i) => add('gfx.' + i, `Grafika ${i + 1} IN/OUT – ${G.name}`, () => GFX.toggle(GFX.byIndex(i)), 'Grafika'));
+    (S.gfx ? S.gfx.list : []).slice(0, 12).forEach((G, i) => { add('gfx.in.' + i, `Grafika ${i + 1} IN – ${G.name}`, () => S.gfx.list[i] && GFX.setIn(S.gfx.list[i], true), 'Grafika'); add('gfx.out.' + i, `Grafika ${i + 1} OUT – ${G.name}`, () => S.gfx.list[i] && GFX.setIn(S.gfx.list[i], false), 'Grafika'); });
     add('gfx.allout', 'Všechny grafiky OUT', () => S.gfx.list.forEach(G => GFX.setIn(G, false)), 'Grafika');
     add('rd.start', 'Scénář: start / stop', () => RUN.startStop(), 'Scénář'); add('rd.next', 'Scénář: další blok', () => RUN.next(), 'Scénář'); add('rd.prev', 'Scénář: předchozí blok', () => RUN.prev(), 'Scénář');
     add('prompter', 'Čtečka: start / pauza', () => togglePrompter(), 'Čtečka');
@@ -33,6 +34,8 @@ const CTL = (() => {
     add('stream', 'Vysílání start/stop', () => toggleStream(), 'Nahrávání a vysílání');
     S.sources.filter(s => s.audio && s.audio.gainN).forEach(s => {
       add('mute.' + s.id, `Ztlumit / zapnout – ${s.name}`, () => { s.audio.mute = !s.audio.mute; renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 'Zvuk');
+      add('mute.on.' + s.id, `Ztlumit – ${s.name}`, () => { s.audio.mute = true; renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 'Zvuk');
+      add('mute.off.' + s.id, `Zapnout zvuk – ${s.name}`, () => { s.audio.mute = false; renderMixer(); if (POP.on('audio')) AUD.renderPage(); save(); }, 'Zvuk');
       add('fader.' + s.id, `Fader (MIDI) – ${s.name}`, v => { s.audio.vol = v <= 0 ? 0 : Math.pow(10, (-60 + v * 70) / 20); }, 'Zvuk', true);
     });
     add('fader.master', 'Fader MASTER (MIDI)', v => { masterFader.gain.value = v <= 0 ? 0 : Math.pow(10, (-60 + v * 70) / 20); }, 'Zvuk', true);
@@ -132,6 +135,7 @@ const CTL = (() => {
     $('#ctlMidi').onclick = connectMidi;
     $('#ctlHttp').onchange = e => { S.ctl.http = e.target.checked; save(); httpConnect(); };
     $('#ctlReset').onclick = () => { if (confirm('Vrátit výchozí klávesy? (MIDI přiřazení zůstanou)')) { S.ctl.map = [...defaults(), ...S.ctl.map.filter(m => m.m)]; renderTab(); save(); } };
+    if (typeof MAC !== 'undefined') MAC.render(); if (typeof AUT !== 'undefined') AUT.render();
   }
   function init() {
     const box = $('#tab-control');

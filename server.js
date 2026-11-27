@@ -18,7 +18,7 @@ const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 let ff = null;
 let last = '';
 const clients = new Set();   // Server-Sent Events – vzdálené ovládání (Stream Deck, Companion)
-const MIME = {'.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml', '.ico':'image/x-icon'};
+const MIME = {'.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.png':'image/png', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.woff':'font/woff', '.woff2':'font/woff2', '.ttf':'font/ttf'};
 
 let ffOk = null, encoders = null, stats = {};
 function hasFfmpeg() {
@@ -108,7 +108,7 @@ const crews = new Map();           // kameramani (interkom): id → {res, name}
 let prState = '{}';
 let lan = null, lanState = '{}';
 const badKeys = new Map();         // ochrana proti hádání klíče
-const LAN_FILES = ['/crew.html', '/js/crew-client.js', '/remote.html', '/guest.html', '/prompter.html', '/js/prompter-client.js', '/js/remote-client.js', '/js/guest-client.js', '/js/qr.js', '/css/remote.css'];
+const LAN_FILES = ['/crew.html', '/js/crew-client.js', '/remote.html', '/guest.html', '/prompter.html', '/js/prompter-client.js', '/js/remote-client.js', '/js/guest-client.js', '/js/qr.js', '/css/remote.css', '/css/tokens.css', '/fonts/Inter.woff', '/fonts/JetBrainsMono.woff'];
 const toApp = o => { const m = 'data: ' + JSON.stringify(o) + '\n\n'; appClients.forEach(c => c.write(m)); };
 const sse = (req, res, set, extra) => {
   res.writeHead(200, {'Content-Type':'text/event-stream', 'Cache-Control':'no-cache', Connection:'keep-alive', 'X-Accel-Buffering':'no'});
@@ -168,7 +168,7 @@ function lanHandler(req, res, online) {
   if (bad && bad.n >= 30 && Date.now() - bad.t < 600000) return send(res, 429, 'Příliš mnoho pokusů – zkus to za 10 minut');
   const ok = (key) => { const kb = Buffer.from(k), keyb = Buffer.from(key || ''); const g = !!key && kb.length === keyb.length && crypto.timingSafeEqual(kb, keyb); if (!g && k) { const b = badKeys.get(ip) || {n:0, t:Date.now()}; if (Date.now() - b.t > 600000) { b.n = 0; b.t = Date.now(); } b.n++; badKeys.set(ip, b); } return g; };
   // přes internet (tunel) jde jen připojení hosta – ovladač a čtečka zůstávají jen v místní síti
-  if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/crew' || p.startsWith('/c/') || p === '/js/crew-client.js' || p === '/css/remote.css')) return send(res, 404, 'nenalezeno');
+  if (online && !(p === '/guest' || p.startsWith('/g/') || p === '/js/guest-client.js' || p === '/crew' || p.startsWith('/c/') || p === '/js/crew-client.js' || p === '/css/remote.css' || p === '/css/tokens.css' || p === '/fonts/Inter.woff' || p === '/fonts/JetBrainsMono.woff')) return send(res, 404, 'nenalezeno');
   if (p === '/c/config' || p === '/g/config') { if (!ok(p === '/c/config' ? lan.ckey : lan.gkey)) return send(res, 403, 'Špatný odkaz'); return iceAll().then(l => send(res, 200, JSON.stringify({iceServers:l}), 'application/json')); }
   if (req.method === 'GET' && (p === '/' || p === '/remote')) return serveFile(res, '/remote.html');
   if (req.method === 'GET' && p === '/guest') return serveFile(res, '/guest.html');
@@ -227,7 +227,7 @@ function lanHandler(req, res, online) {
     return readJson(req).then(d => {
       if (!d.id || !guests.has(d.id) || typeof d.sdp !== 'string' || d.sdp.length > 100000) return send(res, 400, 'chyba');
       if (!appClients.size) return send(res, 503, 'Režie teď neběží');
-      toApp({t:'offer', id:d.id, name:String(d.name || 'Host').slice(0, 40), sdp:d.sdp}); send(res, 200, 'ok');
+      toApp({t:'offer', id:d.id, name:String(d.name || 'Host').slice(0, 40), sdp:d.sdp, cam:!!d.cam}); send(res, 200, 'ok');
     }).catch(() => send(res, 400, 'chyba'));
   }
   send(res, 404, 'nenalezeno');

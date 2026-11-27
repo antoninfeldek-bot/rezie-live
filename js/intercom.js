@@ -39,7 +39,7 @@ const ICM = (() => {
     for (const id of crewT) { const c = CREW.get(id); if (!c) continue; if (on && ST.bus) try { ST.bus.connect(c.talkG); } catch (e) {} c.talkG.gain.setTargetAtTime(on ? 1 : 0, t, 0.02); post('/lan/crew/' + id, {t:'talk', on}); }
     if (target.startsWith('g:')) {
       const id = target.slice(2), g = REM.guests().get(id);
-      if (g) { const n = guestTalkNode(g); if (on && ST.bus) try { ST.bus.connect(n); } catch (e) {} n.gain.setTargetAtTime(on ? 1 : 0, t, 0.02); g.mm.gain.setTargetAtTime(on ? 0.25 : 1, t, 0.05); post('/lan/guest/' + id, {t:'talk', on}); }
+      if (g && g.mm) { const n = guestTalkNode(g); if (on && ST.bus) try { ST.bus.connect(n); } catch (e) {} n.gain.setTargetAtTime(on ? 1 : 0, t, 0.02); g.mm.gain.setTargetAtTime(on ? 0.25 : 1, t, 0.05); post('/lan/guest/' + id, {t:'talk', on}); }
     }
     if (on) ST.talking.add(target); else ST.talking.delete(target);
     document.querySelectorAll(`#icom [data-ptt="${CSS.escape(target)}"]`).forEach(b => b.classList.toggle('on', on));

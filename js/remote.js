@@ -115,7 +115,8 @@ const REM = (() => {
       master:{pos:Math.round(gain2pos(masterFader.gain.value) * 1000) / 1000, lvl:lvl(masterAn)},
       rd:rt ? {name:rt.it.title, left:Math.round(rt.left), over:rt.over, next:rt.nextIt ? rt.nextIt.title : '', show:Math.round(rt.show)} : null,
       pr:{on:!!R.prompter.playing, speed:R.prompter.speed},
-      guests:[...G.values()].map(g => ({name:g.s.name, air:g.air}))
+      guests:[...G.values()].map(g => ({name:g.s.name, air:g.air})),
+      macros:typeof MAC !== 'undefined' ? MAC.list() : []
     };
     if (withThumbs) st.thumbs = {pv:thumb(pv), pg:thumb(pg)};
     return st;
@@ -157,14 +158,17 @@ const REM = (() => {
     let s = S.sources.find(x => x.type === 'guest' && x.guestId === d.id);
     const fresh = !s;
     if (!s) { s = newSource('guest', d.name); s.guestId = d.id; S.sources.push(s); }
-    s.name = d.name;
-    const g = {s, conn:new Set(), air:false, pv:false};
+    s.name = d.cam ? (/^📱/.test(d.name) ? d.name : '📱 ' + d.name) : d.name; s.camMode = !!d.cam;
+    const g = {s, conn:new Set(), air:false, pv:false, cam:!!d.cam};
     G.set(d.id, g);
-    // zpětný obraz (program) a zvuk bez hosta (mix-minus)
-    g.mm = actx.createGain(); g.mmDest = actx.createMediaStreamDestination(); g.mm.connect(g.mmDest);
-    mmUpdate(g);
-    const retV = pg.captureStream(15).getVideoTracks()[0], retA = g.mmDest.stream.getAudioTracks()[0];
-    g.retV = retV;
+    // zpětný obraz (program) a zvuk bez hosta (mix-minus) – mobil jako kamera nic zpátky nepotřebuje (šetří grafiku i síť)
+    let retV = null, retA = null;
+    if (!d.cam) {
+      g.mm = actx.createGain(); g.mmDest = actx.createMediaStreamDestination(); g.mm.connect(g.mmDest);
+      mmUpdate(g);
+      retV = pg.captureStream(15).getVideoTracks()[0]; retA = g.mmDest.stream.getAudioTracks()[0];
+      g.retV = retV;
+    }
     const pc = new RTCPeerConnection({iceServers:await iceList()}); g.pc = pc;
     const vids = [], auds = [];
     pc.ontrack = e => {
@@ -187,6 +191,12 @@ const REM = (() => {
     await pc.setRemoteDescription({type:'offer', sdp:d.sdp});
     for (const tr of pc.getTransceivers()) {
       const kind = tr.receiver.track && tr.receiver.track.kind;
+      if (d.cam) {
+        // nízké zpoždění: co nejmenší vyrovnávací paměť přijímače (v místní síti stačí ~50 ms)
+        try { tr.receiver.jitterBufferTarget = 50; } catch (e) {} try { tr.receiver.playoutDelayHint = 0.05; } catch (e) {}
+        try { tr.direction = 'recvonly'; } catch (e) {}
+        continue;
+      }
       if (kind === 'video' && !vids.length) { tr.direction = 'sendrecv'; await tr.sender.replaceTrack(retV); vids.push(tr); }
       else if (kind === 'audio' && !auds.length) { tr.direction = 'sendrecv'; await tr.sender.replaceTrack(retA); auds.push(tr); }
     }
@@ -215,8 +225,8 @@ const REM = (() => {
     const g = G.get(id); if (!g) return; G.delete(id);
     try { g.pc.close(); } catch (e) {}
     try { g.retV && g.retV.stop(); } catch (e) {}
-    for (const s of S.sources) if (g.conn.has(s.id) && s.audio && s.audio.gainN) try { s.audio.gainN.disconnect(g.mm); } catch (e) {}
-    try { g.mm.disconnect(); } catch (e) {}
+    if (g.mm) { for (const s of S.sources) if (g.conn.has(s.id) && s.audio && s.audio.gainN) try { s.audio.gainN.disconnect(g.mm); } catch (e) {}
+      try { g.mm.disconnect(); } catch (e) {} }
     if (g.aEl) { g.aEl.srcObject = null; }
     const s = g.s; s.missing = true; s.hasVideo = false;
     if (s.stream) { s.stream.getTracks().forEach(t => t.stop()); s.stream = null; }
@@ -232,7 +242,7 @@ const REM = (() => {
     if (!G.size) return;
     const onAir = onAirSet(), inPv = sceneSources(prevScene(), new Set());
     G.forEach((g, id) => {
-      mmUpdate(g);
+      if (g.mm) mmUpdate(g);
       const air = onAir.has(g.s.id), p = inPv.has(g.s.id);
       if (air === g.air && p === g.pv) return; g.air = air; g.pv = p;
       fetch(base() + '/lan/guest/' + id, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({t:'tally', air, pv:p})}).catch(() => {});
@@ -264,6 +274,11 @@ const REM = (() => {
           <code class="url" title="${L('Klikni pro zkopírování')}">${esc(crewUrl())}</code>
           <p class="dim">${L('Kameraman otevře odkaz v mobilu se sluchátky a vybere svou kameru. Slyší režii, může odpovědět a mobil mu svítí jako tally (červená = ve vysílání).')} ${L('Mluvíš z panelu 🎙 nahoře nebo držením klávesy')} <kbd>§</kbd> / <kbd>\`</kbd>.</p>
           <div class="btns"><button data-rm="icom">🎙 ${L('Otevřít interkom')}</button><button data-rm="newck">🔑 ${L('Nový klíč')}</button></div></div>
+        <div class="remcard"><h4>📱 ${L('Mobil jako kamera')}</h4>
+          ${(() => { const tn = ST.info.tunnel || {}, u = C().online && tn.status === 'on' && onlineUrl() ? onlineUrl() + '&cam=1' : guestUrl() + '&cam=1';
+            return `<div class="qr">${qr(u)}</div><code class="url" title="${L('Klikni pro zkopírování')}">${esc(u)}</code>`; })()}
+          <p class="dim">${L('Naskenuj QR mobilem ve stejné Wi-Fi. Mobil posílá obraz v plné kvalitě (až 4K / 60 fps, H.264) s nízkým zpožděním, zpátky nic nepřijímá – šetří baterii i grafiku režie. Zadní kamera, zoom a světlo se ovládají v mobilu. Každý mobil = nový zdroj 📱 v Zdrojích.')}</p>
+          <p class="dim">${L('Tip: mobil na stativ, nabíječku, Wi-Fi 5 GHz. Pro profi aplikace (NDI HX Camera, Larix → SRT) použij Zdroje → NDI nebo SRT vstup.')}</p></div>
         <div class="remcard"><h4>👤 ${L('Odkaz pro hosty')}</h4>
           <label class="chk"><input type="checkbox" id="remOnline" ${C().online ? 'checked' : ''}> 🌍 ${L('Hosté i mimo Wi-Fi (přes internet)')}</label>
           ${(() => { const tn = ST.info.tunnel || {}, u = onlineUrl();

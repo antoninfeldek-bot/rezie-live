@@ -42,10 +42,12 @@ const dbTxt = v => v <= 0.001 ? '−∞' : (20 * Math.log10(v)).toFixed(1);
 const glc = document.createElement('canvas'); glc.width = W; glc.height = H;
 // preserveDrawingBuffer: false – obraz se kopíruje hned po vykreslení, takže GPU nemusí každý snímek dělat kopii navíc
 const gl = glc.getContext('webgl', {alpha:false, antialias:false, preserveDrawingBuffer:false, premultipliedAlpha:false, powerPreference:'high-performance', desynchronized:true});
-const VS = `attribute vec2 a;uniform vec4 r;uniform vec4 cr;varying vec2 v;
-void main(){vec2 p=r.xy+a*r.zw;vec2 c=p/vec2(${W}.0,${H}.0)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0.0,1.0);
-v=vec2(mix(cr.x,1.0-cr.z,a.x),mix(cr.y,1.0-cr.w,a.y));}`;
-const FS = `precision mediump float;uniform sampler2D t;uniform float op;uniform float key;uniform vec3 kc;
+const VS = `attribute vec2 a;uniform vec4 r;uniform vec4 cr;uniform float pd;varying vec2 v;varying vec2 lp;
+void main(){vec2 q=a*(r.zw+2.0*pd)-pd;vec2 p=r.xy+q;vec2 c=p/vec2(${W}.0,${H}.0)*2.0-1.0;gl_Position=vec4(c.x,-c.y,0.0,1.0);
+vec2 u=q/r.zw;v=vec2(mix(cr.x,1.0-cr.z,u.x),mix(cr.y,1.0-cr.w,u.y));lp=q;}`;
+const FS = `precision mediump float;uniform sampler2D t;uniform vec4 bx;uniform vec3 bcl;uniform float sho;uniform highp vec2 sz;varying highp vec2 lp;
+highp float rbox(highp vec2 p,highp vec2 h,highp float r){highp vec2 q=abs(p)-h+r;return length(max(q,0.0))+min(max(q.x,q.y),0.0)-r;}
+uniform float op;uniform float key;uniform vec3 kc;
 uniform float sim;uniform float smo;uniform float spl;varying vec2 v;
 uniform sampler2D lut;uniform float lutOn;uniform float lutN;uniform float lutCols;uniform vec2 lutTex;uniform float lutMix;
 uniform sampler2D crv;uniform float crvOn;uniform float gradeOn;
@@ -57,7 +59,10 @@ vec3 lutS(vec3 c){float n=lutN;float b=c.b*(n-1.0);float b0=floor(b);float b1=mi
 vec2 xy=vec2(c.r*(n-1.0)+0.5,c.g*(n-1.0)+0.5);
 vec2 t0=vec2(mod(b0,lutCols),floor(b0/lutCols))*n;vec2 t1=vec2(mod(b1,lutCols),floor(b1/lutCols))*n;
 return mix(texture2D(lut,(t0+xy)/lutTex).rgb,texture2D(lut,(t1+xy)/lutTex).rgb,f);}
-void main(){vec4 c=texture2D(t,v);float a=c.a;
+void main(){highp vec2 hs=sz*0.5;highp float d=-1e4;float ins=1.0;
+if(bx.w>0.5){d=rbox(lp-hs,hs,bx.x);ins=clamp(0.5-d,0.0,1.0);
+if(ins<=0.0){float s=0.0;if(bx.z>0.5){highp float ds=rbox(lp-hs-vec2(0.0,bx.z*0.3),hs,bx.x);s=1.0-smoothstep(-bx.z*0.2,bx.z,ds);s=s*s*sho;}gl_FragColor=vec4(0.0,0.0,0.0,s*op);return;}}
+vec4 c=texture2D(t,clamp(v,0.0,1.0));float a=c.a;
 if(key>0.5){float d=distance(cuv(c.rgb),cuv(kc));float b=d-sim;
 float m=pow(clamp(b/smo,0.0,1.0),1.5);float sv=pow(clamp(b/spl,0.0,1.0),1.5);
 float l=dot(c.rgb,LW);c.rgb=mix(vec3(l),c.rgb,sv);a*=m;}
@@ -72,6 +77,7 @@ if(abs(hue)>0.0005){float ca=cos(hue);float sa=sin(hue);vec3 k=vec3(0.57735);c.r
 c.rgb=clamp(c.rgb,0.0,1.0);
 if(crvOn>0.5){c.r=texture2D(crv,vec2(c.r*0.99609+0.00195,0.5)).r;c.g=texture2D(crv,vec2(c.g*0.99609+0.00195,0.5)).g;c.b=texture2D(crv,vec2(c.b*0.99609+0.00195,0.5)).b;}
 }
+if(bx.w>0.5){if(bx.y>0.0){float bm=clamp(d+bx.y+0.5,0.0,1.0);c.rgb=mix(c.rgb,bcl,bm);a=max(a,bm);}a*=ins;}
 gl_FragColor=vec4(c.rgb,a*op);}`;
 const U = {};
 if (gl) {
@@ -82,7 +88,7 @@ if (gl) {
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,0, 1,0, 0,1, 1,1]), gl.STATIC_DRAW);
   const aLoc = gl.getAttribLocation(glProg, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
-  ['r','cr','t','op','key','kc','sim','smo','spl','lut','lutOn','lutN','lutCols','lutTex','lutMix','ex','tmp','tnt','con','sat','crv','crvOn','gradeOn','piv','hue','lift','gam','gain','offs'].forEach(n => U[n] = gl.getUniformLocation(glProg, n));
+  ['r','cr','pd','bx','bcl','sho','sz','t','op','key','kc','sim','smo','spl','lut','lutOn','lutN','lutCols','lutTex','lutMix','ex','tmp','tnt','con','sat','crv','crvOn','gradeOn','piv','hue','lift','gam','gain','offs'].forEach(n => U[n] = gl.getUniformLocation(glProg, n));
   gl.uniform1i(U.t, 0); gl.uniform1i(U.lut, 1); gl.uniform1i(U.crv, 2);
 }
 
@@ -166,6 +172,7 @@ function texFor(s) {
   return s.ready;
 }
 
+function srcAspect(s) { const e = s.el; if (e instanceof HTMLVideoElement && e.videoWidth) return e.videoWidth / e.videoHeight; if (e && e.width && e.height && !(e instanceof HTMLImageElement)) return e.width / e.height; return s.aspect || 16 / 9; }
 function layerRect(l, s) {
   if (s && s.type === 'text' && s.el) return {x:l.x, y:l.y, w:s.el.width * l.s, h:s.el.height * l.s};
   return {x:l.x, y:l.y, w:l.w, h:l.h};
@@ -183,9 +190,23 @@ function renderScene(sc, small) {
     const s = srcById(l.sourceId);
     if (!s || !s.hasVideo || !s.el) continue;
     if (!texFor(s)) continue;
-    const r = layerRect(l, s), c = l.crop;
-    gl.uniform4f(U.r, r.x + c.l * r.w, r.y + c.t * r.h, r.w * (1 - c.l - c.r), r.h * (1 - c.t - c.b));
-    gl.uniform4f(U.cr, c.l, c.t, c.r, c.b);
+    const r = SS.rect(l, layerRect(l, s)), c = l.crop, bx = l.box;
+    if (bx && bx.fit === 'cover' && s.type !== 'text') {
+      // výřez tak, aby zdroj vyplnil celý box (bez deformace), posun výřezu = pan
+      const sa = srcAspect(s), vw = 1 - c.l - c.r, vh = 1 - c.t - c.b, va = sa * vw / vh, ba = r.w / r.h;
+      let cl = c.l, ct = c.t, cr = c.r, cb = c.b;
+      if (va > ba) { const ex = vw * (1 - ba / va), px = bx.px ?? 0.5; cl += ex * px; cr += ex * (1 - px); }
+      else if (va < ba) { const ex = vh * (1 - va / ba), py = bx.py ?? 0.5; ct += ex * py; cb += ex * (1 - py); }
+      gl.uniform4f(U.r, r.x, r.y, r.w, r.h); gl.uniform4f(U.cr, cl, ct, cr, cb);
+    } else {
+      gl.uniform4f(U.r, r.x + c.l * r.w, r.y + c.t * r.h, r.w * (1 - c.l - c.r), r.h * (1 - c.t - c.b));
+      gl.uniform4f(U.cr, c.l, c.t, c.r, c.b);
+    }
+    if (bx && bx.on) {
+      const rw = bx.fit === 'cover' ? r.w : r.w * (1 - c.l - c.r), rh = bx.fit === 'cover' ? r.h : r.h * (1 - c.t - c.b);
+      const rad = Math.min(+bx.r || 0, rw / 2, rh / 2), sh = +bx.sh || 0, bc = hex2rgb(bx.bc || '#ffffff');
+      gl.uniform4f(U.bx, rad, +bx.bw || 0, sh, 1); gl.uniform1f(U.pd, sh); gl.uniform2f(U.sz, rw, rh); gl.uniform3f(U.bcl, bc[0], bc[1], bc[2]); gl.uniform1f(U.sho, bx.sho ?? 0.6);
+    } else { gl.uniform4f(U.bx, 0, 0, 0, 0); gl.uniform1f(U.pd, 0); }
     gl.uniform1f(U.op, l.opacity);
     const k = l.key, kc = hex2rgb(k.color);
     gl.uniform1f(U.key, k.on ? 1 : 0); gl.uniform3f(U.kc, kc[0], kc[1], kc[2]);
@@ -341,6 +362,17 @@ function renderColor(s) {
   const x = c.getContext('2d'); x.fillStyle = s.props.color; x.fillRect(0, 0, 16, 16);
   s.hasVideo = true; s.dirty = true; s.aspect = 16 / 9;
 }
+function boxProps(l) {
+  const b = l.box || (l.box = {on:false, fit:'stretch', r:16, bw:0, bc:'#ffffff', sh:24, sho:0.55, px:0.5, py:0.5});
+  return `<div class="sec"><h4>▦ Rámeček a výřez</h4>
+    <label class="chk"><input type="checkbox" data-l="box.on" ${b.on ? 'checked' : ''}> Zaoblení, rámeček a stín</label>
+    <label class="chk"><input type="checkbox" data-l="box.fit" data-on="cover" data-off="stretch" ${b.fit === 'cover' ? 'checked' : ''}> Vyplnit box bez deformace (ořízne okraje)</label>
+    ${range('Zaoblení (px)', 'box.r', b.r ?? 0, 0, 200, 1)}${range('Rámeček (px)', 'box.bw', b.bw ?? 0, 0, 30, 1)}
+    <div class="row"><label style="flex:0">Barva rámečku<input type="color" data-l="box.bc" value="${b.bc || '#ffffff'}"></label></div>
+    ${range('Stín (px)', 'box.sh', b.sh ?? 0, 0, 120, 1)}${range('Síla stínu', 'box.sho', b.sho ?? 0.55, 0, 1, 0.01)}
+    ${b.fit === 'cover' ? range('Posun výřezu ↔', 'box.px', b.px ?? 0.5, 0, 1, 0.01) + range('Posun výřezu ↕', 'box.py', b.py ?? 0.5, 0, 1, 0.01) : ''}
+    <div class="btns"><button data-do="ssopen">▦ Rozložení celé scény…</button></div></div>`;
+}
 function newLayer(s) {
   const l = {id:uid(), sourceId:s.id, x:0, y:0, w:W, h:H, s:1, opacity:1, visible:true,
     crop:{l:0, t:0, r:0, b:0}, key:{on:false, color:'#00ff00', sim:0.4, smooth:0.08, spill:0.1}};
@@ -377,7 +409,7 @@ function dialog(title, html, info) {
     const bs = d.querySelectorAll('menu button'); bs[0].style.display = info ? 'none' : ''; bs[1].textContent = info ? 'Zavřít' : 'OK';
     d.onclose = () => {
       if (d.returnValue !== 'ok') return res(null);
-      const o = {}; d.querySelectorAll('#dlgB [name]').forEach(el => o[el.name] = el.type === 'checkbox' ? el.checked : el.value);
+      const o = {}; d.querySelectorAll('#dlgB [name]').forEach(el => { if (el.type === 'radio' && !el.checked) return; o[el.name] = el.type === 'checkbox' ? el.checked : el.value; });
       res(o);
     };
     d.showModal();
@@ -596,7 +628,7 @@ function renderProps() {
       <h5>Oříznutí</h5>
       ${range('Zleva', 'crop.l', l.crop.l, 0, 0.45, 0.005)}${range('Zprava', 'crop.r', l.crop.r, 0, 0.45, 0.005)}
       ${range('Shora', 'crop.t', l.crop.t, 0, 0.45, 0.005)}${range('Zdola', 'crop.b', l.crop.b, 0, 0.45, 0.005)}
-      </div>
+      </div>${isT ? '' : boxProps(l)}
       <div class="sec"><h4>Klíčování (zelené / modré pozadí)</h4>
       <label class="chk"><input type="checkbox" data-l="key.on" ${l.key.on ? 'checked' : ''}> Zapnout klíč</label>
       <div class="row" style="margin-top:8px"><label style="flex:0">Barva<input type="color" data-l="key.color" value="${l.key.color}"></label>
@@ -659,7 +691,7 @@ function srcCard(s) {
     <div class="grid4"><label class="chk"><input type="checkbox" data-s="props.bold" ${p.bold ? 'checked' : ''}>Tučně</label><label class="chk"><input type="checkbox" data-s="props.bg" ${p.bg ? 'checked' : ''}>Pozadí</label>
       <label>Barva pozadí<input type="color" data-s="props.bgColor" value="${p.bgColor}"></label><label>Krytí pozadí<input type="range" data-s="props.bgOp" min="0" max="1" step="0.05" value="${p.bgOp}"></label></div>
     <div class="grid4"><label class="chk"><input type="checkbox" data-s="props.accentOn" ${p.accentOn ? 'checked' : ''}>Proužek</label><label>Barva proužku<input type="color" data-s="props.accent" value="${p.accent}"></label>
-      <label style="grid-column:span 2">Písmo<select data-s="props.font">${FONTS.map(f => `<option value='${f[0]}' ${p.font === f[0] ? 'selected' : ''}>${f[1]}</option>`).join('')}</select></label></div>`;
+      <label style="grid-column:span 2">Písmo<select data-s="props.font">${FNT.options(p.font)}</select></label></div>`;
   if (s.type === 'video') b += `
     <div class="btns"><button data-sa="play">▶ Přehrát</button><button data-sa="pause">⏸ Pauza</button><button data-sa="rew">⏮ Začátek</button><span class="dim" data-time="${s.id}"></span></div>
     <label class="chk"><input type="checkbox" data-s="props.restart" ${p.restart ? 'checked' : ''}>Při přepnutí do vysílání pustit od začátku</label>
@@ -875,9 +907,9 @@ function toggleIso() {
 /* ================= Hlavička ================= */
 function updateHeader() {
   const bR = $('#bRec'), bI = $('#bIso'), bS = $('#bStream');
-  bR.classList.toggle('on', !!R.rec); bR.textContent = R.rec ? '■ Stop program' : '● Program';
-  bI.classList.toggle('on', R.iso.length > 0); bI.textContent = R.iso.length ? `■ Stop vše (${R.iso.length})` : '● Vše (ISO)';
-  bS.classList.toggle('on', !!R.stream); bS.textContent = R.stream ? '■ Ukončit vysílání' : '⦿ Vysílat';
+  bR.classList.toggle('rec', !!R.rec); bR.textContent = R.rec ? '■ Stop program' : '● Program';
+  bI.classList.toggle('rec', R.iso.length > 0); bI.textContent = R.iso.length ? `■ Stop vše (${R.iso.length})` : '● Vše (ISO)';
+  bS.classList.toggle('live', !!R.stream); bS.textContent = R.stream ? '■ Ukončit vysílání' : '⦿ Vysílat';
   CFG.awake(!!(R.stream || R.rec || R.iso.length));
 }
 function tickClock() {
@@ -1038,7 +1070,7 @@ document.addEventListener('keydown', onKey);
 
 /* ================= Uložení projektu ================= */
 function serialize() {
-  return {v:1, canvas:[W, H], buses:BUS.save(), out2:OUT2.save(), out3:OUT3.save(), out4:OUT4.save(), live:LIVE.save(), pops:POP.save(), rep:RPL.save(), ext:EXT.save(), data:DAT.save(), ptz:PTZ.save(), auto:AUT.save(), sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, fmt:s.fmt, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
+  return {v:1, canvas:[W, H], buses:BUS.save(), out2:OUT2.save(), out3:OUT3.save(), out4:OUT4.save(), live:LIVE.save(), pops:POP.save(), rep:RPL.save(), ext:EXT.save(), data:DAT.save(), ptz:PTZ.save(), auto:AUT.save(), macros:S.macros || {list:[]}, ss:S.ss || null, sources:S.sources.map(s => ({id:s.id, type:s.type, name:s.name, guestId:s.guestId, fmt:s.fmt, deviceId:s.deviceId, res:s.res, props:s.props, micOpts:s.micOpts, color:s.color,
       audio:s.audio ? AUD.saveCh(s.audio) : null})),
     scenes:S.scenes, previewId:S.previewId, programId:S.programId, trans:S.trans,
     prompter:{text:R.prompter.text, speed:R.prompter.speed, size:R.prompter.size, mirror:R.prompter.mirror},
@@ -1068,7 +1100,7 @@ async function restore(d) {
   }
   S.scenes = d.scenes || []; S.previewId = d.previewId; S.programId = d.programId; S.trans = Object.assign({dur:600, swap:true}, d.trans || {});
   if (d.prompter) Object.assign(R.prompter, d.prompter);
-  STR.load(d.streamCfg); REM.load(d.rem); RPL.load(d.rep); EXT.load(d.ext); OUT2.load(d.out2); OUT3.load(d.out3); OUT4.load(d.out4); LIVE.load(d.live); BUS.load(d.buses); DAT.load(d.data); PTZ.load(d.ptz); AUT.load(d.auto); if (window.rzNative) POP.load(d.pops);
+  STR.load(d.streamCfg); REM.load(d.rem); RPL.load(d.rep); EXT.load(d.ext); OUT2.load(d.out2); OUT3.load(d.out3); OUT4.load(d.out4); LIVE.load(d.live); BUS.load(d.buses); DAT.load(d.data); PTZ.load(d.ptz); AUT.load(d.auto); MAC.load(d.macros); S.ss = d.ss || null; if (window.rzNative) POP.load(d.pops);
   AUD.load(d.aud || (d.masterVol != null ? {fader:d.masterVol} : null)); GFX.load(d.gfx); TR.load(d.trs); RUN.load(d.rundown); CTL.load(d.ctl); GR.load(d.grades);
   const oc = Array.isArray(d.canvas) ? d.canvas : [1920, 1080];
   if (oc[0] !== W || oc[1] !== H) rescaleProject(oc[0], oc[1]);
@@ -1095,7 +1127,7 @@ async function loadProject() {
   else {
     S.scenes = ['Kamera', 'Host', 'Znělka', 'Titulky'].map(n => ({id:uid(), name:L(n), layers:[], autoNext:null}));
     S.previewId = S.scenes[0].id;
-    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null); REM.load(null); RPL.load(null); EXT.load(null); DAT.load(null); PTZ.load(null); AUT.load(null);
+    AUD.load(null); GFX.load(null); TR.load(null); RUN.load(null); CTL.load(null); GR.load(null); STR.load(null); REM.load(null); RPL.load(null); EXT.load(null); DAT.load(null); PTZ.load(null); AUT.load(null); MAC.load(null);
   }
 }
 function exportProject() {
@@ -1145,7 +1177,7 @@ function showTab(name) {
   if (TAB_RENDER[name]) TAB_RENDER[name]();
   POP.renderNav();
 }
-const TAB_RENDER = {replay:() => RPL.renderTab(), ptz:() => PTZ.renderTab(), remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => { GFX.renderCtl(); DAT.render(); }, trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => { CTL.renderTab(); AUT.render(); }, rec:() => { DISK.renderBox(); CUT.render(); }, live:() => LIVE.renderTab(), audio:() => { renderMixer(); BUS.render(); }};
+const TAB_RENDER = {replay:() => RPL.renderTab(), ptz:() => PTZ.renderTab(), remote:() => REM.renderTab(), stream:() => STR.renderTab(), gfxctl:() => { GFX.renderCtl(); DAT.render(); }, trans:() => TR.renderTab(), rundown:() => RUN.renderTab(), control:() => { CTL.renderTab(); }, rec:() => { DISK.renderBox(); CUT.render(); }, live:() => LIVE.renderTab(), audio:() => { renderMixer(); BUS.render(); }};
 function renderAll() { renderScenes(); renderLayers(); renderProps(); renderSources(); renderMixer(); renderRecs(); updateHeader(); Object.values(TAB_RENDER).forEach(f => f()); TR.renderSel(); if (S.page && S.page !== 'rezie') showPage(S.page); }
 function showPage(name) {
   if (POP.has(name)) { POP.open('page-' + name); return; }   // stránka je v samostatném okně → jen ho ukázat
@@ -1191,12 +1223,15 @@ function bindEvents() {
     if (el.dataset.sc && sc) { sc[el.dataset.sc] = el.value || null; if (el.dataset.sc === 'name') renderScenes(); save(); return; }
     if (!el.dataset.l) return; const l = selLayerObj(); if (!l) return;
     let v = val(el); if (v === null) return; if (el.dataset.mul) v /= +el.dataset.mul;
+    if (el.dataset.on && el.type === 'checkbox') v = v ? el.dataset.on : el.dataset.off;
+    if (el.dataset.l.startsWith('box.') && !l.box) l.box = {};
     setPath(l, el.dataset.l, v);
+    if (el.dataset.l === 'box.fit') renderProps();
     const o = el.parentElement.querySelector('output'); if (o) o.textContent = fmtN(v, +el.step || 1);
     if (el.dataset.l === 'key.on') renderLayers(); save();
   });
   tp.addEventListener('change', e => { if (e.target.dataset.sc === 'autoNext') { const sc = prevScene(); if (sc) { sc.autoNext = e.target.value || null; save(); } } });
-  tp.addEventListener('click', e => { const a = e.target.dataset.do; if (!a) return; if (a === 'opencolor') { const l = selLayerObj(); if (l) GR.open(l.sourceId); } else layerAction(a); });
+  tp.addEventListener('click', e => { const a = e.target.dataset.do; if (!a) return; if (a === 'opencolor') { const l = selLayerObj(); if (l) GR.open(l.sourceId); } else if (a === 'ssopen') SS.open(); else layerAction(a); });
 
   // zdroje
   const ts = $('#tab-sources');
@@ -1212,6 +1247,7 @@ function bindEvents() {
   });
   ts.addEventListener('input', e => {
     const el = e.target; if (!el.dataset.s) return; const s = srcById(el.closest('.src').dataset.id); if (!s) return;
+    if (el.dataset.s === 'props.font') { FNT.pick(el, s.props.font).then(v => { if (v === '__reload') return renderSources(); if (v) { s.props.font = v; renderText(s); save(); } }); return; }
     const v = val(el); if (v === null) return; setPath(s, el.dataset.s, v);
     if (s.type === 'text') renderText(s);
     if (s.type === 'color') renderColor(s);
@@ -1260,7 +1296,7 @@ $('#startBtn').onclick = async () => {
   catch (e) { try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); st.getTracks().forEach(t => t.stop()); } catch (_) {} }
   $('#start').remove();
   await loadProject(); fillStatic(); bindEvents();
-  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, OUTS, BUS, NIN, UPD, CUT, LIVE, V360, POP, LAY]) { try { m.init(); } catch (e) { console.error(e); } }
+  for (const m of [TR, GFX, AUD, GR, CTL, RUN, DISK, STR, NDI, HLT, REM, ICM, MON, RPL, DAT, EXT, PTZ, AUT, MAC, SS, OUTS, BUS, NIN, UPD, CUT, LIVE, V360, POP, LAY]) { try { m.init(); } catch (e) { console.error(e); } }
   renderAll(); showTab(S.sources.length ? 'props' : 'sources');
   if (typeof TR.tbar !== 'function') toast('Prohlížeč má uloženou starou verzi – načti stránku znovu: Ctrl+Shift+R (Mac: Cmd+Shift+R).');
   setInterval(tickClock, 500); startLoop();

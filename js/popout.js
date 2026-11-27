@@ -14,7 +14,7 @@ const POP = (() => {
     'tab-live':     {title:'🏆 Živě', tab:'live', show:() => LIVE.renderTab()},
     'tab-replay':   {title:'⏪ Replay', tab:'replay', show:() => RPL.renderTab()},
     'tab-ptz':      {title:'🎥 PTZ', tab:'ptz', show:() => PTZ.renderTab()},
-    'tab-control':  {title:'Ovládání', tab:'control', show:() => { CTL.renderTab(); AUT.render(); }},
+    'tab-control':  {title:'Ovládání', tab:'control', show:() => { CTL.renderTab(); }},
     'tab-stream':   {title:'Vysílání', tab:'stream', show:() => STR.renderTab()},
   };
   const W = new Map();   // id → {win, el, ph}

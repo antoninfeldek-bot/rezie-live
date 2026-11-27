@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#0d0e11">
 <title>Režie Live – ovladač</title>
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/remote.css">
 </head>
 <body class="remote">
@@ -24,6 +25,7 @@
     <div class="take"><button id="cut" class="big" data-t>CUT</button><button id="auto" class="big red" data-t>AUTO</button></div>
     <div class="tb"><span data-t>T-bar</span><input type="range" id="tbar" min="0" max="1000" value="0"></div>
     <div id="trs" class="chipsel"></div>
+    <div id="macros" class="grid macgrid"></div>
   </section>
   <section data-v="gfx" class="view"><div id="gfx" class="grid"></div><button id="gfxOut" class="wide" data-t>Všechny grafiky OUT</button></section>
   <section data-v="aud" class="view"><div id="mix"></div></section>

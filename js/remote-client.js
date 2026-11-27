@@ -54,6 +54,10 @@
     const tr = $('#trs'), tk = S.trs.map(x => x.id + x.name).join('|');
     if (tr.dataset.k !== tk) { tr.dataset.k = tk; tr.innerHTML = S.trs.map(x => `<button data-tr="${x.id}">${esc(x.name)}</button>`).join(''); }
     tr.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tr === S.tr));
+    // makra
+    const mc = $('#macros'), ml = S.macros || [], mk2 = ml.map(x => x.id + x.name).join('|');
+    if (mc && mc.dataset.k !== mk2) { mc.dataset.k = mk2; mc.innerHTML = ml.length ? `<h3 class="dim" style="grid-column:1/-1;margin:8px 0 0;font-size:13px">🎬 ${t('Makra')}</h3>` + ml.map(x => `<button data-a="macro.${x.id}">${esc(x.name)}</button>`).join('') : ''; }
+    if (mc) mc.querySelectorAll('[data-a]').forEach(b => { const m = ml.find(x => 'macro.' + x.id === b.dataset.a); b.classList.toggle('pg', !!(m && m.run)); });
     // grafika
     const gf = $('#gfx'), gk = S.gfx.map(x => x.id + x.name).join('|');
     if (gf.dataset.k !== gk) { gf.dataset.k = gk; gf.innerHTML = S.gfx.map((x, i) => `<button data-gfx="${x.id}"><small>F${i + 1}</small>${esc(x.name)}</button>`).join(''); }

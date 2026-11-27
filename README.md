@@ -4,12 +4,14 @@
 
 **Online:** https://antoninfeldek-bot.github.io/rezie-live/
 
-Webová režie pro živé vysílání se 4 pracovními stránkami: **Režie** (scény, klíč, přechody vč. stingeru a T-baru, scénář), **Grafika** (editor animovaných titulků s klíčovými snímky), **Zvuk** (mix pult s modulárními efekty: noise reduction, gate, EQ, kompresor, de-esser, limiter, LUFS) a **Barvy** (lift/gamma/gain, křivky, LUT, waveform, parade, vektorskop, histogram). Dále ovládání klávesami, MIDI a Stream Deckem, nahrávání rovnou na disk, titulky, znělky, mix zvuku, čtečka (teleprompter), více monitorů, nahrávání (program + ISO) a stream na YouTube / Twitch / Facebook.
+Webová režie pro živé vysílání se 4 pracovními stránkami: **Režie** (scény, klíč, přechody vč. stingeru a T-baru, scénář), **Grafika** (editor animovaných titulků s klíčovými snímky, písma z počítače), **Zvuk** (mix pult s modulárními efekty: noise reduction, gate, EQ, kompresor, de-esser, limiter, LUFS) a **Barvy** (lift/gamma/gain, křivky, LUT, waveform, parade, vektorskop, histogram). Dále ovládání klávesami, MIDI a Stream Deckem, nahrávání rovnou na disk, titulky, znělky, mix zvuku, čtečka (teleprompter), více monitorů, nahrávání (program + ISO) a stream na YouTube / Twitch / Facebook.
 
 ## 🍎 Mac aplikace / Mac app
 Stáhni DMG z [Releases](https://github.com/antoninfeldek-bot/rezie-live/releases/latest) (arm64 = M1–M4, x64 = Intel), přetáhni do Aplikací, při prvním spuštění **Nastavení systému → Soukromí a zabezpečení → Přesto otevřít**. V aplikaci je **🚀 Nativní vysílání**: kódování na grafice, víc míst najednou, SRT, automatické znovupřipojení, pojistná nahrávka. Návod: [NAVOD.md](NAVOD.md) · [GUIDE.md](GUIDE.md).
 
-**Nově:** 📱 ovládání z iPadu/mobilu, 👤 hosté přes odkaz (s mix-minus a tally), 🛡 vysílání nepřestane ani při pádu okna. / **New:** iPad/phone remote, guests via link, stream survives window crashes.
+**Verze 2.0:** 🎬 makra (řetězení akcí s časováním), ▦ SuperSource rozložení 2/3/4 zdrojů s animací, ⏪ Replay 2.0 (program, víc úhlů, IN/OUT, plynulé zpomalení, stinger), 📱 mobil jako kamera (až 4K/60, nízké zpoždění), 🔌 zvuk do Zoomu/Teams, 🔤 fonty z počítače v grafice, 🎨 nový čistý vzhled. / **2.0:** macros, SuperSource layouts, Replay 2.0, phone as camera, audio to Zoom/Teams, system fonts in graphics, new clean look.
+
+**Dřív:** 📱 ovládání z iPadu/mobilu, 👤 hosté přes odkaz (s mix-minus a tally), 🛡 vysílání nepřestane ani při pádu okna. / **New:** iPad/phone remote, guests via link, stream survives window crashes.
 
 ## Rychlý start
 Windows: dvojklik na `start-windows.bat` · Mac: `start-mac.command` · nebo `node server.js` a v Chrome http://localhost:8080.

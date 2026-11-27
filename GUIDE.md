@@ -92,8 +92,44 @@ Turn one 360° camera (Insta360 X4…) into several cameras. Sources → **🌐 
 ### ⚡ Performance
 The app draws only as many times per second as the stream has frames (up to 4× less work on a 120 Hz display), draws the preview smaller, takes only new frames from cameras and uses the high-performance GPU. If it still can’t keep up: ⚙ Settings → Advanced → Preview “Economy”.
 
-### ⏪ Replay (instant replay, slow motion)
-**⏪ Replay** tab: tick the cameras to record into memory (last 15 s – 2 min). Pick a camera, length (3–20 s) and speed (100 / 75 / 50 / 25 %) and click **REPLAY to program**. A “⏪ REPLAY” bug shows and when it ends the app goes back to the previous scene. **★ Mark** saves a moment for later. Keys and Stream Deck: Control tab → “Replay to program”, “Mark”.
+### ⏪ Replay 2.0 (instant replay, slow motion, multiple angles)
+**⏪ Replay** tab:
+- **What is recorded:** tick cameras, guests, NDI/SRT inputs, videos – or the whole **🎬 Program**. Keeps the last 15 s – 2 min at 25–60 fps (60 = smoother slow motion). Encoded on the GPU into memory, nothing on disk.
+- **Angles:** buttons with source names. A click during playback switches the angle and continues **at the same moment**. **All angles** = the same moment from every source in a row.
+- **Speed:** 100 / 75 / 50 / 25 % (also while playing). **Smooth slow motion** blends neighbouring frames.
+- **IN / OUT:** find the moment with the slider (the frame shows in the ⏪ Replay source – put the Replay scene in preview), click **[ IN**, move, **OUT ]**. **REPLAY on air** then plays exactly that part. Without IN/OUT it plays the last X seconds.
+- **Transition into replay and back:** pick a stinger or other transition – used automatically at start and end.
+- **★ Mark** saves a moment; each mark has **Play** and **IN/OUT**.
+- Control (keys, MIDI, Stream Deck, macros): Replay on air, All angles, Next angle, IN, OUT, Pause, Speed 25–100 %, **slider as a MIDI fader** (jog).
+
+### 🎬 Macros (Control → Macros)
+A macro = several actions in a row with one press. **+ New macro** (or **✨ From template**), then add steps:
+- **▶ Action** – anything from the Control list (scene to preview / on air, CUT, AUTO, graphic IN / OUT, mute / unmute a mic, layout, replay, PTZ, recording…),
+- **⏱ Wait (s)**, **⏳ Wait for transition end**, **🎞 Wait for video end**, **✋ Wait for next press** (the macro pauses and continues on the next trigger – “step by step”).
+Reorder with ↑ ↓, ▶ on a step tests it. **When it's running and you trigger it again:** restarts / stops / nothing. **Loop** = repeat. The running step is green.
+Trigger: **▶ Run**, key / MIDI / Stream Deck (action list below, group “Macros”), the **mobile remote** (macro buttons under transitions) or **automation** (“when X happens → macro”).
+
+### ▦ Scene layout (SuperSource)
+**▦ Layout** button in the layers panel. Pick a template – **automatic by count**, 1 full, 2 side by side (tall / 16:9), 3 (big + 2 small / three columns), 2×2 and 3×2 grid, picture in picture, big left + strip right. Set margin, gap, corner radius, border (width, color), shadow and animation length.
+It arranges the scene's video layers (cameras, guests, videos, NDI…) in layer order. Graphics, texts, images and colors stay as they are. Each box is **filled without distortion** (edges cropped) – move the crop in the layer under **▦ Border and crop**, where you can also turn corners, border and shadow on for a single layer.
+Switching layouts **animates smoothly**, even when the scene is on air. The “Layout … – scene on air / in preview” actions work on keys, Stream Deck and in macros.
+
+### 📱 Phone as a camera
+**Remote** tab → enable local network → **📱 Phone as a camera** card → scan the QR with a phone on the same Wi-Fi → **Allow camera** → choose quality (720p – 4K) and fps (25 / 30 / 60) → **Join**. A **📱 name** source appears in Sources.
+The phone only sends (no return video) in H.264 with low latency – saves battery, network and the director's GPU. **Zoom** and **torch** work on the phone (if supported), the screen stays on. Phone audio is unprocessed (clean ambient sound); choose **No microphone** to turn it off. Tip: tripod, charger, 5 GHz Wi-Fi.
+
+### 🔌 Program audio to Zoom / Teams, virtual camera
+- **Audio:** install a free virtual audio device (Mac: **BlackHole**, Windows: **VB-Cable**), restart the app, then **Audio → Buses → 🔌 Program audio to Zoom / Teams**. In Zoom choose BlackHole / CABLE Output as the microphone.
+- **Video:** NDI output (Streaming → NDI) + free **NDI Virtual Input** (NDI Tools) = an “NDI Video” camera in Zoom, Teams and Meet.
+
+### 📡 Network inputs – audio that stays in sync
+Audio from NDI / SRT / RTMP inputs adjusts itself to the director's clock (gently, ±0.5 %, inaudible), so it doesn't drift from the picture even after hours. The input card shows **🔊 buffer (ms) and correction (%)**. If audio is constantly offset from video, set the channel **delay** in the mixer.
+
+### 🔤 Computer fonts in graphics
+In graphics (and the text source), at the bottom of the **Font** list: **🖥 Load fonts from this computer…** – loads all installed fonts (once, then remembered). **✎ Type a font name…** = manual entry. A font marked **✱** isn't on this computer (project from another computer) – install it, otherwise a fallback is used.
+
+### 🎨 New 2.0 look
+A dark, calm look with a single selection color (blue). **Red** lights up only for things that are really **on air / recording** (Program, Stream, REC – with a pulse), **green** = preview / ready, **amber** = warnings and muted channels. **Inter** font (bundled, works offline), numbers and times in **JetBrains Mono** so they don't jump.
 
 ### 📑 Titles from a sheet (Google Sheets, CSV)
 **Graphics** tab at the bottom → **Data for titles** → paste a Google Sheet link (shared “Anyone with the link”) or add a CSV file. In the graphics editor type `{Data1!B2}` (cell), `{Data1!Name}` (column Name in the current row) or `{Data1!B@+1}` (next row). Switch rows with ◀ ▶ (or a key). Data refreshes itself.

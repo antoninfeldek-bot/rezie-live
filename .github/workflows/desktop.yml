@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 22
       - name: Version number = release number
-        run: npm pkg set version=1.0.${{ github.run_number }}
+        run: npm pkg set version=2.0.${{ github.run_number }}
       - name: Install (FFmpeg for ${{ matrix.arch }})
         run: npm install --no-audit --no-fund
         env:
@@ -59,10 +59,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: out/*.dmg
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v2.0.{0}', github.run_number) }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          name: Režie Live ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          name: Režie Live ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v2.0.{0}', github.run_number) }}
           body: |
             **Mac s čipem M1/M2/M3/M4 (Apple Silicon):** stáhni `Rezie-Live-mac-arm64.dmg`
             **Starší Mac s Intelem:** stáhni `Rezie-Live-mac-x64.dmg`
@@ -83,7 +83,7 @@ jobs:
         with:
           node-version: 22
       - name: Version number = release number
-        run: npm pkg set version=1.0.${{ github.run_number }}
+        run: npm pkg set version=2.0.${{ github.run_number }}
       - name: Install (FFmpeg for Windows)
         run: npm install --no-audit --no-fund
       - name: Check bundled FFmpeg
@@ -116,10 +116,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: out/*.exe
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v2.0.{0}', github.run_number) }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          name: Režie Live ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          name: Režie Live ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v2.0.{0}', github.run_number) }}
           body: |
             **Mac s čipem M1/M2/M3/M4 (Apple Silicon):** stáhni `Rezie-Live-mac-arm64.dmg`
             **Starší Mac s Intelem:** stáhni `Rezie-Live-mac-x64.dmg`

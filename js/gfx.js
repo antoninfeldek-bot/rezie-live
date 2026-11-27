@@ -356,7 +356,7 @@ const GFX = (() => {
     let st = '';
     if (E.type === 'text' || E.type === 'ticker') {
       st += `<label>Text<textarea data-gs="text" rows="2">${esc(P.text)}</textarea></label>
-      <div class="grid2">${sf('font', `Písmo<select data-gs="font">${FONTS.map(f => `<option value='${f[0]}' ${P.font === f[0] ? 'selected' : ''}>${f[1]}</option>`).join('')}</select>`)}
+      <div class="grid2">${sf('font', `Písmo<select data-gs="font">${FNT.options(P.font)}</select>`)}
       ${sf('size', `Velikost${num('size', P.size, 1, 'data-gs="size" min="4"')}`)}
       ${sf('weight', `Tloušťka<select data-gs="weight">${[300,400,500,600,700,800,900].map(w => `<option ${+P.weight === w ? 'selected' : ''}>${w}</option>`).join('')}</select>`)}
       ${sf('color', `Barva<input type="color" data-gs="color" value="${P.color}">`)}</div>`;
@@ -439,6 +439,7 @@ const GFX = (() => {
       if (el.dataset.gg === 'name') { $('#gxList .sel .nm') && ($('#gxList .sel .nm').textContent = v); renderCtl(); } save(); return; }
     if (el.dataset.gf) { G.fields[el.dataset.gf] = el.value; save(); return; }
     const E = elById(G, ED.sel); if (!E) return;
+    if (el.dataset.gs === 'font') { const prev = E.p.font; FNT.pick(el, prev).then(v => { if (v === '__reload') return renderProps(); if (v) { E.p.font = v; save(); } }); return; }
     if (el.dataset.gs) { const k = el.dataset.gs, v = val(el); if (v === null) return; if (k === '__name') { E.name = v; const r = $(`#gxEls [data-eid="${E.id}"] .nm`); if (r) r.lastChild.textContent = ' ' + v; } else E.p[k] = v; if (k === 'text') renderCtl(); save(); return; }
     if (el.dataset.gp) { const v = val(el); if (v === null) return; setAnim(E, el.dataset.gp, v, ED.t); save(); return; }
     if (el.dataset.gk && ED.selKf) { const ks = E.kf[ED.selKf.prop], k = ks[ED.selKf.i]; if (!k) return; const v = el.dataset.gk === 'e' ? el.value : val(el); if (v === null) return; k[el.dataset.gk] = v;

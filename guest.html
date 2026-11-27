@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0d0e11">
 <title>Režie Live – připojení hosta</title>
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/remote.css">
 </head>
 <body class="guestp">
@@ -21,6 +22,7 @@
       <label><span data-t>Kamera</span><select id="cam"></select></label>
       <label><span data-t>Mikrofon</span><select id="mic"></select></label>
       <label><span data-t>Kvalita</span><select id="q"><option value="720">720p</option><option value="1080">1080p</option><option value="480">480p</option></select></label>
+      <label id="fpsL" hidden><span data-t>Snímků za sekundu</span><select id="fps"><option value="30">30</option><option value="60">60</option><option value="25">25</option></select></label>
       <button id="join" class="wide big red" data-t>Připojit se</button>
     </div>
   </section>
@@ -30,6 +32,7 @@
     <div id="gstate" class="gstate"></div>
     <div id="gtalk" class="talkin gt" hidden>🎙 <span data-t>Režie ti mluví do sluchátek</span></div>
     <div id="gmsg" class="cmsg gm" hidden><div id="gmsgT"></div><div class="ackrow"><button data-ack="👍 OK">👍 OK</button><button data-ack="⏳ Moment">⏳ <span data-t>Moment</span></button><button data-ack="❌ Problém">❌ <span data-t>Problém</span></button></div></div>
+    <div id="camCtl" class="camctl" hidden><label><span data-t>Zoom</span><input type="range" id="zoom" min="1" max="1" step="0.01" value="1"></label><button id="bTorch" hidden>🔦</button></div>
     <div class="gctl"><button id="bMic">🎤</button><button id="bCam">📷</button><button id="bSnd">🔊</button><button id="bLeave" class="red" data-t>Odejít</button></div>
   </section>
   <p id="err" class="msg" hidden></p>

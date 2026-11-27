@@ -51,7 +51,7 @@ const BUS = (() => {
           <button data-ba="mute" class="${b.mute ? 'on' : ''}">M</button><input type="range" min="0" max="1.5" step="0.01" value="${b.vol}" data-bk="vol" title="${L('Hlasitost sběrnice')}"><span class="buslv"><i data-blv="${b.id}"></i></span><button data-ba="del">✕</button></div>
         ${b.err ? `<p class="warn">${esc(b.err)}</p>` : ''}
         <div class="bussends">${[{id:'master', name:'🔴 ' + L('Celý program')}, ...chans.map(s => ({id:s.id, name:icon(s) + ' ' + s.name}))].map(c => `<label><span>${esc(c.name)}</span><input type="range" min="0" max="1.5" step="0.01" value="${b.sends[c.id] || 0}" data-send="${c.id}"><output>${Math.round((b.sends[c.id] || 0) * 100)} %</output></label>`).join('')}</div></div>`).join('')}
-      <div class="btns"><button data-ba="add">+ ${L('Přidat sběrnici')}</button></div>
+      <div class="btns"><button data-ba="add">+ ${L('Přidat sběrnici')}</button><button data-ba="virt" title="${L('Program do Zoomu, Teams, Meet… přes virtuální zvukové zařízení')}">🔌 ${L('Zvuk programu do Zoomu / Teams')}</button></div>
       <p class="dim">${L('Např. „Sluchátka moderátora“ (mikrofony + host, bez hudby) na zvukovou kartu, nebo „Sál“ (program) na reproduktory. Výstupy jsou zvukové karty a sluchátka připojené k Macu.')}</p></div>`;
   }
   function init() {
@@ -72,6 +72,14 @@ const BUS = (() => {
     host.addEventListener('click', e => {
       const t = e.target.closest('[data-ba]'); if (!t) return; const card = t.closest('[data-bid]'), b = card && C().find(x => x.id === card.dataset.bid);
       if (t.dataset.ba === 'add') { if (C().length >= 6) return; C().push({id:uid(), name:L('Sběrnice') + ' ' + String.fromCharCode(65 + C().length), dev:'', vol:1, mute:false, pre:true, sends:{}}); }
+      if (t.dataset.ba === 'virt') {
+        // virtuální zvuková karta: Mac = BlackHole, Windows = VB-Cable (obojí zdarma). V Zoomu pak jako mikrofon vybereš její výstup.
+        const v = outs.find(d => /blackhole|vb-?audio|cable input|loopback|soundflower|virtual|voicemeeter/i.test(d.label));
+        if (!v) { alert(L('Nenašel jsem virtuální zvukové zařízení. Nainstaluj zdarma: Mac → BlackHole (existential.audio/blackhole), Windows → VB-Cable (vb-audio.com/Cable). Pak restartuj aplikaci a klikni znovu.')); return; }
+        if (C().length >= 6) return;
+        C().push({id:uid(), name:'🔌 ' + L('Program → Zoom/Teams'), dev:v.deviceId, vol:1, mute:false, pre:false, sends:{master:1}});
+        toast('🔌 ' + L('Hotovo. V Zoomu / Teams vyber jako mikrofon:') + ' ' + v.label.replace(/\s*\(.*\)$/, ''));
+      }
       if (t.dataset.ba === 'del' && b) S.buses = C().filter(x => x !== b);
       if (t.dataset.ba === 'mute' && b) b.mute = !b.mute;
       sync(); save(); render();

@@ -101,8 +101,44 @@ Z jedné 360° kamery (Insta360 X4…) uděláš víc kamer. Zdroje → **🌐 +
 ### ⚡ Výkon
 Aplikace kreslí jen tolikrát za sekundu, kolik má vysílání snímků (na 120Hz displeji až 4× méně práce), náhled kreslí zmenšeně, z kamer bere jen nové snímky a používá výkonnou grafiku. Když přesto nestíhá: ⚙ Nastavení → Pokročilé → Náhled „Úsporně“.
 
-### ⏪ Replay (opakované záběry, zpomalovačky)
-Záložka **⏪ Replay**: zaškrtni kamery, které se mají nahrávat do paměti (posledních 15 s – 2 min). Vyber kameru, délku (3–20 s) a rychlost (100 / 75 / 50 / 25 %) a klikni **REPLAY do vysílání**. V rohu svítí „⏪ REPLAY“ a po skončení se režie vrátí na předchozí scénu. **★ Značka** si uloží důležitý moment na později. Klávesy a Stream Deck: záložka Ovládání → „Replay do vysílání“, „Značka“.
+### ⏪ Replay 2.0 (opakované záběry, zpomalovačky, víc úhlů)
+Záložka **⏪ Replay**:
+- **Co se nahrává:** zaškrtni kamery, hosty, NDI/SRT vstupy, videa – nebo celý **🎬 Program**. Pamatuje se posledních 15 s – 2 min, v 25–60 snímcích za sekundu (60 = plynulejší zpomalení). Kóduje se na grafice do paměti, na disk nic.
+- **Úhly:** tlačítka se jmény zdrojů. Klik během přehrávání přepne úhel a pokračuje **ve stejném okamžiku**. **Všechny úhly** = stejný moment postupně ze všech zdrojů.
+- **Rychlost:** 100 / 75 / 50 / 25 % (jde měnit i za běhu). **Plynulé zpomalení** prolíná sousední snímky.
+- **IN / OUT:** posuvníkem najdi moment (snímek uvidíš ve zdroji ⏪ Replay – dej scénu Replay do náhledu), klikni **[ IN**, posuň, **OUT ]**. **REPLAY do vysílání** pak pustí přesně tenhle úsek. Bez IN/OUT pustí posledních X sekund.
+- **Přechod do replaye a zpět:** vyber stinger nebo jiný přechod – použije se automaticky na začátku i na konci.
+- **★ Značka** uloží moment; u značky jde **Přehrát** nebo **IN/OUT**.
+- Ovládání (klávesy, MIDI, Stream Deck, makra): Replay do vysílání, Všechny úhly, Další úhel, IN, OUT, Pauza, Rychlost 25–100 %, **posuvník jako MIDI fader** (jog).
+
+### 🎬 Makra (Ovládání → Makra)
+Makro = víc akcí po sobě jedním stiskem. **+ Nové makro** (nebo **✨ Ze šablony**), pak přidávej kroky:
+- **▶ Akce** – cokoli ze seznamu Ovládání (scéna do náhledu / vysílání, CUT, AUTO, grafika IN / OUT, ztlumit / zapnout mikrofon, rozložení, replay, PTZ, nahrávání…),
+- **⏱ Čekej (s)**, **⏳ Čekej na konec přechodu**, **🎞 Čekej na konec videa**, **✋ Čekej na další stisk** (makro se zastaví a pokračuje při dalším spuštění – „krok za krokem“).
+Kroky přesouváš ↑ ↓, ▶ u kroku ho vyzkouší. **Když už běží a spustíš ho znovu:** začne znovu / zastaví se / nic. **Opakovat dokola** = smyčka. Běžící krok svítí zeleně.
+Spuštění: tlačítko **▶ Spustit**, klávesa / MIDI / Stream Deck (seznam akcí níž, skupina „Makra“), **mobilní ovladač** (tlačítka maker pod přechody) nebo **automatizace** („když se stane X → makro“).
+
+### ▦ Rozložení scény (SuperSource)
+Tlačítko **▦ Rozložení** v panelu vrstev. Vyber šablonu – **automaticky podle počtu**, 1 celá, 2 vedle sebe (na výšku / 16:9), 3 (velký + 2 malé / tři sloupce), mřížka 2×2 a 3×2, obraz v obraze, velký vlevo + pruh vpravo. Nastav okraj, mezeru, zaoblení, rámeček (šířka, barva), stín a délku animace.
+Rozloží se video vrstvy scény (kamery, hosté, videa, NDI…), v pořadí vrstev. Grafika, texty, obrázky a barvy zůstanou, jak jsou. Každý box obraz **vyplní bez deformace** (ořízne okraje) – výřez posuneš u vrstvy v sekci **▦ Rámeček a výřez**. Tam jde i zaoblení, rámeček a stín zapnout jen jedné vrstvě.
+Přepnutí rozložení se **plynule animuje**, i když je scéna ve vysílání. Akce „Rozložení … – scéna ve vysílání / v náhledu“ jdou na klávesu, Stream Deck i do maker.
+
+### 📱 Mobil jako kamera
+Záložka **Dálkově** → zapni místní síť → karta **📱 Mobil jako kamera** → naskenuj QR mobilem ve stejné Wi-Fi → **Povolit kameru** → vyber kvalitu (720p – 4K) a snímky (25 / 30 / 60) → **Připojit se**. V Zdrojích se objeví **📱 název**.
+Mobil jen posílá (žádný zpětný obraz) v H.264 s nízkým zpožděním – šetří baterii, síť i grafiku režie. V mobilu jde **zoom** a **světlo** (když je telefon umí), obrazovka nezhasne. Zvuk z mobilu je bez úprav (čistý zvuk prostředí), jde vypnout volbou **Bez mikrofonu**. Tip: stativ, nabíječka, Wi-Fi 5 GHz.
+
+### 🔌 Zvuk programu do Zoomu / Teams, virtuální kamera
+- **Zvuk:** nainstaluj zdarma virtuální zvukovou kartu (Mac: **BlackHole**, Windows: **VB-Cable**), restartuj aplikaci, pak **Zvuk → Sběrnice → 🔌 Zvuk programu do Zoomu / Teams**. V Zoomu vyber jako mikrofon BlackHole / CABLE Output.
+- **Obraz:** NDI výstup (Vysílání → NDI) + zdarma **NDI Virtual Input** (NDI Tools) = kamera „NDI Video“ v Zoomu, Teams i Meetu.
+
+### 📡 Síťové vstupy – zvuk bez rozjíždění
+Zvuk z NDI / SRT / RTMP vstupů se sám doladí na hodiny režie (jemně, ±0,5 %, neslyšitelně), takže se ani po hodinách vysílání nerozjede s obrazem. V kartě vstupu je vidět **🔊 vyrovnávací paměť (ms) a doladění (%)**. Když je zvuk proti obrazu posunutý trvale, nastav **zpoždění** kanálu v mix pultu.
+
+### 🔤 Písma z počítače v grafice
+V grafice (i u textového zdroje) v seznamu **Písmo** dole: **🖥 Načíst fonty z počítače…** – načte všechna nainstalovaná písma (jednou, pak se pamatují). **✎ Napsat název fontu…** = ruční zadání. Písmo označené **✱** v tomhle počítači není (projekt z jiného počítače) – nainstaluj ho, jinak se použije náhradní.
+
+### 🎨 Nový vzhled 2.0
+Tmavý, klidný vzhled s jedinou barvou pro výběr (modrá). **Červená** svítí jen u věcí, které jsou opravdu **ve vysílání / nahrávají se** (Program, Vysílat, REC – i s pulzováním), **zelená** = náhled / připraveno, **jantarová** = varování a ztlumený kanál. Písmo **Inter** (přibalené, funguje offline), čísla a časy v **JetBrains Mono**, aby neposkakovaly.
 
 ### 📑 Titulky z tabulky (Google Sheets, CSV)
 Záložka **Grafika** dole → **Data pro titulky** → vlož odkaz na Google tabulku (stačí sdílet „Kdokoli s odkazem“) nebo přidej soubor CSV. Do textu v editoru grafiky pak napiš `{Data1!B2}` (buňka), `{Data1!Jméno}` (sloupec Jméno v aktuálním řádku) nebo `{Data1!B@+1}` (další řádek). Řádky přepínáš ◀ ▶ (nebo klávesou). Data se samy obnovují.

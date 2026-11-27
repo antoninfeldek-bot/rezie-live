@@ -10,20 +10,29 @@ const NIN = (() => {
   let wkReady = null;
 
   /* ---------- zvuk: malý přehrávač s vyrovnávací pamětí (AudioWorklet) ---------- */
-  const WK = `class P extends AudioWorkletProcessor{constructor(){super();this.q=[];this.len=0;this.pos=0;this.rate=sampleRate;this.fr=0;this.started=false;
+  /* Drift: hodiny vysílače (mobil, druhý PC) a zvukové karty režie nejdou nikdy přesně stejně – za hodinu to dělá i sekundu.
+     Proto se rychlost přehrávání jemně dolaďuje (±0,5 %, neslyšitelné), aby vyrovnávací paměť držela kolem 80 ms.
+     Mezi vzorky se interpoluje (čistší zvuk při převzorkování 44,1 ↔ 48 kHz). Tvrdé zahození jen při velkém skluzu. */
+  const WK = `class P extends AudioWorkletProcessor{constructor(){super();this.q=[];this.len=0;this.pos=0;this.rate=sampleRate;this.started=false;this.adj=1;this.n=0;
     this.port.onmessage=e=>{const d=e.data;this.rate=d.rate||sampleRate;this.q.push(d.buf);this.len+=d.buf.length/2;
-      const max=this.rate*0.4;while(this.len>max&&this.q.length>1){const b=this.q.shift();this.len-=b.length/2;this.pos=0;}};}
-    process(i,o){const L=o[0][0],R=o[0][1]||o[0][0],step=this.rate/sampleRate;
-      if(!this.started){if(this.len<this.rate*0.06){L.fill(0);R.fill(0);return true;}this.started=true;}
+      const max=this.rate*0.6;while(this.len>max&&this.q.length>1){const b=this.q.shift();this.len-=b.length/2-this.pos;this.pos=0;}};}
+    at(i){let k=0;while(k<this.q.length){const n=this.q[k].length/2;if(i<n)return [this.q[k][i*2],this.q[k][i*2+1]];i-=n;k++;}return null;}
+    process(i,o){const L=o[0][0],R=o[0][1]||o[0][0],tgt=this.rate*0.08;
+      if(!this.started){if(this.len<tgt){L.fill(0);R.fill(0);return true;}this.started=true;}
+      const err=(this.len-tgt)/tgt;this.adj+=((1+Math.max(-0.005,Math.min(0.005,err*0.02)))-this.adj)*0.05;
+      const step=this.rate/sampleRate*this.adj;
       for(let k=0;k<L.length;k++){if(!this.q.length){L[k]=R[k]=0;this.started=false;continue;}
-        const b=this.q[0],n=b.length/2,j=this.pos|0;L[k]=b[j*2];R[k]=b[j*2+1];this.pos+=step;
+        const j=this.pos|0,f=this.pos-j,a=this.at(j),b=this.at(j+1)||a;
+        if(!a){L[k]=R[k]=0;this.started=false;this.q=[];this.len=0;this.pos=0;continue;}
+        L[k]=a[0]+(b[0]-a[0])*f;R[k]=a[1]+(b[1]-a[1])*f;this.pos+=step;
         while(this.q.length&&this.pos>=this.q[0].length/2){this.pos-=this.q[0].length/2;this.len-=this.q[0].length/2;this.q.shift();}}
+      if(++this.n%200===0)this.port.postMessage({buf:Math.round(this.len/this.rate*1000),adj:this.adj});
       return true;}}registerProcessor('rz-in',P);`;
   function ensureAudio(s) {
     if (s._an || !actx || !actx.audioWorklet) return;
     if (!wkReady) wkReady = actx.audioWorklet.addModule(URL.createObjectURL(new Blob([WK], {type:'application/javascript'})));
     s._an = 'pending';
-    wkReady.then(() => { const n = new AudioWorkletNode(actx, 'rz-in', {numberOfInputs:0, outputChannelCount:[2]}); s._an = n; attachAudio(s, n); if (LAY.isShown('audio')) renderMixer(); })
+    wkReady.then(() => { const n = new AudioWorkletNode(actx, 'rz-in', {numberOfInputs:0, outputChannelCount:[2]}); s._an = n; n.port.onmessage = e => { s._abuf = e.data.buf; s._adrift = (e.data.adj - 1) * 100; }; attachAudio(s, n); if (LAY.isShown('audio')) renderMixer(); })
       .catch(e => { s._an = null; HLT.note('NDI/SRT zvuk: ' + e.message); });
   }
 
@@ -116,7 +125,7 @@ const NIN = (() => {
       <p>${L('Klíč streamu:')} <code class="cp" data-copy="${esc(p.key)}">${esc(p.key)}</code></p><p class="dim">${L('Najednou může posílat jen jedno zařízení. RTMP má větší zpoždění než SRT.')}</p>`;
     if (s.type === 'netin' && p.mode === 'url') how = `<p class="dim">${esc(p.url)}</p>`;
     if (s.type === 'ndiin') how = `<p class="dim">NDI: ${esc(p.name)}${p.low ? ' · ' + L('nízká kvalita') : ''}</p>`;
-    return `<div class="sec"><b>${s.type === 'ndiin' ? '🔗 NDI' : '📡 ' + (p.mode === 'url' ? L('Adresa') : p.mode.toUpperCase())}</b> ${stTxt(st)} ${st && st.msg && st.state !== 'on' ? `<span class="dim">${esc(st.msg)}</span>` : ''}
+    return `<div class="sec"><b>${s.type === 'ndiin' ? '🔗 NDI' : '📡 ' + (p.mode === 'url' ? L('Adresa') : p.mode.toUpperCase())}</b> ${stTxt(st)} ${s._abuf != null ? `<span class="dim mono" title="${L('Vyrovnávací paměť zvuku a doladění hodin vysílače')}">🔊 ${s._abuf} ms · ${(s._adrift || 0) >= 0 ? '+' : ''}${(s._adrift || 0).toFixed(2)} %</span>` : ''} ${st && st.msg && st.state !== 'on' ? `<span class="dim">${esc(st.msg)}</span>` : ''}
       ${how}<div class="btns"><button data-nin-a="re">⟳ ${L('Připojit znovu')}</button>${s.type === 'ndiin' ? `<button data-nin-a="low">${p.low ? L('Plná kvalita') : L('Nízká kvalita')}</button>` : ''}</div></div>`;
   }
 
